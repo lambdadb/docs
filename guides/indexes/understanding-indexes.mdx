@@ -1,0 +1,26 @@
+---
+title: Understanding indexes
+---
+
+An LambdaDB index is a logical namespace that holds a collection of documents,
+where each document is a collection of fields — which, in turn,
+are key-value pairs that contain your data.
+
+Indexes are not the same as you’d find in a relational database.
+Think of an LambdaDB project as a database that can contain many indexes you can consider as a table,
+and within each index, you have many documents.
+
+* RDBMS => Databases => Tables => Columns/Rows
+* LambdaDB => Projects => Indexes => Documents with key-value pairs
+
+LambdaDB provides a RESTful JSON-based API for interacting with document data.
+You can index, search, and delete documents by sending HTTP requests to the appropriate endpoints.
+These CRUD-like operations can take place at an individual document level or at the index level itself.
+
+## Zero-copy index clone
+
+Zero-copy index clone is a feature that allows you to create a new index by cloning an existing index,
+without physically copying index data.
+
+This feature is useful when you want to create a new index with the same schema and data as an existing index,
+in order to load-test, develop, and experiment in an isolated environment.

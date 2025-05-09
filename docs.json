@@ -1,0 +1,118 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "LambdaDB Documentation",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "guides/overview/overview"
+            ]
+          },
+          {
+            "group": "Indexes",
+            "pages": [
+              "guides/indexes/understanding-indexes",
+              "guides/indexes/data-types",
+              "guides/indexes/create-an-index",
+              "guides/indexes/manage-indexes"
+            ]
+          },
+          {
+            "group": "Data",
+            "pages": [
+              "guides/data/upsert-data",
+              "guides/data/bulk-upsert-data",
+              "guides/data/query-data",
+              "guides/data/fetch-data",
+              "guides/data/delete-data"
+            ]
+          },
+          {
+            "group": "Projects",
+            "pages": [
+              "guides/projects/understanding-projects",
+              "guides/projects/create-a-project",
+              "guides/projects/manage-projects"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/introduction",
+              {
+                "group": "Projects",
+                "pages": [
+                  "api-reference/endpoint/project-list",
+                  "api-reference/endpoint/project-create",
+                  "api-reference/endpoint/project-describe",
+                  "api-reference/endpoint/project-delete",
+                  "api-reference/endpoint/project-configure"
+                ]
+              },
+              {
+                "group": "Indexes",
+                "pages": [
+                  "api-reference/endpoint/index-list",
+                  "api-reference/endpoint/index-create",
+                  "api-reference/endpoint/index-describe",
+                  "api-reference/endpoint/index-delete",
+                  "api-reference/endpoint/index-configure"
+                ]
+              },
+              {
+                "group": "Documents",
+                "pages": [
+                  "api-reference/endpoint/document-upsert",
+                  "api-reference/endpoint/document-get-bulk-upsert-url",
+                  "api-reference/endpoint/document-bulk-upsert",
+                  "api-reference/endpoint/document-query",
+                  "api-reference/endpoint/document-fetch",
+                  "api-reference/endpoint/document-delete"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@lambdadb.ai"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/",
+      "linkedin": "https://www.linkedin.com/"
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "simple"
+    }
+  }
+}

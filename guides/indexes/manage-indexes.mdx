@@ -1,0 +1,81 @@
+---
+title: Manage indexes
+---
+
+This page shows you how to manage your existing indexes.
+
+## List indexes
+
+Use this operation to get a complete description of all indexes in a project:
+
+```bash
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+The response will look like this:
+
+```json
+{
+  "indexes": [
+    {
+      "projectId": "<string>",
+      "indexName": "<string>",
+      "mappings": {},
+      "numDocs": 123,
+      "cloneSourceInfo": {
+        "sourceProjectId": "<string>",
+        "sourceIndexName": "<string>",
+        "sourceIndexVersionId": "<string>"
+      },
+      "indexStatus": "ACTIVE",
+      "indexClass": "STANDARD"
+    }
+  ]
+}
+```
+
+## Describe an index
+
+Use the describe endpoint to get a complete description of a specific index:
+
+```bash
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+The response will look like this:
+
+```json
+{
+  "projectId": "<string>",
+  "indexName": "<string>",
+  "mappings": {},
+  "numDocs": 123,
+  "cloneSourceInfo": {
+    "sourceProjectId": "<string>",
+    "sourceIndexName": "<string>",
+    "sourceIndexVersionId": "<string>"
+  },
+  "indexStatus": "ACTIVE",
+  "indexClass": "STANDARD"
+}
+```
+
+## Delete an index
+
+Use this operation to delete an index and all of its associated resources:
+
+```bash
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X DELETE "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```

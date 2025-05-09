@@ -1,0 +1,51 @@
+---
+title: Create an index
+---
+
+This page shows you how to create an index with various configurations.
+
+## Create an index from scratch
+
+The simplest way to create an index is to provide the index name and the field mappings.
+
+```bash
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+        "indexName": "example-std-index",
+        "mappings": {
+          "url": {
+            "type": "keyword"
+          },
+          "author": {
+            "type": "keyword"
+          }
+        }
+      }'
+```
+
+## Create an index cloned from another index
+
+You can create an index cloned from an existing index by simply providing information
+related to the source index.
+
+```bash
+LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
+LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
+
+curl -i -X POST "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
+  -d '{
+        "indexName": "example-index",
+        "sourceProjectId": "example-source-project-id",
+        "sourceProjectApiKey": $LAMBDADB_SOURCE_PROJECT_API_KEY,
+        "sourceIndexName": "example-source-index-name"
+      }'
+```
+As shown above example, specifying `mappings` is optional when cloning an index.
+You can pass `mappings` object only with additional mappings based on the original index's mappings.
+Deleting or modifying the original index's mappings is not allowed.
