@@ -1,0 +1,100 @@
+---
+title: Manage projects
+---
+
+This page explains how to manage projects.
+
+## List projects
+
+Use this operation to get a complete description of all projects in an organization:
+
+```bash
+LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
+
+curl -i -X GET "https://{baseUrl}/{apiVersion}/projects" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
+```
+
+The response will look like this:
+
+```json
+{
+  "projects": [
+    {
+      "id": "<string>",
+      "projectName": "<string>",
+      "apiKey": "<string>",
+      "rateLimit": 123,
+      "status": "CREATING"
+    }
+  ]
+}
+```
+
+## Describe a project
+
+Use the describe endpoint to get a complete description of a specific project:
+
+```bash
+LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
+
+curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
+```
+
+The response will look like this:
+
+```json
+{
+  "id": "<string>",
+  "projectName": "<string>",
+  "apiKey": "<string>",
+  "rateLimit": 123,
+  "status": "ACTIVE"
+}
+```
+
+## Configure a project
+
+Use the update endpoint to change the rate limit for a project:
+
+```bash
+LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
+
+curl -i -X PATCH "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_ADMIN_API_KEY" \
+  -d '{
+    "rateLimit": 20.0
+  }'
+```
+
+The response will look like this:
+
+```json
+{
+  "id": "<string>",
+  "projectName": "<string>",
+  "apiKey": "<string>",
+  "rateLimit": 20.0,
+  "status": "ACTIVE"
+}
+```
+
+## Delete a project
+
+Use this operation to delete an index and all of its associated resources:
+
+```bash
+LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
+
+curl -i -X DELETE "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
+```
+
+<Warning>
+Deleting a project causes deleting all the indexes in the project.
+</Warning>

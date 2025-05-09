@@ -1,0 +1,26 @@
+---
+title: Understanding projects
+---
+
+An LambdaDB project belongs to an organization and contains a number of indexes.
+Each project is associated with an API key.
+In order to make calls to the index and data LambdaDB APIs, you must provide a valid API key for the relevant project.
+
+## Project ID
+Each LambdaDB project has a unique project ID.
+To find the ID of a project, use [project](/guides/projects/manage-projects#describe-a-project)
+or [index](/guides/indexes/manage-indexes#describe-an-index) describing APIs
+to get a complete description of a project or an index.
+
+<Note>
+
+  Making calls to `projects` APIs require the organization admin API key.
+
+</Note>
+
+## Rate limit
+
+Each project has a rate limit that is set by the organization admin.
+The rate limit is the maximum number of requests that can be made to the LambdaDB APIs in a given time period.
+If the rate limit is exceeded, the API will return a `429 Too Many Requests` error.
+The rate limit can be adjusted via [project update API](/guides/projects/manage-projects#configure-a-project) with an admin API key.

@@ -1,0 +1,74 @@
+Query with a default field specified:
+
+```json
+{
+  "queryString": {
+    "query": "LambdaDB OR title:AI",
+    "defaultField": "content"
+  }
+}
+```
+
+Query to an index having `datetime` field.
+
+createdAt is between 2024-11-05 and 2024-11-06 inclusive:
+
+```json
+{
+    "queryString": {
+        "query": "createdAt:[2024-11-05T00:00:00.000Z TO 2024-11-06T00:00:00.000Z]"
+    }
+}
+```
+
+createdAt is between 2024-11-05 and 2024-11-06 exclusive:
+```json
+{
+    "queryString": {
+        "query": "createdAt:{2024-11-05T00:00:00.000Z TO 2024-11-06T00:00:00.000Z}"
+    }
+}
+```
+
+createdAt is greater than 2024-11-05:
+```json
+{
+    "queryString": {
+        "query": "createdAt:{2024-11-05T00:00:00.000Z TO *}"
+    }
+}
+```
+
+createdAt is less than 2024-11-05:
+
+```json
+{
+    "queryString": {
+        "query": "createdAt:{* TO 2024-11-06T00:00:00.000Z}",
+				//
+    }
+}
+```
+
+createdAt is exactly in 2024-11-05, ":" 문자열을 field 구분자와 구분해주기 위해 escaping character 사용:
+
+```json
+{
+    "queryString": {
+        "query": "\"createdAt:2024-11-05T00:00:00.000Z\""
+    }
+}
+```
+
+
+### Escaping **character**
+
+Url 등과 같이 특수문자가 다수 포함된 Field를 검색하기 위해 escaping character(\, backslash)를 사용할 수 있습니다.
+
+```json
+"queryString": {
+    "query": "node_type:NODE AND (\"https://bookmeter.com/books/5514276\" OR \"https://growinglittlebylittle.tistory.com/6\")",
+		// 백슬래시를 사용하여 특수문자가 포함된 url keyword를 검색
+    "defaultField": "metadata.url"
+},
+```

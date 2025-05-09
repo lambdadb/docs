@@ -1,0 +1,51 @@
+---
+title: Delete data
+---
+
+This page shows you how to use the delete endpoint to remove documents from an index.
+
+## Delete documents by IDs
+
+Since LambdaDB documents can always be efficiently accessed using their ID,
+deleting by ID is the most efficient way to remove specific records.
+
+```bash
+curl -i -X POST \
+  --url https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}/docs/delete \
+  --header 'content-type: application/json' \
+  --header 'x-api-key: <YOUR_API_KEY>' \
+  --data '{
+  "ids": [
+    "<string>",
+    "<string>",
+    ...
+  ]
+}'
+```
+
+## Delete documents by query
+
+To delete documents based on their data, pass a `filter` query to the delete operation.
+This deletes all document matching the filter query.
+
+For example, to delete all documents with genre “documentary” and year 2019 from an index, use the following code:
+
+```bash
+curl -i -X POST \
+  --url https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}/docs/delete \
+  --header 'content-type: application/json' \
+  --header 'x-api-key: <YOUR_API_KEY>' \
+  --data '{
+  "filter": {
+    "queryString": {
+      "query": "genre:documentary AND year:2019"
+    }
+  }
+}'
+```
+
+## Delete an entire index
+
+To remove all documents from an index,
+[delete the index](/guides/indexes/manage-indexes#delete-an-index) and
+[recreate it](/guides/indexes/create-an-index)

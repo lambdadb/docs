@@ -1,0 +1,29 @@
+---
+title: Create a project
+---
+
+This page describes how to create a project.
+
+```bash
+LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
+
+curl -i -X POST "https://{baseUrl}/{apiVersion}/projects" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_ADMIN_API_KEY" \
+  -d '{
+        "projectName": "example-project",
+        "rateLimit": 10.0
+      }'
+```
+
+The response will look like this:
+
+```json
+{
+  "id": "<string>",
+  "projectName": "example-project",
+  "apiKey": "<string>",
+  "rateLimit": 10.0,
+  "status": "CREATING"
+}
+```

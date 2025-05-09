@@ -1,0 +1,44 @@
+---
+title: Fetch data
+---
+
+This page shows you how to use the fetch endpoint to fetch documents by ID from an index.
+
+| Parameter      | Description                                                   | Type       | Required | Default |
+| -------------- | ------------------------------------------------------------- | ---------- | -------- | ------- |
+| ids            | The document IDs to fetch up to 1,000.                        | string[]   | ✓        |         |
+| includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
+| consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
+
+To fetch documents, specify the document IDs.
+
+```python python
+url = f"https://{base_url}/{api_version}/projects/{project_id}/indexes/{index_name}/query"
+headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
+
+fetch = {
+	"ids": ["33201222"]
+}
+
+r = requests.post(url, headers=headers, json=fetch)
+```
+The response will look like this:
+
+```json
+{
+  "took": 76,
+  "total": 1,
+  "docs": [
+    {
+      "index": "example_index",
+      "score": 1.0,
+      "doc": {
+        "id": "33201222",
+        "url": "https://en.wikipedia.org/wiki/LambdaDB",
+        "title": "LambdaDB",
+        "text": "LambdaDB is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+      }
+    }
+  ]
+}
+```
