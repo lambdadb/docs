@@ -11,7 +11,7 @@ Use this operation to get a complete description of all projects in an organizat
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/{apiVersion}/projects" \
+curl -i -X GET "https://{baseUrl}/projects" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
 ```
@@ -39,7 +39,7 @@ Use the describe endpoint to get a complete description of a specific project:
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+curl -i -X GET "https://{baseUrl}/projects/{projectName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
 ```
@@ -63,7 +63,7 @@ Use the update endpoint to change the rate limit for a project:
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
 
-curl -i -X PATCH "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+curl -i -X PATCH "https://{baseUrl}/projects/{projectName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_ADMIN_API_KEY" \
   -d '{
@@ -90,7 +90,7 @@ Use this operation to delete an index and all of its associated resources:
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
 
-curl -i -X DELETE "https://{baseUrl}/{apiVersion}/projects/{projectId}" \
+curl -i -X DELETE "https://{baseUrl}/projects/{projectName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_ADMIN_API_KEY"
 ```

@@ -11,7 +11,7 @@ Use this operation to get a complete description of all indexes in a project:
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes" \
+curl -i -X GET "https://{baseUrl}/projects/{projectName}/indexes" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -22,7 +22,7 @@ The response will look like this:
 {
   "indexes": [
     {
-      "projectId": "<string>",
+      "projectName": "<string>",
       "indexName": "<string>",
       "mappings": {},
       "numDocs": 123,
@@ -45,7 +45,7 @@ Use the describe endpoint to get a complete description of a specific index:
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}" \
+curl -i -X GET "https://{baseUrl}/projects/{projectName}/indexes/{indexName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -54,7 +54,7 @@ The response will look like this:
 
 ```json
 {
-  "projectId": "<string>",
+  "projectName": "<string>",
   "indexName": "<string>",
   "mappings": {},
   "numDocs": 123,
@@ -75,7 +75,7 @@ Use this operation to delete an index and all of its associated resources:
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X DELETE "https://{baseUrl}/{apiVersion}/projects/{projectId}/indexes/{indexName}" \
+curl -i -X DELETE "https://{baseUrl}/projects/{projectName}/indexes/{indexName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```

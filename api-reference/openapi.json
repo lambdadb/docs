@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://{baseUrl}/{version}",
+      "url": "https://{baseUrl}",
       "description": "LambdaDB API endpoints"
     }
   ],
@@ -42,10 +42,10 @@
           "description": "Project API Key."
         }
       },
-      "ProjectId": {
+      "ProjectName": {
         "in": "path",
-        "name": "projectId",
-        "description": "Project ID.",
+        "name": "projectName",
+        "description": "Project name.",
         "required": true,
         "schema": {
           "type": "string"
@@ -183,9 +183,9 @@
       "IndexResponse": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "projectName": {
             "type": "string",
-            "description": "Project ID."
+            "description": "Project name."
           },
           "indexName": {
             "type": "string",
@@ -198,23 +198,17 @@
             "type": "integer",
             "description": "Total number of documents."
           },
-          "cloneSourceInfo": {
-            "type": "object",
-            "description": "Clone source information.",
-            "properties": {
-              "sourceProjectId": {
-                "type": "string",
-                "description": "Source project ID."
-              },
-              "sourceIndexName": {
-                "type": "string",
-                "description": "Source index name."
-              },
-              "sourceIndexVersionId": {
-                "type": "string",
-                "description": "Source index version."
-              }
-            }
+          "sourceProjectName": {
+            "type": "string",
+            "description": "Source project name."
+          },
+          "sourceIndexName": {
+            "type": "string",
+            "description": "Source index name."
+          },
+          "sourceIndexVersionId": {
+            "type": "string",
+            "description": "Source index version."
           },
           "indexStatus": {
             "$ref": "#/components/schemas/Status"
@@ -236,6 +230,8 @@
   "paths": {
     "/projects": {
       "get": {
+        "tags": ["projects"],
+        "operationId": "listProjects",
         "description": "List all projects in an account.",
         "parameters": [
           {
@@ -260,6 +256,14 @@
                       }
                     }
                   }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Example response for a list of projects",
+                    "value": {
+                      "projects": ["example-project-1", "example-project-2"]
+                    }
+                  }
                 }
               }
             }
@@ -267,6 +271,8 @@
         }
       },
       "post": {
+        "tags": ["projects"],
+        "operationId": "createProject",
         "description": "Create a project.",
         "parameters": [
           {
@@ -308,8 +314,10 @@
         }
       }
     },
-    "/projects/{projectId}": {
+    "/projects/{projectName}": {
       "get": {
+        "tags": ["projects"],
+        "operationId": "getProject",
         "description": "Get metadata of an existing project.",
         "parameters": [
           {
@@ -319,12 +327,12 @@
             "$ref": "#/components/parameters/AdminApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "responses": {
           "200": {
-            "description": "Project matched with a projectId.",
+            "description": "Project matched with a projectName.",
             "content": {
               "application/json": {
                 "schema": {
@@ -336,6 +344,8 @@
         }
       },
       "delete": {
+        "tags": ["projects"],
+        "operationId": "deleteProject",
         "description": "Delete an existing project.",
         "parameters": [
           {
@@ -345,7 +355,7 @@
             "$ref": "#/components/parameters/AdminApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "responses": {
@@ -355,6 +365,8 @@
         }
       },
       "patch": {
+        "tags": ["projects"],
+        "operationId": "updateProject",
         "description": "Configure an existing project",
         "parameters": [
           {
@@ -364,7 +376,7 @@
             "$ref": "#/components/parameters/AdminApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "requestBody": {
@@ -398,8 +410,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes": {
+    "/projects/{projectName}/indexes": {
       "get": {
+        "tags": ["projects.indexes"],
+        "operationId": "listIndexes",
         "description": "List all indexes in an existing project.",
         "parameters": [
           {
@@ -409,12 +423,12 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "responses": {
           "200": {
-            "description": "A list of indexes matched with a projectId.",
+            "description": "A list of indexes matched with a projectName.",
             "content": {
               "application/json": {
                 "schema": {
@@ -434,6 +448,8 @@
         }
       },
       "post": {
+        "tags": ["projects.indexes"],
+        "operationId": "createIndex",
         "description": "Create an index.",
         "parameters": [
           {
@@ -443,7 +459,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "requestBody": {
@@ -460,7 +476,7 @@
                   "mappings": {
                     "$ref": "#/components/schemas/IndexMappings"
                   },
-                  "sourceProjectId": {
+                  "sourceProjectName": {
                     "type": "string"
                   },
                   "sourceIndexName": {
@@ -494,8 +510,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}": {
+    "/projects/{projectName}/indexes/{indexName}": {
       "delete": {
+        "tags": ["projects.indexes"],
+        "operationId": "deleteIndex",
         "description": "Delete an existing index.",
         "parameters": [
           {
@@ -505,7 +523,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -518,6 +536,8 @@
         }
       },
       "get": {
+        "tags": ["projects.indexes"],
+        "operationId": "getIndex",
         "description": "Get metadata of an existing index.",
         "parameters": [
           {
@@ -527,7 +547,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -547,6 +567,8 @@
         }
       },
       "patch": {
+        "tags": ["projects.indexes"],
+        "operationId": "updateIndex",
         "description": "Configure an index.",
         "parameters": [
           {
@@ -556,7 +578,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -594,8 +616,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}/docs/upsert": {
+    "/projects/{projectName}/indexes/{indexName}/docs/upsert": {
       "post": {
+        "tags": ["projects.indexes.docs"],
+        "operationId": "upsertDocs",
         "description": "Upsert documents into an index. Note that the maximum supported payload size is 6MB.",
         "parameters": [
           {
@@ -605,7 +629,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -618,7 +642,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "documents": {
+                  "docs": {
                     "type": "array",
                     "items": {
                       "type": "object"
@@ -627,7 +651,7 @@
                   }
                 },
                 "required": [
-                  "documents"
+                  "docs"
                 ]
               }
             }
@@ -640,8 +664,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}/docs/bulk-upsert": {
+    "/projects/{projectName}/indexes/{indexName}/docs/bulk-upsert": {
       "get": {
+        "tags": ["projects.indexes.docs"],
+        "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
         "parameters": [
           {
@@ -651,7 +677,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -702,6 +728,8 @@
         }
       },
       "post": {
+        "tags": ["projects.indexes.docs"],
+        "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into an index. Note that the maximum supported object size is 200MB.",
         "parameters": [
           {
@@ -711,7 +739,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -743,8 +771,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}/docs/delete": {
+    "/projects/{projectName}/indexes/{indexName}/docs/delete": {
       "post": {
+        "tags": ["projects.indexes.docs"],
+        "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from an index.",
         "parameters": [
           {
@@ -754,7 +784,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -804,8 +834,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}/docs/fetch": {
+    "/projects/{projectName}/indexes/{indexName}/docs/fetch": {
       "post": {
+        "tags": ["projects.indexes.docs"],
+        "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from an index.",
         "parameters": [
           {
@@ -815,7 +847,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
@@ -886,8 +918,10 @@
         }
       }
     },
-    "/projects/{projectId}/indexes/{indexName}/query": {
+    "/projects/{projectName}/indexes/{indexName}/query": {
       "post": {
+        "tags": ["projects.indexes"],
+        "operationId": "queryIndex",
         "description": "Search an index with a query and return the most similar documents.",
         "parameters": [
           {
@@ -897,7 +931,7 @@
             "$ref": "#/components/parameters/ProjectApiKey"
           },
           {
-            "$ref": "#/components/parameters/ProjectId"
+            "$ref": "#/components/parameters/ProjectName"
           },
           {
             "$ref": "#/components/parameters/IndexName"
