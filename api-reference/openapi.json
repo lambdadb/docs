@@ -5,43 +5,36 @@
     "summary": "LambdaDB Open API Spec",
     "version": "1.0.0"
   },
+  "tags": [
+    {
+      "name": "projects"
+    },
+    {
+      "name": "projects.indexes"
+    },
+    {
+      "name": "projects.indexes.docs"
+    }
+  ],
   "servers": [
     {
       "url": "https://{baseUrl}",
       "description": "LambdaDB API endpoints"
     }
   ],
+  "x-speakeasy-retries": {
+    "strategy": "backoff",
+    "backoff": {
+      "initialInterval": 500,
+      "maxInterval": 60000,
+      "maxElapsedTime": 3600000,
+      "exponent": 1.5
+    },
+    "statusCodes": ["429","5XX"],
+    "retryConnectionErrors": true
+  },
   "components": {
     "parameters": {
-      "ContentType": {
-        "in": "header",
-        "name": "content-type",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "default": "application/json"
-        }
-      },
-      "AdminApiKey": {
-        "in": "header",
-        "name": "x-api-key",
-        "description": "Admin API Key.",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "description": "Admin API Key."
-        }
-      },
-      "ProjectApiKey": {
-        "in": "header",
-        "name": "x-api-key",
-        "description": "Project API Key.",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "description": "Project API Key."
-        }
-      },
       "ProjectName": {
         "in": "path",
         "name": "projectName",
@@ -59,6 +52,20 @@
         "schema": {
           "type": "string"
         }
+      }
+    },
+    "securitySchemes": {
+      "AdminApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Admin API Key."
+      },
+      "ProjectApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Project API Key."
       }
     },
     "schemas": {
@@ -233,12 +240,9 @@
         "tags": ["projects"],
         "operationId": "listProjects",
         "description": "List all projects in an account.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/AdminApiKey"
+            "AdminApiKey": []
           }
         ],
         "responses": {
@@ -274,12 +278,9 @@
         "tags": ["projects"],
         "operationId": "createProject",
         "description": "Create a project.",
-        "parameters": [
+        "security": [
           {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/AdminApiKey"
+            "AdminApiKey": []
           }
         ],
         "requestBody": {
@@ -319,13 +320,12 @@
         "tags": ["projects"],
         "operationId": "getProject",
         "description": "Get metadata of an existing project.",
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/AdminApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           }
@@ -347,13 +347,12 @@
         "tags": ["projects"],
         "operationId": "deleteProject",
         "description": "Delete an existing project.",
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/AdminApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           }
@@ -368,13 +367,12 @@
         "tags": ["projects"],
         "operationId": "updateProject",
         "description": "Configure an existing project",
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/AdminApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           }
@@ -415,13 +413,12 @@
         "tags": ["projects.indexes"],
         "operationId": "listIndexes",
         "description": "List all indexes in an existing project.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           }
@@ -451,13 +448,12 @@
         "tags": ["projects.indexes"],
         "operationId": "createIndex",
         "description": "Create an index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           }
@@ -515,13 +511,12 @@
         "tags": ["projects.indexes"],
         "operationId": "deleteIndex",
         "description": "Delete an existing index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -539,13 +534,12 @@
         "tags": ["projects.indexes"],
         "operationId": "getIndex",
         "description": "Get metadata of an existing index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -570,13 +564,12 @@
         "tags": ["projects.indexes"],
         "operationId": "updateIndex",
         "description": "Configure an index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -621,13 +614,12 @@
         "tags": ["projects.indexes.docs"],
         "operationId": "upsertDocs",
         "description": "Upsert documents into an index. Note that the maximum supported payload size is 6MB.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -669,13 +661,12 @@
         "tags": ["projects.indexes.docs"],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -731,13 +722,12 @@
         "tags": ["projects.indexes.docs"],
         "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into an index. Note that the maximum supported object size is 200MB.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -776,13 +766,12 @@
         "tags": ["projects.indexes.docs"],
         "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from an index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -839,13 +828,12 @@
         "tags": ["projects.indexes.docs"],
         "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from an index.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
@@ -923,13 +911,12 @@
         "tags": ["projects.indexes"],
         "operationId": "queryIndex",
         "description": "Search an index with a query and return the most similar documents.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ContentType"
-          },
-          {
-            "$ref": "#/components/parameters/ProjectApiKey"
-          },
           {
             "$ref": "#/components/parameters/ProjectName"
           },
