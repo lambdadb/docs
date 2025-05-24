@@ -70,6 +70,7 @@
     },
     "schemas": {
       "Status": {
+        "title": "Status",
         "type": "string",
         "description": "Status",
         "enum": [
@@ -79,6 +80,7 @@
         ]
       },
       "IndexMappings": {
+        "title": "IndexMappings",
         "type": "object",
         "additionalProperties": {
           "type": "object",
@@ -164,6 +166,7 @@
         }
       },
       "ProjectResponse": {
+        "title": "ProjectResponse",
         "type": "object",
         "properties": {
           "id": {
@@ -188,6 +191,7 @@
         }
       },
       "IndexResponse": {
+        "title": "IndexResponse",
         "type": "object",
         "properties": {
           "projectName": {
@@ -223,14 +227,79 @@
         }
       },
       "ConsistentRead": {
+        "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
         "description": "If your application requires a strongly consistent read, set consistentRead to true. Although a strongly consistent read might take more time than an eventually consistent read, it always returns the last updated value."
       },
       "IncludeVectors": {
+        "title": "IncludeVectors",
         "type": "boolean",
         "default": false,
         "description": "If your application need to include vector values in the response, set includeVectors to true."
+      },
+      "BadRequest": {
+        "title": "BadRequest",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "NotFound": {
+        "title": "NotFound",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Unauthenticated": {
+        "title": "Unauthenticated",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ResourceNotFound": {
+        "title": "ResourceNotFound",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ResourceAlreadyExists": {
+        "title": "ResourceAlreadyExists",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "TooManyRequests": {
+        "title": "TooManyRequests",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "InternalServerError": {
+        "title": "InternalServerError",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
       }
     }
   },
@@ -262,10 +331,72 @@
                   }
                 },
                 "examples": {
-                  "success": {
+                  "example": {
                     "summary": "Example response for a list of projects",
                     "value": {
-                      "projects": ["example-project-1", "example-project-2"]
+                      "projects": [
+                        {
+                          "id": "example-project-id",
+                          "projectName": "example-project-name",
+                          "apiKey": "<API key>",
+                          "rateLimit": 10,
+                          "status": "ACTIVE"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
                     }
                   }
                 }
@@ -297,6 +428,15 @@
                     "type": "number"
                   }
                 }
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for project creation",
+                  "value": {
+                    "projectName": "example-project-name",
+                    "rateLimit": 10
+                  }
+                }
               }
             }
           }
@@ -308,6 +448,108 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectResponse"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for a created project",
+                    "value": {
+                      "id": "example-project-id",
+                      "projectName": "example-project-name",
+                      "apiKey": "<API key>",
+                      "rateLimit": 10,
+                      "status": "CREATING"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -337,6 +579,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectResponse"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for a project",
+                    "value": {
+                      "id": "example-project-id",
+                      "projectName": "example-project-name",
+                      "apiKey": "<API key>",
+                      "rateLimit": 10,
+                      "status": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -359,7 +685,99 @@
         ],
         "responses": {
           "202": {
-            "description": "Project delete request accepted."
+            "description": "Project delete request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for a deleted project",
+                    "value": {
+                      "message": "Project example-project-name is queued for deletion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -390,6 +808,14 @@
                 "required": [
                   "rateLimit"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for project update",
+                  "value": {
+                    "rateLimit": 20
+                  }
+                }
               }
             }
           }
@@ -401,6 +827,108 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectResponse"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for an updated project",
+                    "value": {
+                      "id": "example-project-id",
+                      "projectName": "example-project-name",
+                      "apiKey": "<API key>",
+                      "rateLimit": 20,
+                      "status": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -436,6 +964,137 @@
                       "items": {
                         "$ref": "#/components/schemas/IndexResponse"
                       }
+                    }
+                  }
+                },
+                "examples": {
+                  "normalIndex": {
+                    "summary": "Example response for a list of normal indexes",
+                    "value": {
+                      "indexes": [
+                        {
+                          "projectName": "example-project-name",
+                          "indexName": "example-index-name",
+                          "mappings": {
+                            "example-field1": {
+                              "type": "text",
+                              "analyzers": [
+                                "standard"
+                              ]
+                            },
+                            "example-field2": {
+                              "type": "vector",
+                              "dimensions": 128,
+                              "similarity": "cosine"
+                            }
+                          },
+                          "numDocs": 10000,
+                          "indexStatus": "ACTIVE"
+                        }
+                      ]
+                    }
+                  },
+                  "clonedIndex": {
+                    "summary": "Example response for a list of cloned indexes",
+                    "value": {
+                      "indexes": [
+                        {
+                          "projectName": "example-project-name",
+                          "indexName": "example-index-name",
+                          "mappings": {
+                            "example-field1": {
+                              "type": "text",
+                              "analyzers": [
+                                "standard"
+                              ]
+                            },
+                            "example-field2": {
+                              "type": "vector",
+                              "dimensions": 128,
+                              "similarity": "cosine"
+                            }
+                          },
+                          "numDocs": 10000,
+                          "cloneSourceInfo": {
+                            "sourceProjectName": "example-source-project-name",
+                            "sourceIndexName": "example-source-index-name",
+                            "sourceIndexVersionId": "example-source-index-version-id"
+                          },
+                          "indexStatus": "ACTIVE"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
                     }
                   }
                 }
@@ -488,6 +1147,37 @@
                 "required": [
                   "indexName"
                 ]
+              },
+              "examples": {
+                "normalIndex": {
+                  "summary": "Example request body for normal index creation",
+                  "value": {
+                    "indexName": "example-index-name",
+                    "mappings": {
+                      "example-field1": {
+                        "type": "text",
+                        "analyzers": [
+                          "english"
+                        ]
+                      },
+                      "example-field2": {
+                        "type": "vector",
+                        "dimensions": 128,
+                        "similarity": "cosine"
+                      }
+                    }
+                  }
+                },
+                "cloneIndex": {
+                  "summary": "Example request body for index cloning",
+                  "value": {
+                    "indexName": "example-index-name",
+                    "sourceProjectName": "example-source-project-name",
+                    "sourceIndexName": "example-source-index-name",
+                    "sourceProjectApiKey": "example-source-project-api-key",
+                    "sourceDatetime": "2023-10-01T12:00:00Z"
+                  }
+                }
               }
             }
           }
@@ -499,6 +1189,120 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IndexResponse"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for a created index",
+                    "value": {
+                      "projectName": "example-project-name",
+                      "indexName": "example-index-name",
+                      "mappings": {
+                        "example-field1": {
+                          "type": "text",
+                          "analyzers": [
+                            "english"
+                          ]
+                        },
+                        "example-field2": {
+                          "type": "vector",
+                          "dimensions": 128,
+                          "similarity": "cosine"
+                        }
+                      },
+                      "numDocs": 0,
+                      "indexStatus": "CREATING"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -526,7 +1330,99 @@
         ],
         "responses": {
           "202": {
-            "description": "Index delete request accepted."
+            "description": "Index delete request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for a deleted index",
+                    "value": {
+                      "message": "Index example-index-name is queued for deletion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -554,6 +1450,102 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IndexResponse"
+                },
+                "examples": {
+                  "normalIndex": {
+                    "summary": "Example response for an existing index",
+                    "value": {
+                      "projectName": "example-project-name",
+                      "indexName": "example-index-name",
+                      "mappings": {
+                        "example-field1": {
+                          "type": "text",
+                          "analyzers": [
+                            "english"
+                          ]
+                        },
+                        "example-field2": {
+                          "type": "vector",
+                          "dimensions": 128,
+                          "similarity": "cosine"
+                        }
+                      },
+                      "numDocs": 1000,
+                      "indexStatus": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -591,6 +1583,29 @@
                 "required": [
                   "mappings"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for index configuration",
+                  "value": {
+                    "mappings": {
+                      "example-field1": {
+                        "type": "text",
+                        "analyzers": [
+                          "english"
+                        ]
+                      },
+                      "example-field2": {
+                        "type": "vector",
+                        "dimensions": 128,
+                        "similarity": "cosine"
+                      },
+                      "example-field3": {
+                        "type": "keyword"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -602,6 +1617,123 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IndexResponse"
+                },
+                "examples": {
+                  "normalIndex": {
+                    "summary": "Example response for an updated index",
+                    "value": {
+                      "projectName": "example-project-name",
+                      "indexName": "example-index-name",
+                      "mappings": {
+                        "example-field1": {
+                          "type": "text",
+                          "analyzers": [
+                            "english"
+                          ]
+                        },
+                        "example-field2": {
+                          "type": "vector",
+                          "dimensions": 128,
+                          "similarity": "cosine"
+                        },
+                        "example-field3": {
+                          "type": "keyword"
+                        }
+                      },
+                      "numDocs": 1000,
+                      "indexStatus": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -645,13 +1777,152 @@
                 "required": [
                   "docs"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for documents upsert",
+                  "value": {
+                    "docs": [
+                      {
+                        "example-doc1": {
+                          "example-field1": "example-value1",
+                          "example-field2": [
+                            0.1,
+                            0.2,
+                            0.3
+                          ]
+                        }
+                      },
+                      {
+                        "example-doc2": {
+                          "example-field1": "example-value2",
+                          "example-field2": [
+                            0.4,
+                            0.5,
+                            0.6
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "202": {
-            "description": "Upsert request accepted."
+            "description": "Upsert request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents upsert`",
+                    "value": {
+                      "message": "Upsert request is accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -712,6 +1983,90 @@
                       "default": 209715200
                     }
                   }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bulk upsert info",
+                    "value": {
+                      "url": "<S3 presigned URL>",
+                      "type": "application/json",
+                      "httpMethod": "PUT",
+                      "objectKey": "example-object-key",
+                      "sizeLimitBytes": 209715200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
                 }
               }
             }
@@ -750,13 +2105,130 @@
                 "required": [
                   "objectKey"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for bulk upsert",
+                  "value": {
+                    "objectKey": "example-object-key"
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "202": {
-            "description": "Bulk upsert request accepted."
+            "description": "Bulk upsert request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bulk upsert`",
+                    "value": {
+                      "message": "Bulk upsert request is accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },"400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -812,13 +2284,143 @@
                     ]
                   }
                 ]
+              },
+              "examples": {
+                "deleteByIds": {
+                  "summary": "Example request body for documents deletion by IDs",
+                  "value": {
+                    "ids": [
+                      "example-doc-id-1",
+                      "example-doc-id-2"
+                    ]
+                  }
+                },
+                "deleteByQuery": {
+                  "summary": "Example request body for documents deletion by query",
+                  "value": {
+                    "filter": {
+                      "queryString": {
+                        "query": "example-field1:example-value"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "202": {
-            "description": "Delete request accepted."
+            "description": "Delete request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents deletion",
+                    "value": {
+                      "message": "Delete request is accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },"400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -864,6 +2466,17 @@
                 "required": [
                   "ids"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for documents fetch",
+                  "value": {
+                    "ids": [
+                      "example-doc-id-1",
+                      "example-doc-id-2"
+                    ]
+                  }
+                }
               }
             }
           }
@@ -897,6 +2510,120 @@
                           }
                         }
                       }
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents fetch",
+                    "value": {
+                      "total": 2,
+                      "took": 10,
+                      "docs": [
+                        {
+                          "index": "example-index-name",
+                          "doc": {
+                            "example-field1": "example-value1",
+                            "example-field2": [0.1, 0.2, 0.3]
+                          }
+                        },
+                        {
+                          "index": "example-index-name",
+                          "doc": {
+                            "example-field1": "example-value2",
+                            "example-field2": [0.4, 0.5, 0.6]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },"400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
                     }
                   }
                 }
@@ -967,6 +2694,19 @@
                 "required": [
                   "size"
                 ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for query index",
+                  "value": {
+                    "size": 2,
+                    "query": {
+                      "queryString": {
+                        "query": "example-field1:example-value"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -1010,6 +2750,124 @@
                           }
                         }
                       }
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents query",
+                    "value": {
+                      "took": 10,
+                      "maxScore": 1.0,
+                      "total": 2,
+                      "docs": [
+                        {
+                          "index": "example-index-name",
+                          "score": 1.0,
+                          "doc": {
+                            "example-field1": "example-value1",
+                            "example-field2": [0.1, 0.2, 0.3]
+                          }
+                        },
+                        {
+                          "index": "example-index-name",
+                          "score": 0.9,
+                          "doc": {
+                            "example-field1": "example-value2",
+                            "example-field2": [0.4, 0.5, 0.6]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
                     }
                   }
                 }
