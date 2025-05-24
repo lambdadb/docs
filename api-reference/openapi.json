@@ -10,10 +10,10 @@
       "name": "projects"
     },
     {
-      "name": "projects.indexes"
+      "name": "projects.collections"
     },
     {
-      "name": "projects.indexes.docs"
+      "name": "projects.collections.docs"
     }
   ],
   "servers": [
@@ -44,10 +44,10 @@
           "type": "string"
         }
       },
-      "IndexName": {
+      "CollectionName": {
         "in": "path",
-        "name": "indexName",
-        "description": "Index name.",
+        "name": "collectionName",
+        "description": "Collection name.",
         "required": true,
         "schema": {
           "type": "string"
@@ -79,8 +79,8 @@
           "DELETING"
         ]
       },
-      "IndexMappings": {
-        "title": "IndexMappings",
+      "IndexConfigs": {
+        "title": "IndexConfigs",
         "type": "object",
         "additionalProperties": {
           "type": "object",
@@ -190,20 +190,20 @@
           }
         }
       },
-      "IndexResponse": {
-        "title": "IndexResponse",
+      "CollectionResponse": {
+        "title": "CollectionResponse",
         "type": "object",
         "properties": {
           "projectName": {
             "type": "string",
             "description": "Project name."
           },
-          "indexName": {
+          "collectionName": {
             "type": "string",
-            "description": "Index name."
+            "description": "Collection name."
           },
-          "mappings": {
-            "$ref": "#/components/schemas/IndexMappings"
+          "indexConfigs": {
+            "$ref": "#/components/schemas/IndexConfigs"
           },
           "numDocs": {
             "type": "integer",
@@ -213,15 +213,15 @@
             "type": "string",
             "description": "Source project name."
           },
-          "sourceIndexName": {
+          "sourceCollectionName": {
             "type": "string",
-            "description": "Source index name."
+            "description": "Source collection name."
           },
-          "sourceIndexVersionId": {
+          "sourceCollectionVersionId": {
             "type": "string",
-            "description": "Source index version."
+            "description": "Source collection version."
           },
-          "indexStatus": {
+          "collectionStatus": {
             "$ref": "#/components/schemas/Status"
           }
         }
@@ -936,11 +936,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes": {
+    "/projects/{projectName}/collections": {
       "get": {
-        "tags": ["projects.indexes"],
-        "operationId": "listIndexes",
-        "description": "List all indexes in an existing project.",
+        "tags": ["projects.collections"],
+        "operationId": "listcollections",
+        "description": "List all collections in an existing project.",
         "security": [
           {
             "ProjectApiKey": []
@@ -953,29 +953,29 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of indexes matched with a projectName.",
+            "description": "A list of collections matched with a projectName.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "indexes": {
+                    "collections": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/IndexResponse"
+                        "$ref": "#/components/schemas/CollectionResponse"
                       }
                     }
                   }
                 },
                 "examples": {
-                  "normalIndex": {
-                    "summary": "Example response for a list of normal indexes",
+                  "normalCollection": {
+                    "summary": "Example response for a list of normal collections",
                     "value": {
-                      "indexes": [
+                      "collections": [
                         {
                           "projectName": "example-project-name",
-                          "indexName": "example-index-name",
-                          "mappings": {
+                          "collectionName": "example-collection-name",
+                          "indexConfigs": {
                             "example-field1": {
                               "type": "text",
                               "analyzers": [
@@ -989,19 +989,19 @@
                             }
                           },
                           "numDocs": 10000,
-                          "indexStatus": "ACTIVE"
+                          "collectionStatus": "ACTIVE"
                         }
                       ]
                     }
                   },
-                  "clonedIndex": {
-                    "summary": "Example response for a list of cloned indexes",
+                  "clonedCollection": {
+                    "summary": "Example response for a list of cloned collections",
                     "value": {
-                      "indexes": [
+                      "collections": [
                         {
                           "projectName": "example-project-name",
-                          "indexName": "example-index-name",
-                          "mappings": {
+                          "collectionName": "example-collection-name",
+                          "indexConfigs": {
                             "example-field1": {
                               "type": "text",
                               "analyzers": [
@@ -1017,10 +1017,10 @@
                           "numDocs": 10000,
                           "cloneSourceInfo": {
                             "sourceProjectName": "example-source-project-name",
-                            "sourceIndexName": "example-source-index-name",
-                            "sourceIndexVersionId": "example-source-index-version-id"
+                            "sourceCollectionName": "example-source-collection-name",
+                            "sourceCollectionVersionId": "example-source-collection-version-id"
                           },
-                          "indexStatus": "ACTIVE"
+                          "collectionStatus": "ACTIVE"
                         }
                       ]
                     }
@@ -1104,9 +1104,9 @@
         }
       },
       "post": {
-        "tags": ["projects.indexes"],
-        "operationId": "createIndex",
-        "description": "Create an index.",
+        "tags": ["projects.collections"],
+        "operationId": "createCollection",
+        "description": "Create an collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1124,17 +1124,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "indexName": {
+                  "collectionName": {
                     "type": "string",
-                    "description": "Index name must be unique within a project and the supported maximum length is 52."
+                    "description": "Collection name must be unique within a project and the supported maximum length is 52."
                   },
-                  "mappings": {
-                    "$ref": "#/components/schemas/IndexMappings"
+                  "indexConfigs": {
+                    "$ref": "#/components/schemas/IndexConfigs"
                   },
                   "sourceProjectName": {
                     "type": "string"
                   },
-                  "sourceIndexName": {
+                  "sourceCollectionName": {
                     "type": "string"
                   },
                   "sourceDatetime": {
@@ -1145,15 +1145,15 @@
                   }
                 },
                 "required": [
-                  "indexName"
+                  "collectionName"
                 ]
               },
               "examples": {
-                "normalIndex": {
-                  "summary": "Example request body for normal index creation",
+                "normalCollection": {
+                  "summary": "Example request body for normal collection creation",
                   "value": {
-                    "indexName": "example-index-name",
-                    "mappings": {
+                    "collectionName": "example-collection-name",
+                    "indexConfigs": {
                       "example-field1": {
                         "type": "text",
                         "analyzers": [
@@ -1168,12 +1168,12 @@
                     }
                   }
                 },
-                "cloneIndex": {
-                  "summary": "Example request body for index cloning",
+                "cloneCollection": {
+                  "summary": "Example request body for collection cloning",
                   "value": {
-                    "indexName": "example-index-name",
+                    "collectionName": "example-collection-name",
                     "sourceProjectName": "example-source-project-name",
-                    "sourceIndexName": "example-source-index-name",
+                    "sourceCollectionName": "example-source-collection-name",
                     "sourceProjectApiKey": "example-source-project-api-key",
                     "sourceDatetime": "2023-10-01T12:00:00Z"
                   }
@@ -1184,19 +1184,19 @@
         },
         "responses": {
           "202": {
-            "description": "Created index",
+            "description": "Created collection",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IndexResponse"
+                  "$ref": "#/components/schemas/CollectionResponse"
                 },
                 "examples": {
                   "example": {
-                    "summary": "Example response for a created index",
+                    "summary": "Example response for a created collection",
                     "value": {
                       "projectName": "example-project-name",
-                      "indexName": "example-index-name",
-                      "mappings": {
+                      "collectionName": "example-collection-name",
+                      "indexConfigs": {
                         "example-field1": {
                           "type": "text",
                           "analyzers": [
@@ -1210,7 +1210,7 @@
                         }
                       },
                       "numDocs": 0,
-                      "indexStatus": "CREATING"
+                      "collectionStatus": "CREATING"
                     }
                   }
                 }
@@ -1310,11 +1310,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}": {
+    "/projects/{projectName}/collections/{collectionName}": {
       "delete": {
-        "tags": ["projects.indexes"],
-        "operationId": "deleteIndex",
-        "description": "Delete an existing index.",
+        "tags": ["projects.collections"],
+        "operationId": "deleteCollection",
+        "description": "Delete an existing collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1325,12 +1325,12 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "responses": {
           "202": {
-            "description": "Index delete request accepted.",
+            "description": "Collection delete request accepted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1343,9 +1343,9 @@
                 },
                 "examples": {
                   "example": {
-                    "summary": "Example response for a deleted index",
+                    "summary": "Example response for a deleted collection",
                     "value": {
-                      "message": "Index example-index-name is queued for deletion"
+                      "message": "Collection example-collection-name is queued for deletion"
                     }
                   }
                 }
@@ -1427,9 +1427,9 @@
         }
       },
       "get": {
-        "tags": ["projects.indexes"],
-        "operationId": "getIndex",
-        "description": "Get metadata of an existing index.",
+        "tags": ["projects.collections"],
+        "operationId": "getCollection",
+        "description": "Get metadata of an existing collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1440,24 +1440,24 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "responses": {
           "200": {
-            "description": "Describe index success.",
+            "description": "Describe collection success.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IndexResponse"
+                  "$ref": "#/components/schemas/CollectionResponse"
                 },
                 "examples": {
-                  "normalIndex": {
-                    "summary": "Example response for an existing index",
+                  "normalCollection": {
+                    "summary": "Example response for an existing collection",
                     "value": {
                       "projectName": "example-project-name",
-                      "indexName": "example-index-name",
-                      "mappings": {
+                      "collectionName": "example-collection-name",
+                      "indexConfigs": {
                         "example-field1": {
                           "type": "text",
                           "analyzers": [
@@ -1471,7 +1471,7 @@
                         }
                       },
                       "numDocs": 1000,
-                      "indexStatus": "ACTIVE"
+                      "collectionStatus": "ACTIVE"
                     }
                   }
                 }
@@ -1553,9 +1553,9 @@
         }
       },
       "patch": {
-        "tags": ["projects.indexes"],
-        "operationId": "updateIndex",
-        "description": "Configure an index.",
+        "tags": ["projects.collections"],
+        "operationId": "updateCollection",
+        "description": "Configure an collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1566,7 +1566,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -1576,19 +1576,19 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "mappings": {
-                    "$ref": "#/components/schemas/IndexMappings"
+                  "indexConfigs": {
+                    "$ref": "#/components/schemas/IndexConfigs"
                   }
                 },
                 "required": [
-                  "mappings"
+                  "indexConfigs"
                 ]
               },
               "examples": {
                 "example": {
-                  "summary": "Example request body for index configuration",
+                  "summary": "Example request body for collection configuration",
                   "value": {
-                    "mappings": {
+                    "indexConfigs": {
                       "example-field1": {
                         "type": "text",
                         "analyzers": [
@@ -1612,19 +1612,19 @@
         },
         "responses": {
           "200": {
-            "description": "Updated index",
+            "description": "Updated collection",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IndexResponse"
+                  "$ref": "#/components/schemas/CollectionResponse"
                 },
                 "examples": {
-                  "normalIndex": {
-                    "summary": "Example response for an updated index",
+                  "normalCollection": {
+                    "summary": "Example response for an updated collection",
                     "value": {
                       "projectName": "example-project-name",
-                      "indexName": "example-index-name",
-                      "mappings": {
+                      "collectionName": "example-collection-name",
+                      "indexConfigs": {
                         "example-field1": {
                           "type": "text",
                           "analyzers": [
@@ -1641,7 +1641,7 @@
                         }
                       },
                       "numDocs": 1000,
-                      "indexStatus": "ACTIVE"
+                      "collectionStatus": "ACTIVE"
                     }
                   }
                 }
@@ -1741,11 +1741,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}/docs/upsert": {
+    "/projects/{projectName}/collections/{collectionName}/docs/upsert": {
       "post": {
-        "tags": ["projects.indexes.docs"],
+        "tags": ["projects.collections.docs"],
         "operationId": "upsertDocs",
-        "description": "Upsert documents into an index. Note that the maximum supported payload size is 6MB.",
+        "description": "Upsert documents into an collection. Note that the maximum supported payload size is 6MB.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1756,7 +1756,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -1927,9 +1927,9 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}/docs/bulk-upsert": {
+    "/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
-        "tags": ["projects.indexes.docs"],
+        "tags": ["projects.collections.docs"],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
         "security": [
@@ -1942,7 +1942,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "responses": {
@@ -2074,9 +2074,9 @@
         }
       },
       "post": {
-        "tags": ["projects.indexes.docs"],
+        "tags": ["projects.collections.docs"],
         "operationId": "bulkUpsertDocs",
-        "description": "Bulk upsert documents into an index. Note that the maximum supported object size is 200MB.",
+        "description": "Bulk upsert documents into an collection. Note that the maximum supported object size is 200MB.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2087,7 +2087,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -2233,11 +2233,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}/docs/delete": {
+    "/projects/{projectName}/collections/{collectionName}/docs/delete": {
       "post": {
-        "tags": ["projects.indexes.docs"],
+        "tags": ["projects.collections.docs"],
         "operationId": "deleteDocs",
-        "description": "Delete documents by document IDs or query filter from an index.",
+        "description": "Delete documents by document IDs or query filter from an collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2248,7 +2248,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -2425,11 +2425,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}/docs/fetch": {
+    "/projects/{projectName}/collections/{collectionName}/docs/fetch": {
       "post": {
-        "tags": ["projects.indexes.docs"],
+        "tags": ["projects.collections.docs"],
         "operationId": "fetchDocs",
-        "description": "Lookup and return documents by document IDs from an index.",
+        "description": "Lookup and return documents by document IDs from an collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2440,7 +2440,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -2502,7 +2502,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "index": {
+                          "collection": {
                             "type": "string"
                           },
                           "doc": {
@@ -2521,14 +2521,14 @@
                       "took": 10,
                       "docs": [
                         {
-                          "index": "example-index-name",
+                          "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value1",
                             "example-field2": [0.1, 0.2, 0.3]
                           }
                         },
                         {
-                          "index": "example-index-name",
+                          "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value2",
                             "example-field2": [0.4, 0.5, 0.6]
@@ -2633,11 +2633,11 @@
         }
       }
     },
-    "/projects/{projectName}/indexes/{indexName}/query": {
+    "/projects/{projectName}/collections/{collectionName}/query": {
       "post": {
-        "tags": ["projects.indexes"],
-        "operationId": "queryIndex",
-        "description": "Search an index with a query and return the most similar documents.",
+        "tags": ["projects.collections"],
+        "operationId": "queryCollection",
+        "description": "Search an collection with a query and return the most similar documents.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2648,7 +2648,7 @@
             "$ref": "#/components/parameters/ProjectName"
           },
           {
-            "$ref": "#/components/parameters/IndexName"
+            "$ref": "#/components/parameters/CollectionName"
           }
         ],
         "requestBody": {
@@ -2697,7 +2697,7 @@
               },
               "examples": {
                 "example": {
-                  "summary": "Example request body for query index",
+                  "summary": "Example request body for query collection",
                   "value": {
                     "size": 2,
                     "query": {
@@ -2737,9 +2737,9 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "index": {
+                          "collection": {
                             "type": "string",
-                            "description": "Index name."
+                            "description": "Collection name."
                           },
                           "score": {
                             "type": "number",
@@ -2762,7 +2762,7 @@
                       "total": 2,
                       "docs": [
                         {
-                          "index": "example-index-name",
+                          "collection": "example-collection-name",
                           "score": 1.0,
                           "doc": {
                             "example-field1": "example-value1",
@@ -2770,7 +2770,7 @@
                           }
                         },
                         {
-                          "index": "example-index-name",
+                          "collection": "example-collection-name",
                           "score": 0.9,
                           "doc": {
                             "example-field1": "example-value2",

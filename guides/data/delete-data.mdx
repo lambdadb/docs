@@ -2,7 +2,7 @@
 title: Delete data
 ---
 
-This page shows you how to use the delete endpoint to remove documents from an index.
+This page shows you how to use the delete endpoint to remove documents from a collection.
 
 ## Delete documents by IDs
 
@@ -11,7 +11,7 @@ deleting by ID is the most efficient way to remove specific records.
 
 ```bash
 curl -i -X POST \
-  --url https://{baseUrl}/projects/{projectName}/indexes/{indexName}/docs/delete \
+  --url https://{baseUrl}/projects/{projectName}/collections/{collectionName}/docs/delete \
   --header 'content-type: application/json' \
   --header 'x-api-key: <YOUR_API_KEY>' \
   --data '{
@@ -28,11 +28,11 @@ curl -i -X POST \
 To delete documents based on their data, pass a `filter` query to the delete operation.
 This deletes all document matching the filter query.
 
-For example, to delete all documents with genre “documentary” and year 2019 from an index, use the following code:
+For example, to delete all documents with genre “documentary” and year 2019 from a collection, use the following code:
 
 ```bash
 curl -i -X POST \
-  --url https://{baseUrl}/projects/{projectName}/indexes/{indexName}/docs/delete \
+  --url https://{baseUrl}/projects/{projectName}/collections/{collectionName}/docs/delete \
   --header 'content-type: application/json' \
   --header 'x-api-key: <YOUR_API_KEY>' \
   --data '{
@@ -44,8 +44,8 @@ curl -i -X POST \
 }'
 ```
 
-## Delete an entire index
+## Delete an entire collection
 
-To remove all documents from an index,
-[delete the index](/guides/indexes/manage-indexes#delete-an-index) and
-[recreate it](/guides/indexes/create-an-index)
+To remove all documents from a collection,
+[delete the collection](/guides/collections/manage-collections#delete-a-collection) and
+[recreate it](/guides/collections/create-aa-collection)

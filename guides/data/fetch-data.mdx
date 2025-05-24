@@ -2,7 +2,7 @@
 title: Fetch data
 ---
 
-This page shows you how to use the fetch endpoint to fetch documents by ID from an index.
+This page shows you how to use the fetch endpoint to fetch documents by ID from a collection.
 
 | Parameter      | Description                                                   | Type       | Required | Default |
 | -------------- | ------------------------------------------------------------- | ---------- | -------- | ------- |
@@ -13,7 +13,7 @@ This page shows you how to use the fetch endpoint to fetch documents by ID from 
 To fetch documents, specify the document IDs.
 
 ```python python
-url = f"https://{base_url}/projects/{project_name}/indexes/{index_name}/query"
+url = f"https://{base_url}/projects/{project_name}/collections/{collection_name}/query"
 headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
 
 fetch = {
@@ -30,7 +30,7 @@ The response will look like this:
   "total": 1,
   "docs": [
     {
-      "index": "example_index",
+      "collection": "example_collection",
       "score": 1.0,
       "doc": {
         "id": "33201222",

@@ -2,13 +2,13 @@
 title: Upsert data
 ---
 
-This page shows you how to upsert documents into an index.
+This page shows you how to upsert documents into a collection.
 
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
 curl -X POST \
-  "https://{baseUrl}/projects/{project_name}/indexes/{index_name}/docs/upsert" \
+  "https://{baseUrl}/projects/{project_name}/collections/{collection_name}/docs/upsert" \
   -H 'content-type: application/json
   -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
   -d '{

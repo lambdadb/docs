@@ -1,17 +1,17 @@
 ---
-title: Manage indexes
+title: Manage collections
 ---
 
-This page shows you how to manage your existing indexes.
+This page shows you how to manage your existing collections.
 
-## List indexes
+## List collections
 
-Use this operation to get a complete description of all indexes in a project:
+Use this operation to get a complete description of all collections in a project:
 
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/projects/{projectName}/indexes" \
+curl -i -X GET "https://{baseUrl}/projects/{projectName}/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -20,32 +20,31 @@ The response will look like this:
 
 ```json
 {
-  "indexes": [
+  "collections": [
     {
       "projectName": "<string>",
-      "indexName": "<string>",
-      "mappings": {},
+      "collectionName": "<string>",
+      "indexConfigs": {},
       "numDocs": 123,
       "cloneSourceInfo": {
         "sourceProjectId": "<string>",
         "sourceIndexName": "<string>",
         "sourceIndexVersionId": "<string>"
       },
-      "indexStatus": "ACTIVE",
-      "indexClass": "STANDARD"
+      "collectionStatus": "ACTIVE"
     }
   ]
 }
 ```
 
-## Describe an index
+## Describe a collection
 
-Use the describe endpoint to get a complete description of a specific index:
+Use the describe endpoint to get a complete description of a specific collection:
 
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/projects/{projectName}/indexes/{indexName}" \
+curl -i -X GET "https://{baseUrl}/projects/{projectName}/collections/{collectionName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -55,27 +54,26 @@ The response will look like this:
 ```json
 {
   "projectName": "<string>",
-  "indexName": "<string>",
-  "mappings": {},
+  "collectionName": "<string>",
+  "indexConfigs": {},
   "numDocs": 123,
   "cloneSourceInfo": {
     "sourceProjectId": "<string>",
     "sourceIndexName": "<string>",
     "sourceIndexVersionId": "<string>"
   },
-  "indexStatus": "ACTIVE",
-  "indexClass": "STANDARD"
+  "collectionStatus": "ACTIVE"
 }
 ```
 
-## Delete an index
+## Delete a collection
 
-Use this operation to delete an index and all of its associated resources:
+Use this operation to delete a collection and all of its associated resources:
 
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X DELETE "https://{baseUrl}/projects/{projectName}/indexes/{indexName}" \
+curl -i -X DELETE "https://{baseUrl}/projects/{projectName}/collections/{collectionName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```

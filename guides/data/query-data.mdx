@@ -2,7 +2,7 @@
 title: Query data
 ---
 
-A search query, or query, is a request for information about data in LambdaDB indexes.
+A search query, or query, is a request for information about data in LambdaDB collections.
 
 LambdaDB supports several search methods:
 
@@ -45,7 +45,7 @@ Query results are returned in the following format:
 Example query request to LambdaDB is as follows:
 
 ```python python
-url = f"https://{base_url}/projects/{project_name}/indexes/{index_name}/query"
+url = f"https://{base_url}/projects/{project_name}/collections/{collection_name}/query"
 headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
 
 query = {
@@ -64,7 +64,7 @@ The response will look like this:
   "total": 1,
   "docs": [
     {
-      "index": "example_index",
+      "collection": "example_collection",
       "score": 10.691499,
       "doc": {
         "id": "33201222",
@@ -91,9 +91,9 @@ Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operator
 | query        | Query string                      | object  | ✓        |
 | defaultField | Default field name to apply query | string  |          |
 
-A query to an index with `object` field type requires special handling.
+A query to a collection with `object` field type requires special handling.
 
-An example index mappings:
+An example index configurations:
 ```json
 {
   "metadata": {
@@ -338,11 +338,11 @@ The sort order option can have the following values:
  * `asc`: sorts in ascending order
  * `desc`: sorts in descending order
 
-Assuming the following index mapping:
+Assuming the following index configurations:
 
 ```json
 {
-  "mappings": {
+  "indexConfigs": {
     "post_date": {
       "type": "datetime"
     },

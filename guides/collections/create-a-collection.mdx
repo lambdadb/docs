@@ -1,0 +1,51 @@
+---
+title: Create a collection
+---
+
+This page shows you how to create a collection with various configurations.
+
+## Create a collection from scratch
+
+The simplest way to create a collection is to provide the collection name and the field indexConfigs.
+
+```bash
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "https://{baseUrl}/projects/{projectName}/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+        "collectionName": "example-collection",
+        "indexConfigs": {
+          "url": {
+            "type": "keyword"
+          },
+          "author": {
+            "type": "keyword"
+          }
+        }
+      }'
+```
+
+## Create a collection cloned from another collection
+
+You can create a collection cloned from an existing collection by simply providing information
+related to the source collection.
+
+```bash
+LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
+LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
+
+curl -i -X POST "https://{baseUrl}/projects/{projectName}/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
+  -d '{
+        "collectionName": "example-collection",
+        "sourceProjectId": "example-source-project-id",
+        "sourceProjectApiKey": $LAMBDADB_SOURCE_PROJECT_API_KEY,
+        "sourceIndexName": "example-source-collection-name"
+      }'
+```
+As shown above example, specifying `indexConfigs` is optional when cloning a collection.
+You can pass `indexConfigs` object only with additional indexConfigs based on the original collection's indexConfigs.
+Deleting or modifying the original collection's indexConfigs is not allowed.

@@ -20,12 +20,12 @@
             ]
           },
           {
-            "group": "Indexes",
+            "group": "Collections",
             "pages": [
-              "guides/indexes/understanding-indexes",
-              "guides/indexes/data-types",
-              "guides/indexes/create-an-index",
-              "guides/indexes/manage-indexes"
+              "guides/collections/understanding-collections",
+              "guides/collections/index-types",
+              "guides/collections/create-a-collection",
+              "guides/collections/manage-collections"
             ]
           },
           {
@@ -68,11 +68,11 @@
               {
                 "group": "Indexes",
                 "pages": [
-                  "api-reference/endpoint/index-list",
-                  "api-reference/endpoint/index-create",
-                  "api-reference/endpoint/index-describe",
-                  "api-reference/endpoint/index-delete",
-                  "api-reference/endpoint/index-configure"
+                  "api-reference/endpoint/collection-list",
+                  "api-reference/endpoint/collection-create",
+                  "api-reference/endpoint/collection-describe",
+                  "api-reference/endpoint/collection-delete",
+                  "api-reference/endpoint/collection-configure"
                 ]
               },
               {

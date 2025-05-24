@@ -85,7 +85,7 @@ The response will look like this:
 
 ## Delete a project
 
-Use this operation to delete an index and all of its associated resources:
+Use this operation to delete a project and all of its associated resources:
 
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
@@ -96,5 +96,5 @@ curl -i -X DELETE "https://{baseUrl}/projects/{projectName}" \
 ```
 
 <Warning>
-Deleting a project causes deleting all the indexes in the project.
+Deleting a project causes deleting all the collections in the project.
 </Warning>

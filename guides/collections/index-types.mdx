@@ -1,58 +1,58 @@
 ---
-title: Data types
+title: Index types
 ---
 
-LambdaDB currently supports eight types of fields, which are used to define data mappings for indexing.
-Note that the whole document are stored as is regardless of its existence in index mappings,
+LambdaDB currently supports eight types of indexes.
+Note that the whole document are stored as is regardless of its existence in index configurations,
 but being stored does not necessarily mean they are searchable.
 
 ## text
 
-A field to index full-text values, such as the body of an email or the description of a product.
-These fields are analyzed, that they are passed through an analyzer to convert the string into
+This type is for full-text values, such as the body of an email or the description of a product.
+These full-text values are analyzed, that they are passed through an analyzer to convert the string into
 a list of individual terms before being indexed. The analysis process allows LambdaDB to search for
 individual words within each full text field.
 
-text fields are best suited for unstructured but human-readable content.
+`text` indexes are best suited for unstructured but human-readable content.
 If you need to index structured content such as email addresses, hostnames, status codes, or tags,
-it is likely that you should rather use a [keyword](/guides/indexes/data-types#keyword) field.
+it is likely that you should rather use a [keyword](/guides/collections/data-types#keyword) index.
 
 LambdaDB supports four analyzers for tokenization: `standard`(default), `korean`, `japanese`, `english`.
 You can specify multiple analyzers to a single text field to improve search performance.
 
 <Warning>
 
-  . (dot) character cannot be used as a field name and you can only add mappings after creating an index.
-  Modifying or deleting existing mappings is not supported.
+  . (dot) character cannot be used as an index name and you can only add indexes to existing collections.
+  Modifying or deleting existing indexes is not supported.
 
 </Warning>
 
 ## keyword
 
-`keyword` field type is used for structured content such as IDs, email addresses, hostnames,
+`keyword` type is used for structured content such as IDs, email addresses, hostnames,
 status codes, zip codes, or tags.
-Keyword fields are often used in sorting, aggregations, and term-level queries, such as term.
+Keyword indexes are often used in sorting, aggregations, and term-level queries, such as term.
 Note that LambdaDB does not index any string longer than 4096.
 
 ## long
 
-A signed 64-bit integer with a minimum value of $-2^{63}$ and a maximum value of $2^{63}-1$.
-`long` fields are optimized for scoring, sorting, and range queries.
+This type os for a signed 64-bit integer with a minimum value of $-2^{63}$ and a maximum value of $2^{63}-1$.
+`long` indexes are optimized for scoring, sorting, and range queries.
 
 ## double
 
-A double-precision 64-bit IEEE 754 floating point number, restricted to finite values.
-`double` fields are optimized for scoring, sorting, and range queries.
+This type is for a double-precision 64-bit IEEE 754 floating point number, restricted to finite values.
+`double` indexes are optimized for scoring, sorting, and range queries.
 
 ## boolean
 
-`boolean` fields accept JSON true and false values, but can also accept strings
+`boolean` indexes accept JSON true and false values, but can also accept strings
 which are interpreted as either true or false.
 
 ## datetime
 
-Date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
-`datetime` fields are optimized for sorting and range queries, or to search for a specific time.
+This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+`datetime` indexes are optimized for sorting and range queries, or to search for a specific time.
 
 ```python
 import pytz
@@ -69,7 +69,7 @@ print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
 JSON documents are hierarchical in nature: the document may contain inner objects which,
 in turn, may contain inner objects themselves. Internally, this document is indexed as a simple,
 flat list of key-value pairs. The fields within the object, which can be of any data type,
-including object. `objectMapping` should be specified in order to index the fields inside the object.
+including object. `objectIndexConfig` should be specified in order to index the fields inside the object.
 
 ```json
 {
@@ -79,7 +79,7 @@ including object. `objectMapping` should be specified in order to index the fiel
   },
   "metadata": {
     "type": "object",
-    "objectMapping": {
+    "objectIndexConfig": {
       "url": {
         "type": "keyword"
       },
@@ -93,17 +93,17 @@ including object. `objectMapping` should be specified in order to index the fiel
 
 ## vector
 
-The `vector` field type stores dense vectors of numeric values.
-`vector` fields are primarily used for k-nearest neighbor (kNN) search.
-The dense_vector type does not support aggregations or sorting.
-You add a dense_vector field as an array of numeric values
+The `vector` type indexes dense vectors of numeric values.
+`vector` indexes are primarily used for k-nearest neighbor (kNN) search.
+The vector type does not support aggregations or sorting.
+You add a vector field as an array of numeric values
 
 A k-nearest neighbor (kNN) search finds the k nearest vectors to a query vector,
 as measured by a similarity metric. LambdaDB supports four similarity metrics including
 `l2_norm(euclidean)`, `dot_product`, `cosine`, `max_inner_product`.
 You can define the vector similarity to use in kNN search.
 
-## An example index mappings
+## An example index configurations
 
 ```json
 {
@@ -146,7 +146,7 @@ You can define the vector similarity to use in kNN search.
   },
   "node_info": {
     "type": "object",
-    "objectMapping": {
+    "objectIndexConfig": {
       "next": {
         "type": "keyword"
       },
@@ -157,7 +157,7 @@ You can define the vector similarity to use in kNN search.
   },
   "metadata": {
     "type": "object",
-    "objectMapping": {
+    "objectIndexConfig": {
       "robots_allowed": {
         "type": "boolean"
       },
