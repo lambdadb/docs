@@ -69,7 +69,7 @@ print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
 JSON documents are hierarchical in nature: the document may contain inner objects which,
 in turn, may contain inner objects themselves. Internally, this document is indexed as a simple,
 flat list of key-value pairs. The fields within the object, which can be of any data type,
-including object. `objectIndexConfig` should be specified in order to index the fields inside the object.
+including object. `objectIndexConfigs` should be specified in order to index the fields inside the object.
 
 ```json
 {
@@ -79,7 +79,7 @@ including object. `objectIndexConfig` should be specified in order to index the 
   },
   "metadata": {
     "type": "object",
-    "objectIndexConfig": {
+    "objectIndexConfigs": {
       "url": {
         "type": "keyword"
       },
@@ -146,7 +146,7 @@ You can define the vector similarity to use in kNN search.
   },
   "node_info": {
     "type": "object",
-    "objectIndexConfig": {
+    "objectIndexConfigs": {
       "next": {
         "type": "keyword"
       },
@@ -157,7 +157,7 @@ You can define the vector similarity to use in kNN search.
   },
   "metadata": {
     "type": "object",
-    "objectIndexConfig": {
+    "objectIndexConfigs": {
       "robots_allowed": {
         "type": "boolean"
       },
