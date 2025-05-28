@@ -59,13 +59,15 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Admin API Key."
+        "description": "Admin API Key.",
+        "x-speakeasy-example": "<YOUR_ADMIN_API_KEY>"
       },
       "ProjectApiKey": {
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Project API Key."
+        "description": "Project API Key.",
+        "x-speakeasy-example": "<YOUR_PROJECT_API_KEY>"
       }
     },
     "schemas": {
@@ -240,15 +242,6 @@
       },
       "BadRequest": {
         "title": "BadRequest",
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "NotFound": {
-        "title": "NotFound",
         "type": "object",
         "properties": {
           "message": {
