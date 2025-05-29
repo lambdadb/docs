@@ -3,13 +3,13 @@ title: Index types
 ---
 
 LambdaDB currently supports eight types of indexes.
-Note that the whole document are stored as is regardless of its existence in index configurations,
+Note that the whole document is stored as is regardless of its existence in index configurations,
 but being stored does not necessarily mean they are searchable.
 
 ## text
 
 This type is for full-text values, such as the body of an email or the description of a product.
-These full-text values are analyzed, that they are passed through an analyzer to convert the string into
+These full-text values are analyzed that they are passed through an analyzer to convert the string into
 a list of individual terms before being indexed. The analysis process allows LambdaDB to search for
 individual words within each full text field.
 
@@ -73,7 +73,7 @@ including object. `objectIndexConfigs` should be specified in order to index the
 
 ```json
 {
-	"content": {
+  "content": {
     "type": "text",
     "analyzers": ["english", "korean", "japanese"]
   },

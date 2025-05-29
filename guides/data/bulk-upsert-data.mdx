@@ -11,7 +11,7 @@ First, get the required information to upload payload to object storage:
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
 curl -i -X GET \
-  "https://{baseUrl}/projects/{project_name}/collections/{collection_name}/docs/bulk-upsert" \
+  "https://{baseUrl}/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert" \
   -H 'content-type: application/json' \
   -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY'
 ```
@@ -35,7 +35,7 @@ and call `bulk-upsert` API with the corresponding `objectKey` you've just upload
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
 curl -i -X POST \
-  "https://{baseUrl}/projects/{project_name}/collections/{collection_name}/docs/bulk-upsert" \
+  "https://{baseUrl}/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert" \
   -H 'content-type: application/json' \
   -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
   -d '{
