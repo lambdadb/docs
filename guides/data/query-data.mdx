@@ -128,7 +128,6 @@ A k-nearest neighbor (kNN) search finds the k nearest vectors to a query vector,
 | field         | The name of the vector field to search against      | string   | ✓        |
 | queryVector   | Query vector                                        | float[]  | ✓        |
 | k             | Number of nearest neighbors to return as top `docs` | integer  | ✓        |
-| numCandidates | The number of nearest neighbor candidates           | integer  |          |
 | filter        |Query to filter the documents that can match         | object   |          |
 
 An example vector query:
@@ -149,17 +148,10 @@ An example vector query:
         0.054530356,
         0.007080819
     ],
-    "k": 5,
-    "numCandidates": 20
+    "k": 5
   }
 }
 ```
-<Tip>
-
-  Higher `numCandidates` likely leads to higher recall but also higher resource usage.
-
-</Tip>
-
 An example vector query with a filter for better performance:
 
 ```json
@@ -184,8 +176,7 @@ An example vector query with a filter for better performance:
         0.054530356,
         0.007080819
     ],
-    "k": 5,
-    "numCandidates": 20
+    "k": 5
   }
 }
 ```
@@ -290,8 +281,7 @@ An example hybrid query:
         },
         "field": "text_embedding",
         "queryVector": [ ... {float array} ... ],
-        "k": 5,
-        "numCandidates": 20
+        "k": 5
       },
       "occur": "should",
       "boost": 0.3
@@ -397,7 +387,6 @@ scores will still be computed and tracked.
 | Max result size     | 6MB    |
 | Max execution time  | 30s    |
 | Max boolean clauses | 1,024  |
-| Max `numCandidates` | 5,000  |
 
 The query result size is affected by the dimension of the vectors and
 whether vector values are included in the result.
