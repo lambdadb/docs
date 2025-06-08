@@ -37,14 +37,6 @@
               "guides/data/fetch-data",
               "guides/data/delete-data"
             ]
-          },
-          {
-            "group": "Projects",
-            "pages": [
-              "guides/projects/understanding-projects",
-              "guides/projects/create-a-project",
-              "guides/projects/manage-projects"
-            ]
           }
         ]
       },
@@ -55,16 +47,6 @@
             "group": "API Reference",
             "pages": [
               "api-reference/introduction",
-              {
-                "group": "Projects",
-                "pages": [
-                  "api-reference/endpoint/project-list",
-                  "api-reference/endpoint/project-create",
-                  "api-reference/endpoint/project-describe",
-                  "api-reference/endpoint/project-delete",
-                  "api-reference/endpoint/project-configure"
-                ]
-              },
               {
                 "group": "Collections",
                 "pages": [
@@ -106,7 +88,7 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/",
+      "github": "https://github.com/lambdadb",
       "linkedin": "https://www.linkedin.com/"
     }
   },
