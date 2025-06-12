@@ -363,22 +363,6 @@ You can sort search results as follows:
 }
 ```
 
-When sorting on a field, scores are not computed. By setting `trackScores` to true,
-scores will still be computed and tracked.
-
-```json
-{
-  "query" : {
-    "queryString" : { "query" : "name:LambdaDB" }
-  },
-  "sort" : [
-    { "name" : "asc" },
-    { "age" : "desc" }
-  ],
-  "trackScores": true
-}
-```
-
 ## Query limits
 
 | Metric              | Limit  |

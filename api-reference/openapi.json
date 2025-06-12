@@ -2013,11 +2013,6 @@
                     "items": {
                       "type": "string"
                     }
-                  },
-                  "trackScores": {
-                    "type": "boolean",
-                    "description": "If your application needs to track scores with sorting, set trackScores to true.",
-                    "default": false
                   }
                 },
                 "required": [
