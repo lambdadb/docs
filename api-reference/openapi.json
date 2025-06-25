@@ -7,10 +7,10 @@
   },
   "tags": [
     {
-      "name": "projects.collections"
+      "name": "collections"
     },
     {
-      "name": "projects.collections.docs"
+      "name": "collections.docs"
     }
   ],
   "servers": [
@@ -264,7 +264,7 @@
   "paths": {
     "/projects/{projectName}/collections": {
       "get": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "listcollections",
         "description": "List all collections in an existing project.",
         "security": [
@@ -430,7 +430,7 @@
         }
       },
       "post": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "createCollection",
         "description": "Create an collection.",
         "security": [
@@ -638,7 +638,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}": {
       "delete": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "deleteCollection",
         "description": "Delete an existing collection.",
         "security": [
@@ -753,7 +753,7 @@
         }
       },
       "get": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "getCollection",
         "description": "Get metadata of an existing collection.",
         "security": [
@@ -879,7 +879,7 @@
         }
       },
       "patch": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "updateCollection",
         "description": "Configure an collection.",
         "security": [
@@ -1069,7 +1069,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/upsert": {
       "post": {
-        "tags": ["projects.collections.docs"],
+        "tags": ["collections.docs"],
         "operationId": "upsertDocs",
         "description": "Upsert documents into an collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -1255,7 +1255,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
-        "tags": ["projects.collections.docs"],
+        "tags": ["collections.docs"],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
         "security": [
@@ -1400,7 +1400,7 @@
         }
       },
       "post": {
-        "tags": ["projects.collections.docs"],
+        "tags": ["collections.docs"],
         "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into an collection. Note that the maximum supported object size is 200MB.",
         "security": [
@@ -1561,7 +1561,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/delete": {
       "post": {
-        "tags": ["projects.collections.docs"],
+        "tags": ["collections.docs"],
         "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from an collection.",
         "security": [
@@ -1754,7 +1754,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/fetch": {
       "post": {
-        "tags": ["projects.collections.docs"],
+        "tags": ["collections.docs"],
         "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from an collection.",
         "security": [
@@ -1963,7 +1963,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/query": {
       "post": {
-        "tags": ["projects.collections"],
+        "tags": ["collections"],
         "operationId": "queryCollection",
         "description": "Search an collection with a query and return the most similar documents.",
         "security": [
