@@ -36,11 +36,12 @@ LambdaDB currently does not support a partial update operation.
 
 ## Upsert limits
 
-| Metric                       | Limit    |
-| ---------------------------- | ---------|
-| Max payload size             | 6MB      |
-| Max length for a document ID | ??       |
-| Max vector dimensions        | 4,096    |
+| Metric                       | Limit           |
+| ---------------------------- | --------------- |
+| Max payload size             | 6MB             |
+| Max length for a document ID | 512 characters  |
+| Max vector dimensions        | 4,096           |
+| Max document size            | 50KB            |
 
 When upserting larger amounts of data, it is recommended to use
 [bulk-upsert](/guides/data/bulk-upsert-data) operation.
