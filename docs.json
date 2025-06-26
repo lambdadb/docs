@@ -33,6 +33,7 @@
             "pages": [
               "guides/data/upsert-data",
               "guides/data/bulk-upsert-data",
+              "guides/data/update-data",
               "guides/data/query-data",
               "guides/data/fetch-data",
               "guides/data/delete-data"
@@ -63,6 +64,7 @@
                   "api-reference/endpoint/document-upsert",
                   "api-reference/endpoint/document-get-bulk-upsert-url",
                   "api-reference/endpoint/document-bulk-upsert",
+                  "api-reference/endpoint/document-update",
                   "api-reference/endpoint/document-query",
                   "api-reference/endpoint/document-fetch",
                   "api-reference/endpoint/document-delete"
