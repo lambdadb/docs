@@ -10,7 +10,7 @@ This page shows you how to use the fetch endpoint to fetch documents by ID from 
 | includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
 
-To fetch documents, specify the document IDs.
+To fetch documents, specify the document IDs (up to 100 IDs).
 
 ```python python
 url = f"https://{baseUrl}/projects/{projectName}/collections/{collectionName}/query"

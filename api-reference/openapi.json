@@ -1951,7 +1951,7 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "A list of document IDs to fetch. Note that the maximum number of document IDs is 1000."
+                    "description": "A list of document IDs to fetch. Note that the maximum number of document IDs is 100."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -2156,7 +2156,7 @@
                 "properties": {
                   "size": {
                     "type": "integer",
-                    "description": "Number of documents to return. Note that the maximum number of documents is 1000."
+                    "description": "Number of documents to return. Note that the maximum number of documents is 100."
                   },
                   "query": {
                     "type": "object",
