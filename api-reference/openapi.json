@@ -405,7 +405,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -610,7 +610,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -726,7 +726,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -851,7 +851,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1038,7 +1038,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1223,7 +1223,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1369,7 +1369,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1527,7 +1527,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1714,7 +1714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -1906,7 +1906,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -2114,7 +2114,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
@@ -2353,7 +2353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalServerError",
+                  "$ref": "#/components/schemas/InternalServerError"
                 },
                 "examples": {
                   "example": {
