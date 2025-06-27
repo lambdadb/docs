@@ -5,14 +5,6 @@
     "summary": "LambdaDB Open API Spec",
     "version": "1.1.0"
   },
-  "tags": [
-    {
-      "name": "collections"
-    },
-    {
-      "name": "collections.docs"
-    }
-  ],
   "servers": [
     {
       "url": "https://{baseUrl}",
@@ -264,8 +256,7 @@
   "paths": {
     "/projects/{projectName}/collections": {
       "get": {
-        "tags": ["collections"],
-        "operationId": "listcollections",
+        "operationId": "listCollections",
         "description": "List all collections in an existing project.",
         "security": [
           {
@@ -430,9 +421,8 @@
         }
       },
       "post": {
-        "tags": ["collections"],
         "operationId": "createCollection",
-        "description": "Create an collection.",
+        "description": "Create a collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -638,7 +628,6 @@
     },
     "/projects/{projectName}/collections/{collectionName}": {
       "delete": {
-        "tags": ["collections"],
         "operationId": "deleteCollection",
         "description": "Delete an existing collection.",
         "security": [
@@ -753,7 +742,6 @@
         }
       },
       "get": {
-        "tags": ["collections"],
         "operationId": "getCollection",
         "description": "Get metadata of an existing collection.",
         "security": [
@@ -879,9 +867,8 @@
         }
       },
       "patch": {
-        "tags": ["collections"],
         "operationId": "updateCollection",
-        "description": "Configure an collection.",
+        "description": "Configure a collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1069,9 +1056,8 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/upsert": {
       "post": {
-        "tags": ["collections.docs"],
         "operationId": "upsertDocs",
-        "description": "Upsert documents into an collection. Note that the maximum supported payload size is 6MB.",
+        "description": "Upsert documents into a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1255,7 +1241,6 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
-        "tags": ["collections.docs"],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
         "security": [
@@ -1400,9 +1385,8 @@
         }
       },
       "post": {
-        "tags": ["collections.docs"],
         "operationId": "bulkUpsertDocs",
-        "description": "Bulk upsert documents into an collection. Note that the maximum supported object size is 200MB.",
+        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1559,11 +1543,197 @@
         }
       }
     },
+    "/projects/{projectName}/collections/{collectionName}/docs/update": {
+      "post": {
+        "operationId": "updateDocs",
+        "description": "Update documents in a collection. Note that the maximum supported payload size is 6MB.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectName"
+          },
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "docs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    },
+                    "description": "A list of documents to update. Each document must contain 'id' field to be updated."
+                  }
+                },
+                "required": [
+                  "docs"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for documents update",
+                  "value": {
+                    "docs": [
+                      {
+                        "example-doc1": {
+                          "id": "example-id1",
+                          "example-field1": "example-value1",
+                          "example-field2": [
+                            0.1,
+                            0.2,
+                            0.3
+                          ]
+                        }
+                      },
+                      {
+                        "example-doc2": {
+                          "id": "example-id2",
+                          "example-field1": "example-value2",
+                          "example-field2": [
+                            0.4,
+                            0.5,
+                            0.6
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Update request accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents update`",
+                    "value": {
+                      "message": "Update request is accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError",
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/projects/{projectName}/collections/{collectionName}/docs/delete": {
       "post": {
-        "tags": ["collections.docs"],
         "operationId": "deleteDocs",
-        "description": "Delete documents by document IDs or query filter from an collection.",
+        "description": "Delete documents by document IDs or query filter from a collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1754,9 +1924,8 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/fetch": {
       "post": {
-        "tags": ["collections.docs"],
         "operationId": "fetchDocs",
-        "description": "Lookup and return documents by document IDs from an collection.",
+        "description": "Lookup and return documents by document IDs from a collection.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1782,7 +1951,7 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "A list of document IDs to fetch. Note that the maximum number of document IDs is 1000."
+                    "description": "A list of document IDs to fetch. Note that the maximum number of document IDs is 100."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -1963,9 +2132,8 @@
     },
     "/projects/{projectName}/collections/{collectionName}/query": {
       "post": {
-        "tags": ["collections"],
         "operationId": "queryCollection",
-        "description": "Search an collection with a query and return the most similar documents.",
+        "description": "Search a collection with a query and return the most similar documents.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1988,7 +2156,7 @@
                 "properties": {
                   "size": {
                     "type": "integer",
-                    "description": "Number of documents to return. Note that the maximum number of documents is 1000."
+                    "description": "Number of documents to return. Note that the maximum number of documents is 100."
                   },
                   "query": {
                     "type": "object",
