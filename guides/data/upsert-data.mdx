@@ -17,12 +17,17 @@ curl -X POST \
         "id": "33201222",
         "url": "https://en.wikipedia.org/wiki/LambdaDB",
         "title": "LambdaDB",
-        "text": "LambdaDB is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+        "text": "LambdaDB is a serverless-native search engine for AI... ",
+        "dense_vector" : [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "sparse_vector" : [{"LambdaDB" : 0.83}, {"is" : 0.1}, {"a" : 0.1} ... {"AI" : 0.7} ...]
       },
       {
         "url": "https://en.wikipedia.org/wiki/Winamp",
         "title": "Winamp",
-        "text": "Winamp is a media player for Windows, macOS and Android, originally developed by Justin Frankel and Dmitry Boldyrev by their company Nullsoft, which they later sold to AOL, who sold to Radionomy in January 2014."
+        "text": "Winamp is a media player for Windows, macOS and Android ..."
+        "dense_vector" : [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0],
+        // If you want to use index-based format, simply use index numbers as keys in the sparse vector
+        "sparse_vector" : [{"0" : 0.8}, {"4" : 0.1}, {"11" : 0.1}, {"63" : 0.54} ...]
       }
     ]
   }'
