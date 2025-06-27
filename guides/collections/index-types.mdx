@@ -103,6 +103,12 @@ as measured by a similarity metric. LambdaDB supports four similarity metrics in
 `l2_norm(euclidean)`, `dot_product`, `cosine`, `max_inner_product`.
 You can define the vector similarity to use in kNN search.
 
+## sparseVector
+
+The `sparseVector` type is designed for storing and indexing sparse vectors, where most elements are zero or missing.
+Unlike dense vectors, sparse vectors only store non-zero values along with their corresponding indexes.
+`sparseVector` type only support `dot_product` distance metrics.
+
 ## An example index configurations
 
 ```json
@@ -130,8 +136,7 @@ You can define the vector similarity to use in kNN search.
     "type": "keyword"
   },
   "content": {
-    "type": "text",
-    "analyzers": ["english", "korean", "japanese"]
+    "type": "sparseVector"
   },
   "text_embedding": {
     "dimensions": 512,

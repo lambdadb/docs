@@ -136,7 +136,8 @@
                     "long",
                     "double",
                     "datetime",
-                    "boolean"
+                    "boolean",
+                    "sparseVector"
                   ]
                 }
               },
