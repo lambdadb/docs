@@ -5,6 +5,14 @@
     "summary": "LambdaDB Open API Spec",
     "version": "1.1.0"
   },
+  "tags": [
+    {
+      "name": "collections"
+    },
+    {
+      "name": "collections.docs"
+    }
+  ],
   "servers": [
     {
       "url": "https://{baseUrl}",
@@ -257,6 +265,7 @@
   "paths": {
     "/projects/{projectName}/collections": {
       "get": {
+        "tags": ["collections"],
         "operationId": "listCollections",
         "description": "List all collections in an existing project.",
         "security": [
@@ -422,6 +431,7 @@
         }
       },
       "post": {
+        "tags": ["collections"],
         "operationId": "createCollection",
         "description": "Create a collection.",
         "security": [
@@ -629,6 +639,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}": {
       "delete": {
+        "tags": ["collections"],
         "operationId": "deleteCollection",
         "description": "Delete an existing collection.",
         "security": [
@@ -743,6 +754,7 @@
         }
       },
       "get": {
+        "tags": ["collections"],
         "operationId": "getCollection",
         "description": "Get metadata of an existing collection.",
         "security": [
@@ -868,6 +880,7 @@
         }
       },
       "patch": {
+        "tags": ["collections"],
         "operationId": "updateCollection",
         "description": "Configure a collection.",
         "security": [
@@ -1057,6 +1070,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/upsert": {
       "post": {
+        "tags": ["collections.docs"],
         "operationId": "upsertDocs",
         "description": "Upsert documents into a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -1242,6 +1256,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
+        "tags": ["collections.docs"],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents.",
         "security": [
@@ -1386,6 +1401,7 @@
         }
       },
       "post": {
+        "tags": ["collections.docs"],
         "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB.",
         "security": [
@@ -1546,6 +1562,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/update": {
       "post": {
+        "tags": ["collections.docs"],
         "operationId": "updateDocs",
         "description": "Update documents in a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -1733,6 +1750,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/delete": {
       "post": {
+        "tags": ["collections.docs"],
         "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from a collection.",
         "security": [
@@ -1925,6 +1943,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/docs/fetch": {
       "post": {
+        "tags": ["collections.docs"],
         "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from a collection.",
         "security": [
@@ -2133,6 +2152,7 @@
     },
     "/projects/{projectName}/collections/{collectionName}/query": {
       "post": {
+        "tags": ["collections"],
         "operationId": "queryCollection",
         "description": "Search a collection with a query and return the most similar documents.",
         "security": [
