@@ -61,33 +61,6 @@
       }
     },
     "schemas": {
-      "IDs": {
-        "type": "object",
-        "properties": {
-          "ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "A list of document IDs."
-          }
-        },
-        "required": [
-          "ids"
-        ]
-      },
-      "Filter": {
-        "type": "object",
-        "properties": {
-          "filter": {
-            "type": "object",
-            "description": "Query filter."
-          }
-        },
-        "required": [
-          "filter"
-        ]
-      },
       "Status": {
         "title": "Status",
         "type": "string",
@@ -1798,14 +1771,20 @@
           "content": {
             "application/json": {
               "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/IDs"
-                  },
-                  {
-                    "$ref": "#/components/schemas/Filter"
-                  }
-                ]
+                  "type": "object",
+                  "properties": {
+                    "ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "A list of document IDs."
+                    },
+                    "filter": {
+                      "type": "object",
+                      "description": "Query filter."
+                    }
+                }
               },
               "examples": {
                 "deleteByIds": {
