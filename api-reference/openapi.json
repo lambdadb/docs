@@ -3,7 +3,7 @@
   "info": {
     "title": "LambdaDB API",
     "summary": "LambdaDB Open API Spec",
-    "version": "1.1.0"
+    "version": "1.1.1"
   },
   "tags": [
     {
@@ -192,7 +192,25 @@
           "collectionStatus": {
             "$ref": "#/components/schemas/Status"
           }
-        }
+        },
+        "required": [
+          "projectName",
+          "collectionName",
+          "indexConfigs",
+          "numDocs",
+          "collectionStatus"
+        ]
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
       },
       "ConsistentRead": {
         "title": "ConsistentRead",
@@ -292,7 +310,10 @@
                         "$ref": "#/components/schemas/CollectionResponse"
                       }
                     }
-                  }
+                  },
+                  "required": [
+                    "collections"
+                  ]
                 },
                 "examples": {
                   "normalCollection": {
@@ -515,7 +536,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CollectionResponse"
+                  "type": "object",
+                  "properties": {
+                    "collection": {
+                      "$ref": "#/components/schemas/CollectionResponse"
+                    }
+                  },
+                  "required": [
+                    "collection"
+                  ]
                 },
                 "examples": {
                   "example": {
@@ -661,12 +690,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/MessageResponse"
                 },
                 "examples": {
                   "example": {
@@ -776,7 +800,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CollectionResponse"
+                  "type": "object",
+                  "properties": {
+                    "collection": {
+                      "$ref": "#/components/schemas/CollectionResponse"
+                    }
+                  },
+                  "required": [
+                    "collection"
+                  ]
                 },
                 "examples": {
                   "normalCollection": {
@@ -943,7 +975,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CollectionResponse"
+                  "type": "object",
+                  "properties": {
+                    "collection": {
+                      "$ref": "#/components/schemas/CollectionResponse"
+                    }
+                  },
+                  "required": [
+                    "collection"
+                  ]
                 },
                 "examples": {
                   "normalCollection": {
@@ -1143,12 +1183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/MessageResponse"
                 },
                 "examples": {
                   "example": {
@@ -1309,7 +1344,14 @@
                       "description": "Object size limit in bytes.",
                       "default": 209715200
                     }
-                  }
+                  },
+                  "required": [
+                    "url",
+                    "type",
+                    "httpMethod",
+                    "objectKey",
+                    "sizeLimitBytes"
+                  ]
                 },
                 "examples": {
                   "example": {
@@ -1450,12 +1492,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/MessageResponse"
                 },
                 "examples": {
                   "example": {
@@ -1637,12 +1674,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/MessageResponse"
                 },
                 "examples": {
                   "example": {
@@ -1816,12 +1848,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/MessageResponse"
                 },
                 "examples": {
                   "example": {
@@ -2013,7 +2040,12 @@
                         }
                       }
                     }
-                  }
+                  },
+                  "required": [
+                    "total",
+                    "took",
+                    "docs"
+                  ]
                 },
                 "examples": {
                   "example": {
@@ -2249,7 +2281,13 @@
                         }
                       }
                     }
-                  }
+                  },
+                  "required": [
+                    "took",
+                    "maxScore",
+                    "total",
+                    "docs"
+                  ]
                 },
                 "examples": {
                   "example": {
