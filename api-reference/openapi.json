@@ -61,6 +61,33 @@
       }
     },
     "schemas": {
+      "IDs": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of document IDs."
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "Filter": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "object",
+            "description": "Query filter."
+          }
+        },
+        "required": [
+          "filter"
+        ]
+      },
       "Status": {
         "title": "Status",
         "type": "string",
@@ -1773,31 +1800,10 @@
               "schema": {
                 "oneOf": [
                   {
-                    "type": "object",
-                    "properties": {
-                      "ids": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        },
-                        "description": "A list of document IDs."
-                      }
-                    },
-                    "required": [
-                      "ids"
-                    ]
+                    "$ref": "#/components/schemas/IDs"
                   },
                   {
-                    "type": "object",
-                    "properties": {
-                      "filter": {
-                        "type": "object",
-                        "description": "Query filter."
-                      }
-                    },
-                    "required": [
-                      "filter"
-                    ]
+                    "$ref": "#/components/schemas/Filter"
                   }
                 ]
               },
