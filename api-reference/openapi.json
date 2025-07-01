@@ -2037,7 +2037,11 @@
                           "doc": {
                             "type": "object"
                           }
-                        }
+                        },
+                        "required": [
+                          "collection",
+                          "doc"
+                        ]
                       }
                     }
                   },
@@ -2278,7 +2282,12 @@
                           "doc": {
                             "type": "object"
                           }
-                        }
+                        },
+                        "required": [
+                          "collection",
+                          "score",
+                          "doc"
+                        ]
                       }
                     }
                   },
