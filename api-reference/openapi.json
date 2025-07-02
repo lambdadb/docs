@@ -1136,7 +1136,8 @@
                   "docs": {
                     "type": "array",
                     "items": {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     "description": "A list of documents to upsert."
                   }
@@ -1625,7 +1626,8 @@
                   "docs": {
                     "type": "array",
                     "items": {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     "description": "A list of documents to update. Each document must contain 'id' field to be updated."
                   }
@@ -1814,6 +1816,7 @@
                     },
                     "filter": {
                       "type": "object",
+                      "additionalProperties": true,
                       "description": "Query filter."
                     }
                 }
@@ -2035,7 +2038,8 @@
                             "type": "string"
                           },
                           "doc": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": true
                           }
                         },
                         "required": [
@@ -2202,6 +2206,7 @@
                   },
                   "query": {
                     "type": "object",
+                    "additionalProperties": true,
                     "description": "Query object."
                   },
                   "consistentRead": {
@@ -2214,7 +2219,8 @@
                     "type": "array",
                     "description": "List of field name, sort direction pairs.",
                     "items": {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     }
                   },
                   "fields": {
@@ -2280,7 +2286,8 @@
                             "description": "Document similarity score."
                           },
                           "doc": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": true
                           }
                         },
                         "required": [
