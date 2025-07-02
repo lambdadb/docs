@@ -15,16 +15,12 @@
   ],
   "servers": [
     {
-      "url": "https://{baseUrl}/projects/{projectName}",
+      "url": "https://{baseUrl}",
       "description": "LambdaDB API endpoints",
       "variables": {
         "baseUrl": {
           "description": "The base URL of the API",
-          "default": "https://api.lambdadb.com"
-        },
-        "projectName": {
-          "description": "Project name.",
-          "default": "default"
+          "default": "api.lambdadb.com/projects/default"
         }
       }
     }
