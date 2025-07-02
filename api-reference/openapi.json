@@ -15,8 +15,18 @@
   ],
   "servers": [
     {
-      "url": "https://{baseUrl}",
-      "description": "LambdaDB API endpoints"
+      "url": "https://{baseUrl}/projects/{projectName}",
+      "description": "LambdaDB API endpoints",
+      "variables": {
+        "baseUrl": {
+          "description": "The base URL of the API",
+          "default": "https://api.lambdadb.com"
+        },
+        "projectName": {
+          "description": "Project name.",
+          "default": "default"
+        }
+      }
     }
   ],
   "x-speakeasy-retries": {
@@ -32,15 +42,6 @@
   },
   "components": {
     "parameters": {
-      "ProjectName": {
-        "in": "path",
-        "name": "projectName",
-        "description": "Project name.",
-        "required": true,
-        "schema": {
-          "type": "string"
-        }
-      },
       "CollectionName": {
         "in": "path",
         "name": "collectionName",
@@ -281,7 +282,7 @@
     }
   },
   "paths": {
-    "/projects/{projectName}/collections": {
+    "/collections": {
       "get": {
         "tags": ["collections"],
         "operationId": "listCollections",
@@ -289,11 +290,6 @@
         "security": [
           {
             "ProjectApiKey": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "responses": {
@@ -458,11 +454,6 @@
         "security": [
           {
             "ProjectApiKey": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
           }
         ],
         "requestBody": {
@@ -666,7 +657,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}": {
+    "/collections/{collectionName}": {
       "delete": {
         "tags": ["collections"],
         "operationId": "deleteCollection",
@@ -677,9 +668,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -787,9 +775,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -921,9 +906,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -1108,7 +1090,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/docs/upsert": {
+    "/collections/{collectionName}/docs/upsert": {
       "post": {
         "tags": ["collections.docs"],
         "operationId": "upsertDocs",
@@ -1119,9 +1101,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -1290,7 +1269,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/docs/bulk-upsert": {
+    "/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
         "tags": ["collections.docs"],
         "operationId": "getBulkUpsertDocs",
@@ -1301,9 +1280,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -1454,9 +1430,6 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/ProjectName"
-          },
-          {
             "$ref": "#/components/parameters/CollectionName"
           }
         ],
@@ -1598,7 +1571,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/docs/update": {
+    "/collections/{collectionName}/docs/update": {
       "post": {
         "tags": ["collections.docs"],
         "operationId": "updateDocs",
@@ -1609,9 +1582,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -1782,7 +1752,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/docs/delete": {
+    "/collections/{collectionName}/docs/delete": {
       "post": {
         "tags": ["collections.docs"],
         "operationId": "deleteDocs",
@@ -1793,9 +1763,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -1956,7 +1923,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/docs/fetch": {
+    "/collections/{collectionName}/docs/fetch": {
       "post": {
         "tags": ["collections.docs"],
         "operationId": "fetchDocs",
@@ -1967,9 +1934,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
@@ -2175,7 +2139,7 @@
         }
       }
     },
-    "/projects/{projectName}/collections/{collectionName}/query": {
+    "/collections/{collectionName}/query": {
       "post": {
         "tags": ["collections"],
         "operationId": "queryCollection",
@@ -2186,9 +2150,6 @@
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectName"
-          },
           {
             "$ref": "#/components/parameters/CollectionName"
           }
