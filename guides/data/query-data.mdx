@@ -45,7 +45,7 @@ Query results are returned in the following format:
 Example query request to LambdaDB is as follows:
 
 ```python python
-url = f"https://{baseUrl}/projects/{projectName}/collections/{collectionName}/query"
+url = f"https://{projectHost}/collections/{collectionName}/query"
 headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
 
 query = {

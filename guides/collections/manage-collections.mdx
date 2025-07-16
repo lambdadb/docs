@@ -11,7 +11,7 @@ Use this operation to get a complete description of all collections in a project
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/projects/{projectName}/collections" \
+curl -i -X GET "https://{projectHost}/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -44,7 +44,7 @@ Use the describe endpoint to get a complete description of a specific collection
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{baseUrl}/projects/{projectName}/collections/{collectionName}" \
+curl -i -X GET "https://{projectHost}/collections/{collectionName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
@@ -73,7 +73,7 @@ Use this operation to delete a collection and all of its associated resources:
 ```bash
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X DELETE "https://{baseUrl}/projects/{projectName}/collections/{collectionName}" \
+curl -i -X DELETE "https://{projectHost}/collections/{collectionName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```

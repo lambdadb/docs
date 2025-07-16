@@ -15,11 +15,11 @@
   ],
   "servers": [
     {
-      "url": "https://{baseUrl}",
+      "url": "https://{projectHost}",
       "description": "LambdaDB API endpoints",
       "variables": {
-        "baseUrl": {
-          "description": "The base URL of the API",
+        "projectHost": {
+          "description": "The project URL of the API",
           "default": "api.lambdadb.com/projects/default"
         }
       }
@@ -2189,7 +2189,7 @@
                   }
                 },
                 "required": [
-                  "size"
+                  "query"
                 ]
               },
               "examples": {
@@ -2257,7 +2257,6 @@
                   },
                   "required": [
                     "took",
-                    "maxScore",
                     "total",
                     "docs"
                   ]
