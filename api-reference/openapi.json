@@ -2249,7 +2249,6 @@
                         },
                         "required": [
                           "collection",
-                          "score",
                           "doc"
                         ]
                       }
