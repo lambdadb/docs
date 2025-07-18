@@ -16,7 +16,9 @@
           {
             "group": "Get started",
             "pages": [
-              "guides/overview/overview"
+              "guides/get-started/overview",
+              "guides/get-started/quickstart",
+              "guides/get-started/architecture"
             ]
           },
           {

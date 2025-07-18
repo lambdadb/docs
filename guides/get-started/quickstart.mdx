@@ -1,0 +1,268 @@
+---
+title: Quickstart
+---
+
+This guide will walk you through creating your first collection and performing hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
+
+## 🚀 Step 1: Install the SDK
+
+The LambdaDB SDK provides convenient access to the LambdaDB APIs.
+
+```python
+pip install lambdadb
+```
+
+<Tip>
+    We recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
+</Tip>
+
+## 🔑 Step 2: Get Your API Key
+
+To use LambdaDB, you'll need an API key. Fill out [this form](https://share-na2.hsforms.com/1vBeXGa1ETXupo4_mIrtoEA40td9f) to obtain playground credentials.
+
+<Note>
+    Keep your API key secure and consider storing it in environment variables rather than hardcoding it in your scripts.
+</Note>
+
+## 📚 Step 3: Create a Collection
+
+A collection is where you'll store your documents and define how they should be indexed for search. LambdaDB supports 9 different index types: text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
+
+Let's create a collection that combines text search with vector similarity:
+
+```python
+from lambdadb import LambdaDB, models
+
+# Initialize the LambdaDB client
+lambda_db = LambdaDB(
+    server_url="your_project_url_here", # Replace with your project url
+    project_api_key="your_api_key_here"  # Replace with your actual API key
+)
+
+collection_name = "quickstart"
+
+# Create collection with text and vector indexes
+res = lambda_db.collections.create(
+    collection_name=collection_name,
+    index_configs={
+        "text": {
+            "type": models.TypeText.TEXT,
+            "analyzers": [
+                models.Analyzer.ENGLISH,  # English text support
+                models.Analyzer.KOREAN    # Korean text support
+            ],
+        },
+        "vector": {
+            "type": models.TypeVector.VECTOR,
+            "dimensions": 10,                        # Vector dimension
+            "similarity": models.Similarity.COSINE,  # Cosine similarity metric
+        },
+    }
+)
+```
+
+Response:
+
+```python
+CreateCollectionResponse(
+    collection=CollectionResponse(
+        project_name='testProject',
+        collection_name='quickstart',
+        index_configs={
+            'text': IndexConfigsText(
+                type=<TypeText.TEXT: 'text'>,
+                analyzers=[<Analyzer.ENGLISH: 'english'>, <Analyzer.KOREAN: 'korean'>]
+            ),
+            'keyword': IndexConfigs(type=<Type.KEYWORD: 'keyword'>),
+            'vector': IndexConfigsVector(
+                type=<TypeVector.VECTOR: 'vector'>,
+                dimensions=10,
+                similarity=<Similarity.COSINE: 'cosine'>
+            ),
+            'id': IndexConfigs(type=<Type.KEYWORD: 'keyword'>)
+        },
+        num_docs=0,
+        collection_status=<Status.CREATING: 'CREATING'>,
+        source_project_name=None,
+        source_collection_name=None,
+        source_collection_version_id=None
+    )
+)
+```
+
+**Key Configuration Details:**
+- **Text field**: Supports multilingual search with English and Korean analyzers
+- **Vector field**: 10-dimensional vectors using cosine similarity
+- **Keyword field**: Added to support exact match filtering.
+
+## 📄 Step 4: Add Documents
+
+Now let's add some sample documents. Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
+
+```python
+# Prepare sample documents
+docs = [
+    {
+        "id": "doc1",
+        "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.",
+        "keyword": "serverless",
+        "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    },
+    {
+        "id": "doc2",
+        "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.",
+        "keyword": "cloud",
+        "vector": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
+    },
+    {
+        "id": "doc3",
+        "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.",
+        "keyword": ["serverless", "infrastructure"],  # Multiple keywords supported
+        "vector": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
+    }
+]
+
+# Upload documents to the collection
+lambda_db.collections.docs.upsert(
+    collection_name=collection_name,
+    docs=docs
+)
+```
+
+Response:
+
+```python
+MessageResponse(message='Upsert request is accepted')
+```
+
+**Important Notes:**
+
+- **Upsert behavior**: Documents with the same ID will be updated; new IDs create new documents
+- **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically
+- **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality
+- **Eventually consistent**: LambdaDB is eventually consistent, so there can be a slight delay before new or changed documents are visible to queries
+
+**Check indexing status:** You can view collection stats to verify that your documents have been indexed:
+
+```python
+# Check collection status and document count
+res = lambda_db.collections.get(collection_name="quickstart")
+```
+
+## 🔍 Step 5: Full-Text Search
+
+Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". This demonstrates LambdaDB's powerful query capabilities:
+
+```python
+res = lambda_db.collections.query(
+    collection_name=collection_name,
+    size=10,
+    query={
+        "bool": [
+            {
+                "queryString": {
+                    "query": "I hate managing servers",  # Main search query
+                    "defaultField": "text"               # Search in text field
+                }
+            },
+            {
+                "queryString": {
+                    "query": "keyword:serverless"       # Filter by keyword
+                },
+                "occur": "must"
+            }
+        ]
+    }
+)
+
+# Display results
+print("🔍 Search Results:")
+for result in res.docs:
+    doc_id = str(result.doc['id'])
+    score = f"{result.score:.2f}"
+    keyword = str(result.doc['keyword'])
+    text = str(result.doc['text'])
+
+    print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
+```
+
+Response:
+
+```python
+doc3  | 0.92  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc1  | 0.48  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+```
+
+Why these results? doc3 scored highest because it directly mentions "manage servers", while doc1 matched on "server management" and "serverless computing".
+
+## 🔍 Step 6: Hybrid Search
+
+Now let's combine full-text search with vector similarity for more comprehensive results. This is where LambdaDB really shines:
+
+```python
+res = lambda_db.collections.query(
+    collection_name=collection_name,
+    size=10,
+    query={
+        "l2": [  # L2 normalization combines scores
+            {
+                "queryString": {
+                    "query": "I hate managing servers",
+                    "defaultField": "text"
+                }
+            },
+            {
+                "knn": {  # K-nearest neighbors vector search
+                    "field": "vector",
+                    "k": 5,
+                    "queryVector": [
+                        0.9, 0.8, 0.7, 0.6, 0.5,
+                        0.4, 0.3, 0.2, 0.1, 1.0
+                    ]
+                }
+            }
+        ]
+    }
+)
+
+# Display hybrid search results
+print("🔄 Hybrid Search Results:")
+for result in res.docs:
+    doc_id = str(result.doc['id'])
+    score = f"{result.score:.2f}"
+    keyword = str(result.doc['keyword'])
+    text = str(result.doc['text'])
+
+    print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
+```
+
+Response:
+
+```python
+doc3  | 0.71  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc2  | 0.52  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
+doc1  | 0.43  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+```
+
+**Score Normalization Options:**
+- `rrf` (Reciprocal Rank Fusion): Great for combining rankings from different search methods
+- `l2` (L2 Normalization): Normalizes scores using L2 norm
+- `mm` (Min-Max Normalization): Simple linear scaling to 0-1 range
+
+## 🧹 Step 7: Clean Up
+
+When you're finished experimenting, clean up your resources:
+
+```python
+lambda_db.collections.delete(collection_name=collection_name)
+```
+
+## 🚀 Next Steps
+
+- **Advanced Queries**: Explore complex patterns in our [Query Guide](https://docs.lambdadb.ai/guides/data/query-data)
+- **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](https://docs.lambdadb.ai/guides/data/bulk-upsert-data)
+- **API Reference**: Comprehensive documentation at our [API Reference](https://docs.lambdadb.ai/api-reference/introduction)
+
+## 🤝 Support
+
+Need help? Visit our [community forum](https://discord.com/channels/1394545889367949402/1394545891045806173) for support and discussions.
