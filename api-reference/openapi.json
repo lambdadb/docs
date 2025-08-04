@@ -119,7 +119,7 @@
                   "description": "Vector similarity metric.",
                   "enum": [
                     "cosine",
-                    "l2_norm",
+                    "euclidean",
                     "dot_product",
                     "max_inner_product"
                   ],
