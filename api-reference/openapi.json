@@ -151,6 +151,25 @@
               "required": [
                 "type"
               ]
+            },
+            {
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "object"
+                  ]
+                },
+                "objectIndexConfigs": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "objectIndexConfigs"
+              ]
             }
           ]
         }
