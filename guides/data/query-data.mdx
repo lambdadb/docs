@@ -35,12 +35,12 @@ Common parameters for the request body of a query are as follows:
 
 Query results are returned in the following format:
 
-| Field    | Description                                      | Type      |
-| -------- | ------------------------------------------------ | --------- |
+| Field    | Description                                          | Type      |
+| -------- | ---------------------------------------------------- | --------- |
 | took     | Milliseconds it took LambdaDB to execute the request | long      |
-| maxScore | Highest returned document `score`                | float     |
-| total    | Metadata about the number of matching documents  | long      |
-| docs     | Contains returned documents and metadata         | object[]  |
+| maxScore | Highest returned document `score`                    | float     |
+| total    | Metadata about the number of matching documents      | long      |
+| docs     | Contains returned documents and metadata             | object[]  |
 
 Example query request to LambdaDB is as follows:
 
@@ -86,10 +86,11 @@ and a configured `similarity metric` for vector search.
 LambdaDB supports a simple query string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_1_0/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
 Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operators`, and `special character escaping` are supported.
 
-| Parameter    | Description                       | Type    | Required |
-| ------------ | --------------------------------- | ------- | -------- |
-| query        | Query string                      | object  | ✓        |
-| defaultField | Default field name to apply query | string  |          |
+| Parameter    | Description                              | Type     | Required | Default |
+| ------------ | ---------------------------------------- | -------  | -------- | ------- |
+| query        | Query string                             | object   | ✓        |         |
+| defaultField | Default field name to apply query        | string   |          | ""      |
+| skipSyntax   | Skip syntax check for special characters | boolean  |          | false   |
 
 A query to a collection with `object` field type requires special handling.
 

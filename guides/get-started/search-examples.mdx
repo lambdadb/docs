@@ -1,0 +1,623 @@
+---
+title: Search Examples
+---
+
+This guide demonstrates three powerful search techniques using the `cohere-wikipedia-en-100k` collection in the playground project. Each example showcases different approaches to finding the most relevant information from your data.
+
+## 🚀 Prerequisites
+
+Before running these examples, ensure you have:
+
+**Required Credentials:**
+
+- **Cohere API key** from [cohere.com](https://www.cohere.com/)
+- **LambdaDB playground project API key**
+
+<Tip>
+
+Fill out [this form](https://share-na2.hsforms.com/1vBeXGa1ETXupo4_mIrtoEA40td9f) to obtain playground credentials.
+
+</Tip>
+
+**Installation:**
+
+```bash
+pip install cohere lambdadb
+```
+
+## ⚙️ Initial Setup
+
+```python
+import cohere
+from lambdadb import LambdaDB
+
+# Initialize clients
+co = cohere.Client("<YOUR_COHERE_API_KEY>")
+lambda_db = LambdaDB(
+    server_url="<PLAYGROUND_PROJECT_URL>",
+    project_api_key="<YOUR_LAMBDADB_API_KEY>"
+)
+
+collection_name = "cohere-wikipedia-en-100k"
+
+def generate_embedding(query_text):
+    """Generate embedding for search queries"""
+    response = co.embed(
+        texts=[query_text],
+        model="embed-multilingual-v3.0",
+        input_type="search_query"
+    )
+    return response.embeddings[0]
+
+def display_results(results, title, description=""):
+    """Display search results in a consistent format"""
+    print(f"\n{'='*60}")
+    print(f"🔍 {title}")
+    if description:
+        print(f"📝 {description}")
+    print(f"📊 Found {len(results.docs)} results")
+    print(f"{'='*60}")
+
+    for i, result in enumerate(results.docs, 1):
+        print(f"\n--- Result {i} ---")
+        print(f"Title: {result.doc['title']}")
+        print(f"URL: {result.doc['url']}")
+        print(f"Score: {result.score}")
+        print(f"Text Preview: {result.doc['text'][:200]}...")
+        print("-" * 50)
+
+```
+
+## 🎯 Example 1: Hybrid Search with Combined Scoring
+
+**💡 When to use:** This is your go-to search method when you want the most comprehensive and accurate results. Perfect for general queries where you need both keyword relevance and semantic understanding.
+
+**🔧 How it works:** Combines traditional full-text search with vector similarity using hybrid scoring strategies like Reciprocal Rank Fusion(`rrf`), L2 distance(`l2`), or Min-Max(`mm`) normalization—flexibly choosing the best fit for your use case.
+
+<Tip>
+
+Check out [this page](/guides/data/query-data#hybrid-query) for more details about hybrid query and scoring.
+
+</Tip>
+
+```python
+def hybrid_search_example():
+    """
+    Hybrid search combines keyword matching with semantic similarity
+    Best for: General queries requiring comprehensive results
+    """
+    # User query
+    user_query = "When is Taylor Lautner, who appeared in Twilight,'s birthday?"
+
+    # Generate embedding
+    query_vector = generate_embedding(user_query)
+
+    # Hybrid search with RRF
+    hybrid_query = {
+        "rrf": [
+            # Full-text search component
+            {
+                "queryString": {
+                    "query": user_query,
+                    "defaultField": "text",
+                    "skipSyntax": True  # Handles special characters safely
+                }
+            },
+            # Vector similarity component
+            {
+                "knn": {
+                    "field": "vector",
+                    "k": 5,  # Vector search candidates
+                    "queryVector": query_vector
+                }
+            }
+        ]
+    }
+
+    # Execute search
+    results = lambda_db.collections.query(
+        collection_name=collection_name,
+        size=3,  # Return top 3 results
+        query=hybrid_query
+    )
+
+    display_results(
+        results,
+        "Hybrid Search with RRF",
+        "Combines keyword and semantic search for comprehensive results"
+    )
+
+    return results
+
+# Run the example
+hybrid_results = hybrid_search_example()
+
+```
+
+**Expected Results:**
+
+```
+============================================================
+🔍 Hybrid Search with RRF
+📝 Combines keyword and semantic search for comprehensive results
+📊 Found 3 results
+============================================================
+
+--- Result 1 ---
+Title: Taylor Lautner
+URL: https://en.wikipedia.org/wiki/Taylor%20Lautner
+Score: 1.0
+Text Preview: Taylor Daniel Lautner (; born February 11, 1992) is an American actor. He is best known for playing werewolf  Jacob Black in The Twilight Saga film series (2008–2012)....
+--------------------------------------------------
+
+--- Result 2 ---
+Title: Taylor Lautner
+URL: https://en.wikipedia.org/wiki/Taylor%20Lautner
+Score: 0.4919355
+Text Preview: Lautner was initially supposed to be in two films, Northern Lights and a movie based on Max Steel, but pulled out of both films due to scheduling conflicts and better offers. Other planned projects we...
+--------------------------------------------------
+
+--- Result 3 ---
+Title: Taylor Lautner
+URL: https://en.wikipedia.org/wiki/Taylor%20Lautner
+Score: 0.4919355
+Text Preview: Although it began after the release of the first film, upon release of New Moon, Lautner and his co-stars Stewart and Pattinson transitioned to teen idol status, with Lautner particularly admired by t...
+--------------------------------------------------
+```
+
+## 🏷️ Example 2: Hybrid Search with Keyword Filtering
+
+**💡 When to use:** Perfect when you want to search within a specific category or document type. Use this when you know the general category but need semantic ranking within that subset.
+
+**🔧 How it works:** First filters documents by specific keywords (like titles starting with "List"), then applies semantic search within those filtered results.
+
+```python
+def keyword_filtering_example():
+    """
+    Keyword filtering + vector search for category-specific results
+    Best for: Searching within specific document types or categories
+    """
+    # User query and filter
+    user_query = "I want to know the list of global movie theater chains."
+    keyword_filter = "List*"  # Find titles starting with "List"
+
+    # Generate embedding
+    query_vector = generate_embedding(user_query)
+
+    # Filtered search query
+    filtered_query = {
+        "rrf": [
+            # Boolean query with filtering
+            {
+                "bool": [
+                    {
+                        "queryString": {
+                            "query": user_query,
+                            "defaultField": "text",
+                            "skipSyntax": True # Handle special characters in user input
+                        },
+                        "occur": "should"  # Optional text match
+                    },
+                    {
+                        "queryString": {
+                            "query": keyword_filter,
+                            "defaultField": "title"
+                        },
+                        "occur": "must"  # Required filter
+                    }
+                ]
+            },
+            # Vector similarity within filtered results
+            {
+                "knn": {
+                    "field": "vector",
+                    "k": 5,
+                    "queryVector": query_vector
+                }
+            }
+        ]
+    }
+
+    # Execute search
+    results = lambda_db.collections.query(
+        collection_name=collection_name,
+        size=3,
+        query=filtered_query
+    )
+
+    display_results(
+        results,
+        "Hybrid Search + Keyword Filtering",
+        "Filters by document title, then ranks semantically"
+    )
+
+    return results
+
+# Run the example
+filtered_results = keyword_filtering_example()
+
+```
+
+**Expected Results:**
+
+```
+============================================================
+🔍 Hybrid Search + Keyword Filtering
+📝 Filters by document title, then ranks semantically
+📊 Found 3 results
+============================================================
+
+--- Result 1 ---
+Title: List of movie theater chains
+URL: https://en.wikipedia.org/wiki/List%20of%20movie%20theater%20chains
+Score: 1.0
+Text Preview: This is a list of movie theater chains across the world. The chains of movie theaters are listed alphabetically by continent and then by country....
+--------------------------------------------------
+
+--- Result 2 ---
+Title: List of movie theater chains
+URL: https://en.wikipedia.org/wiki/List%20of%20movie%20theater%20chains
+Score: 0.4919355
+Text Preview: CJ CGV – largest multiplex cinema chain of Korea, with 1,201 screens worldwide and more than 100 million viewers worldwide...
+--------------------------------------------------
+
+--- Result 3 ---
+Title: List of supermarket chains in Canada
+URL: https://en.wikipedia.org/wiki/List%20of%20supermarket%20chains%20in%20Canada
+Score: 0.4919355
+Text Preview: This is a list of supermarket chains in Canada. For supermarkets operating in other countries, see List of supermarket chains....
+--------------------------------------------------
+```
+
+**💡 Tip:** To apply the keyword filter to semantic search as well, move it to the `filter` parameter within the `knn` query:
+
+```python
+{
+    "knn": {
+        "filter": {
+            "queryString": {
+                "query": "List*",
+                "defaultField": "title"            }
+        },
+        "field": "vector",
+        "k": 5,
+        "queryVector": query_vector
+    }
+}
+
+```
+
+## 🎯 Example 3: Vector Search with Exact Match Filtering
+
+**💡 When to use:** Ideal when you know the exact document or URL and want to find the most relevant content within it. Perfect for document-specific Q&A scenarios.
+
+**🔧 How it works:** Filters to an exact URL match, then uses vector similarity to rank the most relevant sections within that specific document.
+
+```python
+def exact_match_filtering_example():
+    """
+    Exact match filtering + vector search for document-specific queries
+    Best for: Finding specific information within a known document
+    """
+    # Specific document and query
+    target_url = "https://en.wikipedia.org/wiki/The%20Top%20Ten%20Club"
+    user_query = "How many times did The Beatles perform at the Top Ten Club?"
+
+    # Generate embedding
+    query_vector = generate_embedding(user_query)
+
+    # Exact match query
+    exact_match_query = {
+        "knn": {
+            "filter": {
+                "queryString": {
+                    "query": target_url,
+                    "defaultField": "url",
+                    "skipSyntax": True  # URLs contain special characters
+                },
+                "occur": "must"
+            },
+            "field": "vector",
+            "k": 5,
+            "queryVector": query_vector
+        }
+    }
+
+    # Execute search
+    results = lambda_db.collections.query(
+        collection_name=collection_name,
+        size=3,
+        query=exact_match_query
+    )
+
+    display_results(
+        results,
+        "Exact Match Filtering + Vector Search",
+        "Searches within a specific document using semantic ranking"
+    )
+
+    return results
+
+# Run the example
+exact_match_results = exact_match_filtering_example()
+
+```
+
+**Expected Results:**
+
+```
+============================================================
+🔍 Exact Match Filtering + Vector Search
+📝 Searches within a specific document using semantic ranking
+📊 Found 3 results
+============================================================
+
+--- Result 1 ---
+Title: The Top Ten Club
+URL: https://en.wikipedia.org/wiki/The%20Top%20Ten%20Club
+Score: 0.8863629
+Text Preview: The Beatles appeared back at the Top Ten Club with Tony Sheridan from 1 April 1 to 1 July 1961. The Beatles and Tony Sheridan performed continuously for 92 nights in the Top Ten Club. It should have ...
+--------------------------------------------------
+
+--- Result 2 ---
+Title: The Top Ten Club
+URL: https://en.wikipedia.org/wiki/The%20Top%20Ten%20Club
+Score: 0.85881656
+Text Preview: documented the Beatles' visit to the Top Ten Club in 1961. The reportage did not appear in Quick until 1966.   photographed the Beatles by chance when he commissioned a trade union newspaper in Ten Cl...
+--------------------------------------------------
+
+--- Result 3 ---
+Title: The Top Ten Club
+URL: https://en.wikipedia.org/wiki/The%20Top%20Ten%20Club
+Score: 0.8185468
+Text Preview: The Beatles, who, until 31 December 1960, were under contract with Bruno Koschmider, the owner of Kaiserkeller, often visited Top Ten Club, where Tony Sheridan performed with his Jets. They also playe...
+--------------------------------------------------
+```
+
+## 🔧 Complete Working Example
+
+Here's a complete script that runs all three examples with proper error handling:
+
+```python
+import cohere
+from lambdadb import LambdaDB
+
+class WikipediaSearchExamples:
+    def __init__(self, cohere_api_key, lambdadb_api_key):
+        """Initialize the search examples with API credentials"""
+        self.co = cohere.Client(cohere_api_key)
+        self.lambda_db = LambdaDB(
+            server_url="<PLAYGROUND_PROJECT_URL>",
+            project_api_key=lambdadb_api_key
+        )
+        self.collection_name = "cohere-wikipedia-en-100k"
+
+    def generate_embedding(self, text):
+        """Generate embedding for search queries"""
+        try:
+            response = self.co.embed(
+                texts=[text],
+                model="embed-multilingual-v3.0",
+                input_type="search_query"
+            )
+            return response.embeddings[0]
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            return None
+
+    def run_hybrid_search(self):
+        """Example 1: Hybrid Search with RRF"""
+        user_query = "When is Taylor Lautner, who appeared in Twilight,'s birthday?"
+        query_vector = self.generate_embedding(user_query)
+
+        if not query_vector:
+            return None
+
+        query = {
+            "rrf": [
+                {
+                    "queryString": {
+                        "query": user_query,
+                        "defaultField": "text",
+                        "skipSyntax": True
+                    }
+                },
+                {
+                    "knn": {
+                        "field": "vector",
+                        "k": 5,
+                        "queryVector": query_vector
+                    }
+                }
+            ]
+        }
+
+        return self.lambda_db.collections.query(
+            collection_name=self.collection_name,
+            size=3,
+            query=query
+        )
+
+    def run_keyword_filtering(self):
+        """Example 2: Keyword Filtering with Vector Search"""
+        user_query = "I want to know the list of global movie theater chains."
+        query_vector = self.generate_embedding(user_query)
+
+        if not query_vector:
+            return None
+
+        query = {
+            "rrf": [
+                {
+                    "bool": [
+                        {
+                            "queryString": {
+                                "query": user_query,
+                                "defaultField": "text",
+                                "skipSyntax": True
+                            },
+                            "occur": "should"
+                        },
+                        {
+                            "queryString": {
+                                "query": "List*",
+                                "defaultField": "title"                            },
+                            "occur": "must"
+                        }
+                    ]
+                },
+                {
+                    "knn": {
+                        "field": "vector",
+                        "k": 5,
+                        "queryVector": query_vector
+                    }
+                }
+            ]
+        }
+
+        return self.lambda_db.collections.query(
+            collection_name=self.collection_name,
+            size=3,
+            query=query
+        )
+
+    def run_exact_match(self):
+        """Example 3: Exact Match Filtering with Vector Search"""
+        target_url = "https://en.wikipedia.org/wiki/The%20Top%20Ten%20Club"
+        user_query = "How many times did The Beatles perform at the Top Ten Club?"
+        query_vector = self.generate_embedding(user_query)
+
+        if not query_vector:
+            return None
+
+        query = {
+            "knn": {
+                "filter": {
+                    "queryString": {
+                        "query": target_url,
+                        "defaultField": "url",
+                        "skipSyntax": True
+                    },
+                    "occur": "must"
+                },
+                "field": "vector",
+                "k": 5,
+                "queryVector": query_vector
+            }
+        }
+
+        return self.lambda_db.collections.query(
+            collection_name=self.collection_name,
+            size=3,
+            query=query
+        )
+
+    def display_results(self, results, title, description=""):
+        """Display search results in a consistent format"""
+        if not results:
+            print(f"❌ Failed to get results for {title}")
+            return
+
+        print(f"\n{'='*60}")
+        print(f"🔍 {title}")
+        if description:
+            print(f"📝 {description}")
+        print(f"📊 Found {len(results.docs)} results")
+        print(f"{'='*60}")
+
+        for i, result in enumerate(results.docs, 1):
+            print(f"\n--- Result {i} ---")
+            print(f"Title: {result.doc['title']}")
+            print(f"URL: {result.doc['url']}")
+            print(f"Score: {result.score}")
+            print(f"Text Preview: {result.doc['text'][:200]}...")
+            print("-" * 50)
+
+    def run_all_examples(self):
+        """Run all three search examples"""
+        print("🚀 Running LambdaDB Playground Search Examples")
+        print("=" * 60)
+
+        # Example 1: Hybrid Search
+        hybrid_results = self.run_hybrid_search()
+        self.display_results(
+            hybrid_results,
+            "Hybrid Search with RRF",
+            "Combines keyword and semantic search for comprehensive results"
+        )
+
+        # Example 2: Keyword Filtering
+        filtered_results = self.run_keyword_filtering()
+        self.display_results(
+            filtered_results,
+            "Keyword Filtering + Vector Search",
+            "Filters by document type, then ranks semantically"
+        )
+
+        # Example 3: Exact Match
+        exact_results = self.run_exact_match()
+        self.display_results(
+            exact_results,
+            "Exact Match Filtering + Vector Search",
+            "Searches within a specific document using semantic ranking"
+        )
+
+        return hybrid_results, filtered_results, exact_results
+
+# Usage Example
+if __name__ == "__main__":
+    # Initialize with your API keys
+    examples = WikipediaSearchExamples(
+        cohere_api_key="YOUR_COHERE_API_KEY",
+        lambdadb_api_key="YOUR_LAMBDADB_API_KEY"
+    )
+
+    # Run all examples
+    try:
+        results = examples.run_all_examples()
+        print("\n✅ All examples completed successfully!")
+    except Exception as e:
+        print(f"❌ Error running examples: {e}")
+
+```
+
+---
+
+## 📋 Search Method Comparison
+
+| Method | Best For | Advantages | Use Cases |
+| --- | --- | --- | --- |
+| **Hybrid Search** | General queries | Best overall accuracy, combines keyword + semantic | User questions, general search |
+| **Keyword Filtering** | Category-specific search | Fast filtering + semantic ranking | Document type filtering, topic-specific search |
+| **Exact Match** | Document-specific queries | Precise targeting within known documents | Q&A on specific pages, document analysis |
+
+---
+
+## 🎯 Best Practices
+
+### ✅ Configuration Tips
+
+- **Set `skipSyntax: true`** for user inputs that may contain special characters
+- **Use appropriate `k` values** (5-20 for most use cases)
+- **Choose RRF** for best overall search quality
+- **Apply filters in `knn.filter`** for semantic search within filtered results
+
+### 🚀 Performance Optimization
+
+- Use smaller `k` values for faster vector search
+- Combine multiple filters in boolean queries for precise targeting
+- Consider using `l2` or `mm` (min-max) normalization for simpler score interpretation
+
+---
+
+## **➡️ Next Step**
+
+- **Apply for early access:** https://40td9f.share-na2.hsforms.com/2Ckykg-UgT1K1oqAtWG3zMQ
+
+## **🤝 Support**
+
+Need help with your implementation? Check out our:
+
+- **API reference:** [Comprehensive documentation for developers](/api-reference/introduction)
+- **Community forum:** [Get help from other developers](https://discord.gg/dnKm7WUHWg)

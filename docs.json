@@ -18,6 +18,7 @@
             "pages": [
               "guides/get-started/overview",
               "guides/get-started/quickstart",
+              "guides/get-started/search-examples",
               "guides/get-started/architecture"
             ]
           },

@@ -137,10 +137,11 @@ MessageResponse(message='Upsert request is accepted')
 
 **Important Notes:**
 
-- **Upsert behavior**: Documents with the same ID will be updated; new IDs create new documents
-- **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically
-- **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality
-- **Eventually consistent**: LambdaDB is eventually consistent, so there can be a slight delay before new or changed documents are visible to queries
+- **Upsert behavior**: Documents with the same ID will be updated; new IDs create new documents.
+- **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
+- **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
+- **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
+If your application require strong (read-after-write) consistency, set `consistentRead` to `true` when query or fetch data from a collection. 
 
 **Check indexing status:** You can view collection stats to verify that your documents have been indexed:
 
@@ -259,10 +260,10 @@ lambda_db.collections.delete(collection_name=collection_name)
 
 ## 🚀 Next Steps
 
-- **Advanced Queries**: Explore complex patterns in our [Query Guide](https://docs.lambdadb.ai/guides/data/query-data)
-- **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](https://docs.lambdadb.ai/guides/data/bulk-upsert-data)
-- **API Reference**: Comprehensive documentation at our [API Reference](https://docs.lambdadb.ai/api-reference/introduction)
+- **Advanced Queries**: Explore complex patterns in our [Query Guide](/guides/data/query-data)
+- **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](/guides/data/bulk-upsert-data)
+- **API Reference**: Comprehensive documentation at our [API Reference](/api-reference/introduction)
 
 ## 🤝 Support
 
-Need help? Visit our [community forum](https://discord.com/channels/1394545889367949402/1394545891045806173) for support and discussions.
+Need help? Visit our [Community Forum](https://discord.gg/dnKm7WUHWg) for support and discussions.
