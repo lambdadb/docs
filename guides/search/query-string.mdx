@@ -1,0 +1,142 @@
+LambdaDB supports a simple query string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_2_2/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
+
+Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operators`, and `special character escaping` are supported.
+
+## Parameters
+
+| Parameter    | Description                              | Type     | Required | Default |
+|--------------|------------------------------------------|----------|----------|---------|
+| query        | Query string                             | object   | ✓        |         |
+| defaultField | Default field name to apply query        | string   |          |         |
+| skipSyntax   | Skip syntax check for special characters | boolean  |          | false   |
+
+> **Note:** A query to a collection with `object` field type requires special handling.
+
+## Examples
+
+### Basic Query
+
+```json
+{
+  "queryString": {
+    "query": "hello world",
+    "defaultField": "text"
+  }
+}
+```
+
+The above example is equivalent to:
+
+```json
+{
+  "queryString": {
+    "query": "text:hello OR text:world",
+  }
+}
+```
+
+You can also query multiple fields by specifying field names in the query string. Terms are separated by spaces, and specific fields are targeted using the `field:value` syntax:
+```json
+{
+  "queryString": {
+    "query": "hello world keyword:python",
+    "defaultField": "text"
+  }
+}
+```
+
+For handling special characters, use the `skipSyntax` option:
+
+```json
+{
+  "queryString": {
+    "query": "hello! world?",
+    "defaultField": "text",
+    "skipSyntax": true
+  }
+}
+```
+
+### Exact Match Query
+
+```json
+{
+  "queryString": {
+    "query": "keyword",
+    "defaultField": "keyword"
+  }
+}
+```
+
+If the keyword includes special characters, you can use the `skipSyntax` option:
+
+```json
+{
+  "queryString": {
+    "query": "https://sample_url.com",
+    "defaultField": "keyword",
+    "skipSyntax": true
+  }
+}
+```
+
+Alternatively, wrap them in double quotes (")
+
+```json
+{
+  "queryString": {
+    "query": '"https://sample_url.com"',
+    "defaultField": "keyword"
+  }
+}
+```
+
+To search for keywords that contain spaces, you need to wrap them in double quotes (").
+For example, to search for the phrase hello world as a single keyword, use:
+
+```json
+{
+  "queryString": {
+    "query": '"hello world"',
+    "defaultField": "keyword"
+  }
+}
+```
+
+
+### Range Query
+
+Range queries allow you to search for values within a specific range using range query syntax.
+
+#### Supported Field Types
+Range queries work with the following field types:
+
+long - Integer numbers
+double - Floating-point numbers
+date - Date and datetime values
+
+Note: While keyword fields are technically supported, range queries on text or keyword fields may not execute if search.allow_expensive_queries is disabled for performance reasons.
+
+#### Syntax
+
+- **Inclusive range**: `[min TO max]` - includes both lower and upper bounds
+- **Exclusive range**: `{min TO max}` - excludes both lower and upper bounds
+
+```json
+{
+  "queryString": {
+    "query": "[123 TO 456]",
+    "defaultField": "long"
+  }
+}
+```
+
+
+```json
+{
+  "queryString": {
+    "query": "{2024-03-10T09:15:45Z TO 2024-03-10T09:15:46Z}",
+    "defaultField": "datetime"
+  }
+}
+```

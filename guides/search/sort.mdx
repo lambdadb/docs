@@ -1,0 +1,62 @@
+# Sort
+
+LambdaDB allows you to add one or more sorts on specific fields. Each sort can be reversed as well. The sort is defined on a per field level.
+
+<Note>
+Sorting can be done on the following data types:
+* `long`
+* `double`
+* `datetime`
+</Note>
+
+## Parameters
+
+| Parameter | Description                        | Type   | Required | Values      |
+|-----------|-----------------------------------|--------|----------|-------------|
+| field     | Field name to sort by             | string | ✓        | -           |
+| order     | Sort order direction              | string |          | asc, desc   |
+
+### Sort Order Options
+
+| Value | Description                |
+|-------|----------------------------|
+| asc   | Sorts in ascending order   |
+| desc  | Sorts in descending order  |
+
+## Usage
+
+The sort parameter accepts an array of sort objects, allowing multiple field sorting with different orders.
+
+```python python
+lambda_db = LambdaDB(
+    server_url="SERVER_URL",
+    project_api_key="YOUR_API_KEY",
+)
+
+results = lambda_db.collections.query(
+    collection_name=collection_name,
+    query={},
+    size=10,
+    sort=[{"field1": "desc"}, {"field2": "asc"}],
+)
+```
+
+## Examples
+
+### Single Field Sort
+
+```json
+# Sort by timestamp in descending order (newest first)
+sort=[{"timestamp": "desc"}]
+```
+
+### Multiple Field Sort
+
+```json
+# Sort by priority (desc) first, then by created_date (asc)
+[{"priority": "desc"}, {"created_date": "asc"}]
+```
+
+<Note>
+When multiple sort fields are specified, the sorting is applied in the order they appear in the array. Documents are first sorted by the first field, then by the second field for documents with the same first field value, and so on.
+</Note>

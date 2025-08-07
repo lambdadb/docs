@@ -32,14 +32,26 @@
             ]
           },
           {
-            "group": "Data",
+            "group": "Documents",
             "pages": [
-              "guides/data/upsert-data",
-              "guides/data/bulk-upsert-data",
-              "guides/data/update-data",
-              "guides/data/query-data",
-              "guides/data/fetch-data",
-              "guides/data/delete-data"
+              "guides/documents/upsert-data",
+              "guides/documents/bulk-upsert-data",
+              "guides/documents/update-data",
+              "guides/documents/fetch-data",
+              "guides/documents/delete-data"
+            ]
+          },
+          {
+            "group": "Search",
+            "pages": [
+              "guides/search/overview",
+              "guides/search/query-string",
+              "guides/search/boolean",
+              "guides/search/vector",
+              "guides/search/sparse-vector",
+              "guides/search/hybrid",
+              "guides/search/sort",
+              "guides/search/limits"
             ]
           }
         ]
@@ -73,7 +85,7 @@
                 ]
               },
               {
-                "group": "Query",
+                "group": "Search",
                 "pages": [
                   "api-reference/endpoint/document-query"
                 ]

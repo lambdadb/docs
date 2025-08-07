@@ -1,0 +1,57 @@
+---
+title: Fetch data
+---
+
+This page shows you how to use the fetch endpoint to fetch documents by ID from a collection.
+
+| Parameter      | Description                                                   | Type       | Required | Default |
+| -------------- | ------------------------------------------------------------- | ---------- | -------- | ------- |
+| ids            | The document IDs to fetch up to 1,000.                        | string[]   | ✓        |         |
+| includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
+| consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
+
+To fetch documents, specify the document IDs (up to 100 IDs).
+
+<Tabs>
+<Tab title="Python">
+```python
+res_fetch = lambda_db.collections.docs.fetch(
+    collection_name=collection_name, 
+    ids=["33201222"], 
+    include_vectors=True
+)
+```
+</Tab>
+
+<Tab title="cURL">
+```bash
+curl -X POST "https://${PROJECT_HOST}/collections/${COLLECTION_NAME}/fetch" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${YOUR_API_KEY}" \
+  -d '{
+    "ids": ["33201222"],
+    "includeVectors": true
+  }'
+```
+</Tab>
+</Tabs>
+
+The response will look like this:
+
+```json
+{
+  "took": 76,
+  "total": 1,
+  "docs": [
+    {
+      "collection": "example_collection",
+      "score": 1.0,
+      "doc": {
+        "id": "33201222",
+        "url": "https://en.wikipedia.org/wiki/LambdaDB",
+        "title": "LambdaDB",
+        "text": "LambdaDB is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+      }
+    }
+  ]
+}

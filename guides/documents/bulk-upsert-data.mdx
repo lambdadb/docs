@@ -1,0 +1,117 @@
+---
+title: Bulk upsert data
+---
+
+Besides the upsert operation which has 6MB maximum payload size limit,
+LambdaDB also supports bulk upsert operation to insert or update multiple documents up to 200MB at once.
+
+##  Get bulk upsert information
+
+First, get the required information to upload payload to object storage:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    get_bulk_upsert = lambda_db.collections.docs.get_bulk_upsert(
+        collection_name=collection_name
+    )
+    ```
+  </Tab>
+  
+  <Tab title="cURL">
+    ```bash
+    LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+    curl -i -X GET \
+      "https://{projectHost}/collections/{collectionName}/docs/bulk-upsert" \
+      -H 'content-type: application/json' \
+      -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY'
+    ```
+  </Tab>
+</Tabs>
+
+The response will look like this:
+
+```json
+{
+  "url": "<string>",
+  "type": "application/json",
+  "httpMethod": "PUT",
+  "objectKey": "<string>",
+  "sizeLimitBytes": 209715200
+}
+```
+
+## Upload documents and execute bulk upsert
+
+Upload your documents as a one object using the provided URL and call `bulk-upsert` API with the corresponding `objectKey`:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import json
+    import requests
+    from time import sleep
+
+    # Upload documents to the provided URL
+    put_documents = requests.put(
+        get_bulk_upsert.url,
+        data=json.dumps({"docs": docs}),
+        headers={"Content-Type": "application/json"},
+    )
+
+    # Execute bulk upsert
+    bulk_upsert = lambda_db.collections.docs.bulk_upsert(
+        collection_name=collection_name, 
+        object_key=get_bulk_upsert.object_key
+    )
+    ```
+  </Tab>
+  
+  <Tab title="cURL">
+    ```bash
+    # First, upload your documents to the provided URL using PUT request
+    # (Replace <provided_url> with the actual URL from step 1)
+    curl -X PUT \
+      "<provided_url>" \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "docs": [
+          {
+            "id": "bulk_33201222",
+            "url": "https://en.wikipedia.org/wiki/LambdaDB",
+            "title": "LambdaDB",
+            "text": "LambdaDB is a serverless-native search engine for AI... ",
+            "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+            "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}
+          }
+        ]
+      }'
+
+    # Then execute bulk upsert with the objectKey
+    LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+    curl -i -X POST \
+      "https://{baseUrl}/collections/{collectionName}/docs/bulk-upsert" \
+      -H 'content-type: application/json' \
+      -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
+      -d '{
+        "objectKey": "<string>"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+After successful bulk upsert initiation, you'll receive:
+
+```json
+{
+  "message": "Bulk upsert request is accepted"
+}
+```
+
+<Note>
+Bulk upsert operations are processed asynchronously. It may take some time for the documents to be fully indexed and available for search.
+</Note>

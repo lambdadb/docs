@@ -15,7 +15,7 @@ individual words within each full text field.
 
 `text` indexes are best suited for unstructured but human-readable content.
 If you need to index structured content such as email addresses, hostnames, status codes, or tags,
-it is likely that you should rather use a [keyword](/guides/collections/data-types#keyword) index.
+it is likely that you should rather use a [keyword](/guides/collections/index-types#keyword) index.
 
 LambdaDB supports four analyzers for tokenization: `standard`(default), `korean`, `japanese`, `english`.
 You can specify multiple analyzers to a single text field to improve search performance.
@@ -113,73 +113,70 @@ Unlike dense vectors, sparse vectors only store non-zero values along with their
 
 ```json
 {
-  "index_id": {
-    "type": "keyword"
-  },
-  "parent_id": {
-    "type": "keyword"
-  },
-  "summary": {
+  "text": {
     "type": "text",
-    "analyzers": ["english", "korean", "japanese"]
+    "analyzers": [
+      "english",
+      "korean",
+      "japanese"
+    ]
   },
-  "summary_model": {
+  "keyword": {
     "type": "keyword"
   },
-  "node_type": {
-    "type": "keyword"
+  "long": {
+    "type": "long"
   },
-  "embed_model": {
-    "type": "keyword"
+  "double": {
+    "type": "double"
   },
-  "content_type": {
-    "type": "keyword"
+  "boolean": {
+    "type": "boolean"
   },
-  "content": {
+  "datetime": {
+    "type": "datetime"
+  },
+  "vector": {
+    "type": "vector",
+    "dimensions": 10,
+    "similarity": "cosine"
+  },
+  "sparseVector": {
     "type": "sparseVector"
   },
-  "text_embedding": {
-    "dimensions": 512,
-    "similarity": "cosine",
-    "type": "vector"
-  },
-  "created_at": {
-    "type": "datetime"
-  },
-  "updated_at": {
-    "type": "datetime"
-  },
-  "node_info": {
+  "object": {
     "type": "object",
     "objectIndexConfigs": {
-      "next": {
+      "text": {
+        "type": "text",
+        "analyzers": [
+          "english",
+          "korean",
+          "japanese"
+        ]
+      },
+      "keyword": {
         "type": "keyword"
       },
-      "prev": {
-        "type": "keyword"
-      }
-    }
-  },
-  "metadata": {
-    "type": "object",
-    "objectIndexConfigs": {
-      "robots_allowed": {
+      "long": {
+        "type": "long"
+      },
+      "double": {
+        "type": "double"
+      },
+      "boolean": {
         "type": "boolean"
       },
-      "failed_crawl": {
-        "type": "boolean"
+      "datetime": {
+        "type": "datetime"
       },
-      "md5_digest": {
-        "type": "keyword"
+      "vector": {
+        "type": "vector",
+        "dimensions": 10,
+        "similarity": "cosine"
       },
-      "url": {
-        "type": "keyword"
-},
-      "og_image": {
-        "type": "keyword"
-      },
-      "related_images": {
-        "type": "keyword"
+      "sparseVector": {
+        "type": "sparseVector"
       }
     }
   }

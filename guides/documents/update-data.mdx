@@ -1,0 +1,69 @@
+---
+title: Update data
+---
+
+This page shows you how to update documents in a collection.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    # Prepare update documents
+    docs = [
+        {
+          "id": "33201222",
+          "title": "LambdaDB v2",
+          "text": "LambdaDB v2 is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+        },
+        {
+          "id": "33201223",
+          "url": "https://en.wikipedia.org/wiki/Winamp",
+          "title": "Winamp v2",
+          "text": "Winamp v2 is a media player for Windows, macOS and Android, originally developed by Justin Frankel and Dmitry Boldyrev by their company Nullsoft, which they later sold to AOL, who sold to Radionomy in January 2014."
+        }
+    ]
+
+    # Execute update
+    update_docs_test = lambda_db.collections.docs.update(
+        collection_name=collection_name,
+        docs=docs,
+    )
+    ```
+  </Tab>
+  
+  <Tab title="cURL">
+    ```bash
+    LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+    curl -X POST \
+      "https://{baseUrl}/projects/{projectName}/collections/{collectionName}/docs/update" \
+      -H 'content-type: application/json' \
+      -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
+      -d '{
+        "docs": [
+          {
+            "id": "33201222",
+            "title": "LambdaDB v2",
+            "text": "LambdaDB v2 is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+          },
+          {
+            "id": "33201223",
+            "url": "https://en.wikipedia.org/wiki/Winamp",
+            "title": "Winamp v2",
+            "text": "Winamp v2 is a media player for Windows, macOS and Android, originally developed by Justin Frankel and Dmitry Boldyrev by their company Nullsoft, which they later sold to AOL, who sold to Radionomy in January 2014."
+          }
+        ]
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+Each document in a payload must contain an `id` field to uniquely identify a document to update.
+
+## Update limits
+
+| Metric                       | Limit           |
+| ---------------------------- | --------------- |
+| Max payload size             | 6MB             |
+| Max length for a document ID | 512 characters  |
+| Max vector dimensions        | 4,096           |
+| Max document size            | 50KB            |

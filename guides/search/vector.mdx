@@ -1,0 +1,87 @@
+A k-nearest neighbor(kNN) search finds the k nearest vectors to a query vector, as measured by a similarity metric.
+
+## Parameters
+
+| Parameter     | Description                                         | Type     | Required |
+| ------------- | --------------------------------------------------- | -------  | -------- |
+| field         | The name of the vector field to search against      | string   | ✓        |
+| queryVector   | Query vector                                        | float[]  | ✓        |
+| k             | Number of nearest neighbors to return as top `docs` | integer  | ✓        |
+| filter        | Query to filter the documents that can match        | object   |          |
+
+
+## Examples
+
+### Simple KNN Vector Query
+
+```json
+{
+  "knn": {
+    "field": "example_vector_field",
+    "queryVector": [
+        0.030255454,
+        -0.058824085,
+        -0.065448694,
+        -0.03987034,
+        0.060786933,
+        -0.15469691,
+        -0.043918714,
+        0.057719983,
+        0.054530356,
+        0.007080819
+    ],
+    "k": 5
+  }
+}
+```
+
+### KNN Vector Query with filter Query
+
+An example vector query with a filter for better performance:
+
+```json
+{
+  "knn": {
+    "filter" : {
+      "queryString": {
+          "query": "node_type:NODE AND \"https://example.com/books/5514276\"",
+          "defaultField": "metadata.url"
+      }
+    },
+    "field": "example_vector_field",
+    "queryVector": [
+        0.030255454,
+        -0.058824085,
+        -0.065448694,
+        -0.03987034,
+        0.060786933,
+        -0.15469691,
+        -0.043918714,
+        0.057719983,
+        0.054530356,
+        0.007080819
+    ],
+    "k": 5
+  }
+}
+```
+
+### includeVectors
+
+The `include_vectors` parameter controls whether vector embeddings are returned in the query results. By default, vector data is excluded from responses to reduce payload size and improve performance.
+
+```python python
+lambda_db = LambdaDB(
+    server_url="SERVER_URL",
+    project_api_key="YOUR_API_KEY",
+)
+
+results = lambda_db.collections.query(
+    collection_name=collection_name,
+    query={},
+    size=10,
+    include_vectors=True,
+)
+```
+
+**Note**: Setting `include_vectors=True` will increase response size significantly, especially for high-dimensional vectors. Use this option only when vector data is specifically needed for your application.
