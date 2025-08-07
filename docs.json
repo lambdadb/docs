@@ -45,10 +45,10 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "Reference",
         "groups": [
           {
-            "group": "API Reference",
+            "group": "APIs",
             "pages": [
               "api-reference/introduction",
               {
@@ -68,9 +68,14 @@
                   "api-reference/endpoint/document-get-bulk-upsert-url",
                   "api-reference/endpoint/document-bulk-upsert",
                   "api-reference/endpoint/document-update",
-                  "api-reference/endpoint/document-query",
                   "api-reference/endpoint/document-fetch",
                   "api-reference/endpoint/document-delete"
+                ]
+              },
+              {
+                "group": "Query",
+                "pages": [
+                  "api-reference/endpoint/document-query"
                 ]
               }
             ]
