@@ -12,16 +12,30 @@ This page shows you how to use the fetch endpoint to fetch documents by ID from 
 
 To fetch documents, specify the document IDs (up to 100 IDs).
 
-```python python
-url = f"https://{projectHost}/collections/{collectionName}/query"
-headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
-
-fetch = {
-	"ids": ["33201222"]
-}
-
-r = requests.post(url, headers=headers, json=fetch)
+<Tabs>
+<Tab title="Python">
+```python
+res_fetch = lambda_db.collections.docs.fetch(
+    collection_name=collection_name, 
+    ids=["33201222"], 
+    include_vectors=True
+)
 ```
+</Tab>
+
+<Tab title="cURL">
+```bash
+curl -X POST "https://${PROJECT_HOST}/collections/${COLLECTION_NAME}/fetch" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${YOUR_API_KEY}" \
+  -d '{
+    "ids": ["33201222"],
+    "includeVectors": true
+  }'
+```
+</Tab>
+</Tabs>
+
 The response will look like this:
 
 ```json
@@ -41,4 +55,3 @@ The response will look like this:
     }
   ]
 }
-```
