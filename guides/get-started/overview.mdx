@@ -4,17 +4,32 @@ title: "Overview"
 
 LambdaDB is a **serverless-native database** designed for building accurate, secure, and scalable AI applications. Store and search unstructured data at scale without managing any infrastructure.
 
----
+<Note>
+LambdaDB provides everything you need for **modern AI-powered retrieval:**
+</Note>
 
-## 🔍 Search & Retrieval
+## 🗃️ Storage & Retrieval
 
-- **Vector Search**: k-NN search with cosine, euclidean, dot product, max inner product metrics
-- **Full-Text Search**: Multi-language analysis (English, Korean, Japanese, standard)
-- **Hybrid Search**: Combines vector + text with score normalization (RRF, min-max, L2)
-- **Multi-Vector Field Search**: Search across multiple vector fields simultaneously
-- **Sparse Vector Search**: Efficient high-dimensional sparse vector storage and search
-
---- 
+<CardGroup cols={2}>
+  <Card title="Data Storage" href="/guides/documents/upsert-data" icon="database">
+    Store text, embeddings, and their metadata with flexible schema support across 8 different index types
+  </Card>
+  <Card title="Vector Search" href="/guides/search/vector" icon="magnifying-glass">
+    k-NN search with cosine, euclidean, dot product, max inner product metrics
+  </Card>
+  <Card title="Full-Text Search" href="/guides/search/query-string" icon="book-open">
+    Multi-language analysis (English, Korean, Japanese, standard)
+  </Card>
+  <Card title="Hybrid Search" href="/guides/search/hybrid" icon="bolt">
+    Combines vector + text with score normalization (RRF, min-max, L2)
+  </Card>
+  <Card title="Multi-Vector Field Search" href="/guides/search/vector#multi-vector-field-search" icon="layer-group">
+    Search across multiple vector fields simultaneously
+  </Card>
+  <Card title="Sparse Vector Search" href="/guides/search/sparse-vector" icon="network-wired">
+    Efficient high-dimensional sparse vector storage and search
+  </Card>
+</CardGroup>
 
 ## 🏢 Enterprise Features
 
