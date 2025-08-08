@@ -1,184 +1,394 @@
 ---
-title: Index types
+title: "Index types"
 ---
 
-LambdaDB currently supports eight types of indexes.
-Note that the whole document is stored as is regardless of its existence in index configurations,
-but being stored does not necessarily mean they are searchable.
+LambdaDB currently supports eight types of indexes. Note that the whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean they are searchable.
+
+<Warning>
+The dot (.) character cannot be used as an index name and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
+</Warning>
 
 ## text
 
-This type is for full-text values, such as the body of an email or the description of a product.
-These full-text values are analyzed that they are passed through an analyzer to convert the string into
-a list of individual terms before being indexed. The analysis process allows LambdaDB to search for
-individual words within each full text field.
+This type is for full-text values, such as the body of an email or the description of a product. These full-text values are analyzed by passing them through an analyzer to convert the string into a list of individual terms before being indexed. The analysis process allows LambdaDB to search for individual words within each full text field.
 
-`text` indexes are best suited for unstructured but human-readable content.
-If you need to index structured content such as email addresses, hostnames, status codes, or tags,
-it is likely that you should rather use a [keyword](/guides/collections/index-types#keyword) index.
+`text` indexes are best suited for unstructured but human-readable content. If you need to index structured content such as email addresses, hostnames, status codes, or tags, you should rather use a `keyword` index.
 
-LambdaDB supports four analyzers for tokenization: `standard`(default), `korean`, `japanese`, `english`.
-You can specify multiple analyzers to a single text field to improve search performance.
+LambdaDB supports four analyzers for tokenization: `standard` (default), `korean`, `japanese`, `english`. You can specify multiple analyzers to a single text field to improve search performance.
 
-<Warning>
+<CodeGroup>
 
-  . (dot) character cannot be used as an index name and you can only add indexes to existing collections.
-  Modifying or deleting existing indexes is not supported.
+```python Python
+{
+    "content": {
+        "type": models.TypeText.TEXT,
+        "analyzers": [
+            models.Analyzer.ENGLISH,
+            models.Analyzer.KOREAN,
+            models.Analyzer.JAPANESE
+        ]
+    }
+}
+```
 
-</Warning>
+```json JSON
+{
+    "content": {
+        "type": "text",
+        "analyzers": [
+            "english",
+            "korean", 
+            "japanese"
+        ]
+    }
+}
+```
+
+</CodeGroup>
 
 ## keyword
 
-`keyword` type is used for structured content such as IDs, email addresses, hostnames,
-status codes, zip codes, or tags.
-Keyword indexes are often used in sorting, aggregations, and term-level queries, such as term.
-Note that LambdaDB does not index any string longer than 4096.
+`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Keyword indexes are often used in sorting, aggregations, and term-level queries. Note that LambdaDB does not index any string longer than 4096 characters.
+
+You can also store multiple keyword values as an array for fields like tags or categories.
+
+<CodeGroup>
+
+```python Python
+{
+    "status": {"type": models.Type.KEYWORD},
+    "category": {"type": models.Type.KEYWORD}
+}
+```
+
+```json JSON
+{
+    "status": {"type": "keyword"},
+    "category": {"type": "keyword"}
+}
+```
+
+</CodeGroup>
 
 ## long
 
-This type os for a signed 64-bit integer with a minimum value of $-2^{63}$ and a maximum value of $2^{63}-1$.
-`long` indexes are optimized for scoring, sorting, and range queries.
+This type is for a signed 64-bit integer with a minimum value of $-2^{63}$ and a maximum value of $2^{63}-1$. `long` indexes are optimized for scoring, sorting, and range queries.
+
+<CodeGroup>
+
+```python Python
+{
+    "user_id": {"type": models.Type.LONG},
+    "timestamp": {"type": models.Type.LONG}
+}
+```
+
+```json JSON
+{
+    "user_id": {"type": "long"},
+    "timestamp": {"type": "long"}
+}
+```
+
+</CodeGroup>
 
 ## double
 
-This type is for a double-precision 64-bit IEEE 754 floating point number, restricted to finite values.
-`double` indexes are optimized for scoring, sorting, and range queries.
+This type is for a double-precision 64-bit IEEE 754 floating point number, restricted to finite values. `double` indexes are optimized for scoring, sorting, and range queries.
+
+<CodeGroup>
+
+```python Python
+{
+    "score": {"type": models.Type.DOUBLE},
+    "price": {"type": models.Type.DOUBLE}
+}
+```
+
+```json JSON
+{
+    "score": {"type": "double"},
+    "price": {"type": "double"}
+}
+```
+
+</CodeGroup>
 
 ## boolean
 
-`boolean` indexes accept JSON true and false values, but can also accept strings
-which are interpreted as either true or false.
+`boolean` indexes accept JSON true and false values, but can also accept strings which are interpreted as either true or false.
+
+<CodeGroup>
+
+```python Python
+{
+    "is_active": {"type": models.Type.BOOLEAN},
+    "published": {"type": models.Type.BOOLEAN}
+}
+```
+
+```json JSON
+{
+    "is_active": {"type": "boolean"},
+    "published": {"type": "boolean"}
+}
+```
+
+</CodeGroup>
 
 ## datetime
 
-This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
-`datetime` indexes are optimized for sorting and range queries, or to search for a specific time.
+This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6). `datetime` indexes are optimized for sorting and range queries, or to search for a specific time.
 
-```python
+<CodeGroup>
+
+```python Python
 import pytz
 from datetime import datetime
 
+# Example datetime usage
 dt = datetime.now()
 print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
+# Output: 2024-11-05T14:27:56+00:00
 
-# 2024-11-05T14:27:56+00:00
-```
-
-## object
-
-JSON documents are hierarchical in nature: the document may contain inner objects which,
-in turn, may contain inner objects themselves. Internally, this document is indexed as a simple,
-flat list of key-value pairs. The fields within the object, which can be of any data type,
-including object. `objectIndexConfigs` should be specified in order to index the fields inside the object.
-
-```json
+# Index configuration
 {
-  "content": {
-    "type": "text",
-    "analyzers": ["english", "korean", "japanese"]
-  },
-  "metadata": {
-    "type": "object",
-    "objectIndexConfigs": {
-      "url": {
-        "type": "keyword"
-      },
-      "author": {
-        "type": "keyword"
-      }
-    }
-  }
+    "created_at": {"type": models.Type.DATETIME},
+    "updated_at": {"type": models.Type.DATETIME}
 }
 ```
+
+```json JSON
+{
+    "created_at": {"type": "datetime"},
+    "updated_at": {"type": "datetime"}
+}
+```
+
+</CodeGroup>
 
 ## vector
 
-The `vector` type indexes dense vectors of numeric values.
-`vector` indexes are primarily used for k-nearest neighbor (kNN) search.
-The vector type does not support aggregations or sorting.
-You add a vector field as an array of numeric values
+The `vector` type indexes dense vectors of numeric values. `vector` indexes are primarily used for k-nearest neighbor (kNN) search. The vector type does not support aggregations or sorting. You add a vector field as an array of numeric values.
 
-A k-nearest neighbor (kNN) search finds the k nearest vectors to a query vector,
-as measured by a similarity metric. LambdaDB supports four similarity metrics including
-`euclidean`, `dot_product`, `cosine`, `max_inner_product`.
-You can define the vector similarity to use in kNN search.
+A k-nearest neighbor (kNN) search finds the k nearest vectors to a query vector, as measured by a similarity metric. LambdaDB supports four similarity metrics: `euclidean`, `dot_product`, `cosine`, `max_inner_product`. You can define the vector similarity to use in kNN search.
+
+LambdaDB supports `multi-vector field search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
+
+<CodeGroup>
+
+```python Python
+{
+    "embedding": {
+        "type": models.TypeVector.VECTOR,
+        "dimensions": 768,
+        "similarity": models.Similarity.COSINE
+    },
+    "image_vector": {
+        "type": models.TypeVector.VECTOR,
+        "dimensions": 512,
+        "similarity": models.Similarity.EUCLIDEAN
+    }
+}
+```
+
+```json JSON
+{
+    "embedding": {
+        "type": "vector",
+        "dimensions": 768,
+        "similarity": "cosine"
+    },
+    "image_vector": {
+        "type": "vector",
+        "dimensions": 512,
+        "similarity": "euclidean"
+    }
+}
+```
+
+</CodeGroup>
 
 ## sparseVector
 
-The `sparseVector` type is designed for storing and indexing sparse vectors, where most elements are zero or missing.
-Unlike dense vectors, sparse vectors only store non-zero values along with their corresponding indexes.
-`sparseVector` type only support `dot_product` distance metrics.
+The `sparseVector` type is designed for storing and indexing sparse vectors, where most elements are zero or missing. Unlike dense vectors, sparse vectors only store non-zero values along with their corresponding indexes. `sparseVector` type only supports `dot_product` distance metrics.
 
-## An example index configurations
+<CodeGroup>
 
-```json
+```python Python
 {
-  "text": {
-    "type": "text",
-    "analyzers": [
-      "english",
-      "korean",
-      "japanese"
-    ]
-  },
-  "keyword": {
-    "type": "keyword"
-  },
-  "long": {
-    "type": "long"
-  },
-  "double": {
-    "type": "double"
-  },
-  "boolean": {
-    "type": "boolean"
-  },
-  "datetime": {
-    "type": "datetime"
-  },
-  "vector": {
-    "type": "vector",
-    "dimensions": 10,
-    "similarity": "cosine"
-  },
-  "sparseVector": {
-    "type": "sparseVector"
-  },
-  "object": {
-    "type": "object",
-    "objectIndexConfigs": {
-      "text": {
+    "sparse_embedding": {"type": models.Type.SPARSE_VECTOR}
+}
+```
+
+```json JSON
+{
+    "sparse_embedding": {"type": "sparseVector"}
+}
+```
+
+</CodeGroup>
+
+## object
+
+JSON documents are hierarchical in nature: the document may contain inner objects which, in turn, may contain inner objects themselves. Internally, this document is indexed as a simple, flat list of key-value pairs. The fields within the object can be of any data type, including object. `objectIndexConfigs` should be specified in order to index the fields inside the object.
+
+<CodeGroup>
+
+```python Python
+{
+    "metadata": {
+        "type": models.TypeObject.OBJECT,
+        "objectIndexConfigs": {
+            "url": {"type": models.Type.KEYWORD},
+            "author": {"type": models.Type.KEYWORD},
+            "content": {
+                "type": models.TypeText.TEXT,
+                "analyzers": [models.Analyzer.ENGLISH, models.Analyzer.KOREAN]
+            }
+        }
+    }
+}
+```
+
+```json JSON
+{
+    "metadata": {
+        "type": "object",
+        "objectIndexConfigs": {
+            "url": {"type": "keyword"},
+            "author": {"type": "keyword"},
+            "content": {
+                "type": "text",
+                "analyzers": ["english", "korean"]
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Complete Example Configuration
+
+Here's a comprehensive example that demonstrates all index types:
+
+<CodeGroup>
+
+```python Python
+from lambdadb import models
+
+complete_index_config = {
+    "text": {
+        "type": models.TypeText.TEXT,
+        "analyzers": [
+            models.Analyzer.JAPANESE,
+            models.Analyzer.KOREAN,
+            models.Analyzer.ENGLISH,
+        ],
+    },
+    "keyword": {"type": models.Type.KEYWORD},
+    "long": {"type": models.Type.LONG},
+    "double": {"type": models.Type.DOUBLE},
+    "boolean": {"type": models.Type.BOOLEAN},
+    "datetime": {"type": models.Type.DATETIME},
+    "vector": {
+        "type": models.TypeVector.VECTOR,
+        "dimensions": 10,
+        "similarity": models.Similarity.COSINE,
+    },
+    "sparseVector": {"type": models.Type.SPARSE_VECTOR},
+    "object": {
+        "type": models.TypeObject.OBJECT,
+        "objectIndexConfigs": {
+            "text": {
+                "type": models.TypeText.TEXT,
+                "analyzers": [
+                    models.Analyzer.JAPANESE,
+                    models.Analyzer.KOREAN,
+                    models.Analyzer.ENGLISH,
+                ],
+            },
+            "keyword": {"type": models.Type.KEYWORD},
+            "long": {"type": models.Type.LONG},
+            "double": {"type": models.Type.DOUBLE},
+            "boolean": {"type": models.Type.BOOLEAN},
+            "datetime": {"type": models.Type.DATETIME},
+            "vector": {
+                "type": models.TypeVector.VECTOR,
+                "dimensions": 10,
+                "similarity": models.Similarity.COSINE,
+            },
+            "sparseVector": {"type": models.Type.SPARSE_VECTOR},
+        },
+    },
+}
+```
+
+```json JSON
+{
+    "text": {
         "type": "text",
         "analyzers": [
-          "english",
-          "korean",
-          "japanese"
+            "japanese",
+            "korean",
+            "english"
         ]
-      },
-      "keyword": {
-        "type": "keyword"
-      },
-      "long": {
-        "type": "long"
-      },
-      "double": {
-        "type": "double"
-      },
-      "boolean": {
-        "type": "boolean"
-      },
-      "datetime": {
-        "type": "datetime"
-      },
-      "vector": {
+    },
+    "keyword": {"type": "keyword"},
+    "long": {"type": "long"},
+    "double": {"type": "double"},
+    "boolean": {"type": "boolean"},
+    "datetime": {"type": "datetime"},
+    "vector": {
         "type": "vector",
         "dimensions": 10,
         "similarity": "cosine"
-      },
-      "sparseVector": {
-        "type": "sparseVector"
-      }
+    },
+    "sparseVector": {"type": "sparseVector"},
+    "object": {
+        "type": "object",
+        "objectIndexConfigs": {
+            "text": {
+                "type": "text",
+                "analyzers": [
+                    "japanese",
+                    "korean",
+                    "english"
+                ]
+            },
+            "keyword": {"type": "keyword"},
+            "long": {"type": "long"},
+            "double": {"type": "double"},
+            "boolean": {"type": "boolean"},
+            "datetime": {"type": "datetime"},
+            "vector": {
+                "type": "vector",
+                "dimensions": 10,
+                "similarity": "cosine"
+            },
+            "sparseVector": {"type": "sparseVector"}
+        }
     }
-  }
 }
 ```
+
+</CodeGroup>
+
+## Supported Analyzers
+
+| Analyzer | Description |
+|----------|-------------|
+| `standard` | Default general-purpose analyzer |
+| `english` | English language analyzer |
+| `korean` | Korean language analyzer |
+| `japanese` | Japanese language analyzer |
+
+## Supported Similarity Metrics
+
+| Metric | Description | Use Case |
+|--------|-------------|----------|
+| `cosine` | Cosine similarity | Most common for text embeddings |
+| `euclidean` | Euclidean distance | Geometric distance calculations |
+| `dot_product` | Dot product similarity | Fast similarity computation |
+| `max_inner_product` | Maximum inner product | Specialized similarity metric |

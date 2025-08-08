@@ -2,6 +2,8 @@
 
 A query that combines vector search with traditional text-based queries to achieve better relevance by leveraging both semantic similarity and keyword matching.
 
+Text search and vector search use fundamentally different scoring mechanisms - text search typically uses relevance scores based on term frequency and document frequency, while vector search uses similarity distances. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
+
 LambdaDB supports three rescoring methods to combine results from different query types: `rrf` (Reciprocal Rank Fusion), `mm` (min-max), and `l2` (l2_norm).
 
 - **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods
@@ -9,7 +11,6 @@ LambdaDB supports three rescoring methods to combine results from different quer
 - **L2 norm** uses Euclidean distance-based normalization to merge relevance scores from multiple query sources
 
 Regardless of the rescoring method used, the final combined score is always normalized to a value between 0 and 1.
-
 ## Parameters
 
 ### Rescoring Methods

@@ -35,6 +35,53 @@ A k-nearest neighbor(kNN) search finds the k nearest vectors to a query vector, 
 }
 ```
 
+### Multi-Vector Field Search
+
+You can search across multiple vector fields simultaneously by wrapping multiple kNN objects in a bool query. This is useful when you have different types of embeddings (e.g., text embeddings, image embeddings) and want to combine their results.
+
+```json
+{
+  "bool": [
+      {
+        "knn": {
+          "field": "text_embedding",
+          "queryVector": [
+            0.030255454,
+            -0.058824085,
+            -0.065448694,
+            -0.03987034,
+            0.060786933,
+            -0.15469691,
+            -0.043918714,
+            0.057719983,
+            0.054530356,
+            0.007080819
+          ],
+          "k": 10
+        }
+      },
+      {
+        "knn": {
+          "field": "image_embedding", 
+          "queryVector": [
+            0.125434521,
+            -0.087654321,
+            0.045123789,
+            -0.156789012,
+            0.098765432,
+            0.034567890,
+            -0.123456789,
+            0.076543210,
+            -0.089012345,
+            0.112345678
+          ],
+          "k": 10
+        }
+      }
+  ]
+}
+```
+
 ### KNN Vector Query with filter Query
 
 An example vector query with a filter for better performance:

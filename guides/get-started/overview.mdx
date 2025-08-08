@@ -1,21 +1,41 @@
 ---
-title: Overview
+title: "Overview"
 ---
 
-LambdaDB is a serverless-native database for building accurate, secure, and scalable AI applications.
-Use LambdaDB to store and search unstructured data at scale without managing any infrastructure.
+LambdaDB is a serverless-native database designed for building accurate, secure, and scalable AI applications. Store and search unstructured data at scale without managing any infrastructure.
 
-LambdaDB gives you everything you need for retrieval:
+## Core Capabilities
 
-* Store text, embeddings, and their metadata
-* Vector search
-* Full-text search
-* Hybrid search
-* Metadata filtering
+LambdaDB provides everything you need for modern AI-powered retrieval:
 
-In addition, LambdaDB provides a set of convenient features to help you manage your data:
+### Search & Retrieval
+- **Vector Search**: k-nearest neighbor search with multiple similarity metrics (cosine, euclidean, dot product, max inner product)
+- **Full-Text Search**: Multi-language text analysis with support for English, Korean, Japanese, and standard analyzers
+- **Hybrid Search**: Combines vector and text search with intelligent score normalization (RRF, min-max, L2 norm)
+- **Multi-Vector Field Search**: Search across multiple vector fields simultaneously in a single query
+- **Sparse Vector Search**: Efficient storage and search for high-dimensional sparse vectors
 
-* Configurable project-level rate limiting
-* Continuous backups and point-in-time recovery (PITR)
-* Zero-copy collection clone in seconds regardless of collection size
-* Zero operations due to its serverless-native architecture
+### Data Management
+- **Flexible Schema**: Store text, embeddings, metadata, and structured data with 8 index types
+- **CRUD Operations**: Full document lifecycle management with individual and bulk operations
+- **Advanced Filtering**: Complex boolean queries and metadata filtering capabilities
+
+## Enterprise Features
+
+### Backup & Recovery
+- **Continuous Backups**: Automatic project-level backups with 30-day retention
+- **Point-in-Time Recovery (PITR)**: Restore collections to any specific moment within retention period
+- **Zero-Copy Collection Clone**: Instant collection cloning without data duplication
+
+### Operations & Management
+- **Serverless Architecture**: Zero infrastructure management required
+- **Configurable Rate Limiting**: Project-level controls for API usage
+- **RESTful API**: Simple HTTP-based interface with comprehensive SDKs
+
+## Why Choose LambdaDB?
+
+- **Built for AI**: Native support for vector search, and hybrid retrieval patterns
+- **Serverless-First**: Focus on your application logic, not database operations
+- **Production Ready**: Enterprise-grade backup, recovery, and rate limiting features
+- **Developer Friendly**: RESTful APIs, comprehensive SDKs, and extensive documentation
+- **Cost Effective**: Pay only for what you use with automatic scaling
