@@ -25,7 +25,7 @@
           {
             "group": "Collections",
             "pages": [
-              "guides/collections/understanding-collections",
+              "guides/collections/collection-overview",
               "guides/collections/index-types",
               "guides/collections/create-a-collection",
               "guides/collections/manage-collections"
@@ -44,9 +44,9 @@
           {
             "group": "Search",
             "pages": [
-              "guides/search/overview",
+              "guides/search/search-overview",
               {
-                "group": "Query objects",
+                "group": "Query",
                 "pages": [
                   "guides/search/query-string",
                   "guides/search/boolean",
