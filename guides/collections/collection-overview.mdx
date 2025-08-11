@@ -1,0 +1,64 @@
+---
+title: "Overview"
+---
+
+A LambdaDB collection is a logical namespace that holds a set of documents, where each document is a set of fields — which, in turn, are key-value pairs that contain your data.
+
+## Database structure comparison
+
+LambdaDB's structure differs from traditional relational databases. Here's how they compare:
+
+| RDBMS      | LambdaDB                      |
+|:---------- |:----------------------------- |
+| Database   | Project                       |
+| Table      | Collection                    |
+| Column/row | Document with key-value pairs |
+
+Think of a LambdaDB project as a database that can contain many collections (similar to tables), and within each collection, you have many documents containing your actual data as flexible key-value pairs.
+
+<Note>
+
+Indexes in LambdaDB are not the same as you'd find in a relational database. The whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean they are searchable.
+
+</Note>
+
+## API interaction
+
+LambdaDB provides a RESTful JSON-based API for interacting with document data. You can perform the following operations by sending HTTP requests to the appropriate endpoints:
+
+- **Upsert** documents into collections
+- **Search** across documents using various query types
+- **Delete** individual documents or entire collections
+- **Update** document data and collection configurations
+
+These CRUD-like operations can take place at both individual document level and collection level, giving you flexibility in how you manage your data.
+
+## Zero-copy collection clone
+
+Zero-copy collection clone is a powerful feature that allows you to create a new collection by referencing an existing collection's data, without physically copying the underlying data.
+
+This feature is useful when you want to create a new collection with the same configurations and data as an existing collection,
+in order to load-test, develop, and experiment in an isolated environment.
+
+### Key benefits
+
+- **Instant creation**: Collections are created immediately without waiting for data transfer.
+- **Storage efficiency**: No additional storage space required for the cloned data.
+- **Isolated environment**: Perfect for load testing, development, and experimentation.
+- **Same configurations**: Inherits all index configurations and data from the source collection.
+
+### Use cases
+
+This feature is particularly useful when you want to:
+
+- Create isolated environments for testing without affecting production data.
+- Set up staging environments that mirror production collections.
+- Experiment with different query patterns or configurations.
+- Perform load testing with real data volumes.
+- Create backup references for disaster recovery scenarios.
+
+<Info>
+
+Changes made to documents in a zero-copy cloned collection do not affect the original collection, ensuring complete isolation while maintaining efficiency.
+
+</Info>

@@ -1,0 +1,96 @@
+---
+title: Overview
+---
+
+A search query, or query, is a request for information about data in LambdaDB collections.
+
+LambdaDB supports several search methods:
+
+* Search for exact values: search for exact values or ranges of numbers, dates, IPs, or strings.
+* Full-text search: use full text queries to query unstructured textual data and find documents that best match query terms.
+* Vector search: store vectors in LambdaDB and use approximate nearest neighbor (ANN) to find vectors that are similar, supporting use cases like semantic search.
+
+Common parameters for the request body of a query are as follows:
+
+| Parameter      | Description                                                  | Type    | Required | Default |
+|:-------------- |:-------------------------------------------------------------|:------- |:-------- |:------- |
+| size           | The number of results to return for each query               | integer | ✓        |         |
+| query          | Query object (details in the [subsections](/guides/search/query-string))                         | object  | ✓        |         |
+| includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
+| consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
+| fields         | A list of field names to include in the result. Use dot notation (e.g., user.name) to specify nested fields. | string[]  |          |    |
+| sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)) | object[] | | |
+
+<Tip>
+
+  Depending on your data and your query, you may get fewer than `size` results.
+  This happens when `size` is larger than the number of possible matching documents for your query.
+
+</Tip>
+
+<Tip>
+
+  Setting `includeVectors=True` will increase response size significantly, especially for high-dimensional vectors. 
+  Use this option only when vector data is specifically needed for your application.
+
+</Tip>
+
+<Note>
+
+  LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
+  If your application requires strong (read-after-write) consistency, set consistentRead to true when query data from a collection, at the expense of potential high latency and cost.
+
+</Note>
+
+Query results are returned in the following format:
+
+| Field    | Description                                          | Type      |
+| -------- | ---------------------------------------------------- | --------- |
+| took     | Milliseconds it took LambdaDB to execute the request | long      |
+| maxScore | Highest returned document `score`                    | float     |
+| total    | The total number of matching documents               | long      |
+| docs     | Contains returned documents and metadata             | object[]  |
+
+## Example
+
+```python Python
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY",
+)
+
+results = lambda_db.collections.query(
+    collection_name=collection_name,
+    query={
+      "queryString": {
+        "query": "*:*" # Match all
+      }
+    },
+    size=10
+)
+```
+The response will look like this:
+
+```json
+{
+  "took": 76,
+  "maxScore": 1.0,
+  "total": 1,
+  "docs": [
+    {
+      "collection": "example_collection",
+      "score": 1.0,
+      "doc": {
+        "id": "33201222",
+        "url": "https://en.wikipedia.org/wiki/LambdaDB",
+        "title": "LambdaDB is awesome",
+        "text": null
+      }
+    }
+  ]
+}
+```
+
+Matched documents are ordered by similarity from most similar to least similar by default.
+Similarity is expressed as a `score`, and it is calculated based on `BM25 algorithm` for full-text search
+and a configured `similarity metric` for vector search.

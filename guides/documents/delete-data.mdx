@@ -1,0 +1,86 @@
+---
+title: Delete data
+---
+
+This page shows you how to use the delete endpoint to remove documents from a collection.
+
+## Delete documents by IDs
+
+Since LambdaDB documents can always be efficiently accessed using their ID,
+deleting by ID is the most efficient way to remove specific records.
+
+<CodeGroup>
+  
+  ```python Python
+  from lambdadb import LambdaDB
+
+  lambda_db = LambdaDB(
+      server_url="PROJECT_URL",
+      project_api_key="YOUR_API_KEY"
+  )
+
+  res = lambda_db.collections.docs.delete(
+      collection_name="your_collection_name", 
+      ids=[
+          "example-doc-id-1",
+          "example-doc-id-2",
+      ]
+  )
+  ```
+
+  ```bash cURL
+  curl -i -X POST \
+    --url "$PROJECT_URL/collections/{collectionName}/docs/delete" \
+    --header 'content-type: application/json' \
+    --header 'x-api-key: <YOUR_API_KEY>' \
+    --data '{
+    "ids": [
+      "example-doc-id-1",
+      "example-doc-id-2"
+    ]
+  }'
+  ```
+  
+</CodeGroup>
+
+## Delete documents by query
+
+To delete documents based on their data, pass a `filter` query to the delete operation.
+This deletes all document matching the filter query.
+
+For example, to delete all documents with genre "documentary" and year 2019 from a collection, use the following code:
+
+<CodeGroup>
+  
+  ```python Python
+  res = lambda_db.collections.docs.delete(
+      collection_name="your_collection_name",
+      filter_={
+          "queryString": {
+              "query": "genre:documentary AND year:2019"
+          }
+      }
+  )
+  ```
+
+  ```bash cURL
+  curl -i -X POST \
+    --url "$PROJECT_URL/collections/{collectionName}/docs/delete" \
+    --header 'content-type: application/json' \
+    --header 'x-api-key: <YOUR_API_KEY>' \
+    --data '{
+    "filter": {
+      "queryString": {
+        "query": "genre:documentary AND year:2019"
+      }
+    }
+  }'
+  ```
+
+</CodeGroup>
+
+## Delete an entire collection
+
+To remove all documents from a collection,
+[delete the collection](/guides/collections/manage-collections#delete-a-collection) and
+[recreate it](/guides/collections/create-a-collection#create-a-collection-from-scratch)

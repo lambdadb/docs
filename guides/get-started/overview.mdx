@@ -1,21 +1,41 @@
 ---
-title: Overview
+title: "Overview"
 ---
 
-LambdaDB is a serverless-native database for building accurate, secure, and scalable AI applications.
-Use LambdaDB to store and search unstructured data at scale without managing any infrastructure.
+LambdaDB is a **serverless-native search engine** designed for building accurate, secure, and scalable AI applications. Store and search unstructured data at scale without managing any infrastructure.
 
-LambdaDB gives you everything you need for retrieval:
 
-* Store text, embeddings, and their metadata
-* Vector search
-* Full-text search
-* Hybrid search
-* Metadata filtering
+## 🗃️ Serverless storage & retrieval
 
-In addition, LambdaDB provides a set of convenient features to help you manage your data:
+<CardGroup cols={2}>
+  <Card title="Object storage" href="/guides/documents/upsert-data" icon="database">
+    Store text, embeddings, and their metadata with flexible schema support across 8 different index types.
+  </Card>
+  <Card title="Vector search" href="/guides/search/vector" icon="magnifying-glass">
+    k-NN search with cosine, euclidean, dot product, max inner product metrics.
+  </Card>
+  <Card title="Full-text search" href="/guides/search/query-string" icon="book-open">
+    Multi-language analysis (English, Korean, Japanese, standard).
+  </Card>
+  <Card title="Hybrid search" href="/guides/search/hybrid" icon="bolt">
+    Combines vector + lexical with score normalization (RRF, Min-Max, L2).
+  </Card>
+  <Card title="Multi-field vector search" href="/guides/search/vector#multi-vector-field-search" icon="layer-group">
+    Search across multiple vector fields simultaneously.
+  </Card>
+  <Card title="Sparse vector search" href="/guides/search/sparse-vector" icon="network-wired">
+    Efficient high-dimensional sparse vector storage and search.
+  </Card>
+</CardGroup>
 
-* Configurable project-level rate limiting
-* Continuous backups and point-in-time recovery (PITR)
-* Zero-copy collection clone in seconds regardless of collection size
-* Zero operations due to its serverless-native architecture
+## 🏢 Enterprise features
+
+### Backup & recovery
+- **Continuous backups**: Automatic collection-level backups with 30 days retention by default.
+- **Point-in-time recovery (PITR)**: Restore a collection to any specific moment within retention period.
+- **Zero-copy collection clone**: Instant collection cloning without data duplication.
+
+### Operation & management
+- **Serverless-native architecture**: Zero infrastructure management required without paying for idle resources.
+- **Configurable rate limiting**: Project-level controls for API usage.
+- **RESTful API**: Simple HTTP-based interface with comprehensive SDKs.

@@ -1,35 +1,52 @@
 ---
-title: Manage collections
+title: "Manage collections"
 ---
 
-This page shows you how to manage your existing collections.
+This page shows you how to manage your existing collections including listing, describing, and deleting operations.
 
 ## List collections
 
-Use this operation to get a complete description of all collections in a project:
+Retrieve a complete list of all collections in your project along with their metadata and status information.
 
-```bash
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY"
+)
+
+lambda_db.collections.list()
+```
+
+```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{projectHost}/collections" \
-  -H "content-type: application/json" \
+curl -i -X GET "$PROJECT_URL/collections" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
-The response will look like this:
+</CodeGroup>
+
+The response includes detailed information about each collection:
 
 ```json
 {
   "collections": [
     {
-      "projectName": "<string>",
-      "collectionName": "<string>",
-      "indexConfigs": {},
-      "numDocs": 123,
+      "projectName": "your-project",
+      "collectionName": "example-collection",
+      "indexConfigs": {
+        "title": {"type": "text"},
+        "category": {"type": "keyword"}
+      },
+      "numDocs": 1250,
       "cloneSourceInfo": {
-        "sourceProjectId": "<string>",
-        "sourceIndexName": "<string>",
-        "sourceIndexVersionId": "<string>"
+        "sourceProjectId": "source-project-id",
+        "sourceIndexName": "source-collection",
+        "sourceIndexVersionId": "wR0NyDJbqDiHMaaV597GjczO2oGQyG7T"
       },
       "collectionStatus": "ACTIVE"
     }
@@ -39,28 +56,52 @@ The response will look like this:
 
 ## Describe a collection
 
-Use the describe endpoint to get a complete description of a specific collection:
+Get detailed information about a specific collection, including its configuration, document count, and current status.
 
-```bash
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY"
+)
+
+lambda_db.collections.get(collection_name="example-collection")
+```
+
+```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "https://{projectHost}/collections/{collectionName}" \
-  -H "content-type: application/json" \
+curl -i -X GET "$PROJECT_URL/collections/example-collection" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
-The response will look like this:
+</CodeGroup>
+
+The response provides comprehensive collection details:
 
 ```json
 {
-  "projectName": "<string>",
-  "collectionName": "<string>",
-  "indexConfigs": {},
-  "numDocs": 123,
+  "projectName": "your-project",
+  "collectionName": "example-collection",
+  "indexConfigs": {
+    "title": {
+      "type": "text",
+      "analyzers": ["standard", "korean"]
+    },
+    "embedding": {
+      "type": "vector",
+      "dimensions": 768,
+      "similarity": "cosine"
+    }
+  },
+  "numDocs": 1250,
   "cloneSourceInfo": {
-    "sourceProjectId": "<string>",
-    "sourceIndexName": "<string>",
-    "sourceIndexVersionId": "<string>"
+    "sourceProjectId": "source-project-id",
+    "sourceIndexName": "source-collection",
+    "sourceIndexVersionId": "wR0NyDJbqDiHMaaV597GjczO2oGQyG7T"
   },
   "collectionStatus": "ACTIVE"
 }
@@ -68,12 +109,40 @@ The response will look like this:
 
 ## Delete a collection
 
-Use this operation to delete a collection and all of its associated resources:
+Permanently delete a collection and all of its associated data and resources. This operation cannot be undone.
 
-```bash
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY"
+)
+
+lambda_db.collections.delete(collection_name="collection-to-delete")
+```
+
+```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X DELETE "https://{projectHost}/collections/{collectionName}" \
-  -H "content-type: application/json" \
+curl -i -X DELETE "$PROJECT_URL/collections/collection-to-delete" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
+
+</CodeGroup>
+
+<Warning>
+Deleting a collection is irreversible and will permanently remove all documents and metadata. Make sure you have proper backups if needed before proceeding with this operation.
+</Warning>
+
+## Collection status
+
+Collections can have the following status values:
+
+| Status     | Description |
+|:-----------|:------------|
+| `CREATING` | Collection is being created and not yet available |
+| `ACTIVE`   | Collection is ready for read/write operations |
+| `DELETING` | Collection is being deleted |

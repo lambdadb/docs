@@ -1,0 +1,119 @@
+---
+title: "Vector query"
+---
+
+A vector query finds the k nearest vectors to a query vector, as measured by a similarity metric.
+
+## Parameters
+
+| Parameter     | Description                                         | Type     | Required |
+|:------------- |:--------------------------------------------------- |:-------  |:-------- |
+| field         | The name of the vector field to search against      | string   | ✓        |
+| queryVector   | Query vector                                        | float[]  | ✓        |
+| k             | Number of nearest neighbors to return as top `docs` | integer  | ✓        |
+| filter        | Query to filter the documents that can match        | object   |          |
+
+
+## Examples
+
+### Simple vector query
+
+```json
+{
+  "knn": {
+    "field": "example_vector_field",
+    "queryVector": [
+        0.030255454,
+        -0.058824085,
+        -0.065448694,
+        -0.03987034,
+        0.060786933,
+        -0.15469691,
+        -0.043918714,
+        0.057719983,
+        0.054530356,
+        0.007080819
+    ],
+    "k": 5
+  }
+}
+```
+
+### Multi-fields vector query
+
+You can search across multiple vector fields simultaneously by wrapping multiple kNN objects in a boolean query. 
+This is useful when you have different types of embeddings (e.g., text embedding and image embedding) and want to combine their results.
+
+```json
+{
+  "bool": [
+      {
+        "knn": {
+          "field": "text_embedding",
+          "queryVector": [
+            0.030255454,
+            -0.058824085,
+            -0.065448694,
+            -0.03987034,
+            0.060786933,
+            -0.15469691,
+            -0.043918714,
+            0.057719983,
+            0.054530356,
+            0.007080819
+          ],
+          "k": 10
+        }
+      },
+      {
+        "knn": {
+          "field": "image_embedding", 
+          "queryVector": [
+            0.125434521,
+            -0.087654321,
+            0.045123789,
+            -0.156789012,
+            0.098765432,
+            0.034567890,
+            -0.123456789,
+            0.076543210,
+            -0.089012345,
+            0.112345678
+          ],
+          "k": 10
+        }
+      }
+  ]
+}
+```
+
+### Vector query with filter query
+
+An example vector query with a filter for better performance and relavance:
+
+```json
+{
+  "knn": {
+    "filter" : {
+      "queryString": {
+          "query": "node_type:NODE AND \"https://example.com/books/5514276\"",
+          "defaultField": "metadata.url"
+      }
+    },
+    "field": "example_vector_field",
+    "queryVector": [
+        0.030255454,
+        -0.058824085,
+        -0.065448694,
+        -0.03987034,
+        0.060786933,
+        -0.15469691,
+        -0.043918714,
+        0.057719983,
+        0.054530356,
+        0.007080819
+    ],
+    "k": 5
+  }
+}
+```

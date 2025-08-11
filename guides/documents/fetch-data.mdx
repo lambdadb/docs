@@ -2,26 +2,45 @@
 title: Fetch data
 ---
 
-This page shows you how to use the fetch endpoint to fetch documents by ID from a collection.
+This page shows you how to use the fetch endpoint to fetch documents by IDs from a collection.
 
 | Parameter      | Description                                                   | Type       | Required | Default |
-| -------------- | ------------------------------------------------------------- | ---------- | -------- | ------- |
-| ids            | The document IDs to fetch up to 1,000.                        | string[]   | ✓        |         |
+| :------------- | :------------------------------------------------------------ | :--------- | :------- | :------ |
+| ids            | The document IDs to fetch up to 1,00.                         | string[]   | ✓        |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
 
 To fetch documents, specify the document IDs (up to 100 IDs).
 
-```python python
-url = f"https://{projectHost}/collections/{collectionName}/query"
-headers = {"content-type" : "application/json", "x-api-key" : f"{YOUR_API_KEY}"}
+<CodeGroup>
 
-fetch = {
-	"ids": ["33201222"]
-}
+  ```python Python
+  from lambdadb import LambdaDB
 
-r = requests.post(url, headers=headers, json=fetch)
-```
+  lambda_db = LambdaDB(
+      server_url="PROJECT_URL",
+      project_api_key="YOUR_API_KEY"
+  )
+
+  res_fetch = lambda_db.collections.docs.fetch(
+      collection_name=collection_name, 
+      ids=["33201222"], 
+      include_vectors=True
+  )
+  ```
+
+  ```bash cURL
+  curl -X POST "$PROJECT_URL/collections/${collection_name}/fetch" \
+    -H "Content-Type: application/json" \
+    -H "x-api-key: ${YOUR_API_KEY}" \
+    -d '{
+      "ids": ["33201222"],
+      "includeVectors": true
+    }'
+  ```
+
+</CodeGroup>
+
 The response will look like this:
 
 ```json
@@ -31,7 +50,6 @@ The response will look like this:
   "docs": [
     {
       "collection": "example_collection",
-      "score": 1.0,
       "doc": {
         "id": "33201222",
         "url": "https://en.wikipedia.org/wiki/LambdaDB",
@@ -41,4 +59,3 @@ The response will look like this:
     }
   ]
 }
-```

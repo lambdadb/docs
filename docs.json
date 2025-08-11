@@ -25,21 +25,38 @@
           {
             "group": "Collections",
             "pages": [
-              "guides/collections/understanding-collections",
+              "guides/collections/collection-overview",
               "guides/collections/index-types",
               "guides/collections/create-a-collection",
               "guides/collections/manage-collections"
             ]
           },
           {
-            "group": "Data",
+            "group": "Documents",
             "pages": [
-              "guides/data/upsert-data",
-              "guides/data/bulk-upsert-data",
-              "guides/data/update-data",
-              "guides/data/query-data",
-              "guides/data/fetch-data",
-              "guides/data/delete-data"
+              "guides/documents/upsert-data",
+              "guides/documents/bulk-upsert-data",
+              "guides/documents/update-data",
+              "guides/documents/fetch-data",
+              "guides/documents/delete-data"
+            ]
+          },
+          {
+            "group": "Search",
+            "pages": [
+              "guides/search/search-overview",
+              {
+                "group": "Query",
+                "pages": [
+                  "guides/search/query-string",
+                  "guides/search/boolean",
+                  "guides/search/vector",
+                  "guides/search/sparse-vector",
+                  "guides/search/hybrid"
+                ]
+              },
+              "guides/search/sort",
+              "guides/search/limits"
             ]
           }
         ]
@@ -50,34 +67,40 @@
           {
             "group": "APIs",
             "pages": [
-              "api-reference/introduction",
+              "reference/api/introduction",
               {
                 "group": "Collections",
                 "pages": [
-                  "api-reference/endpoint/collection-list",
-                  "api-reference/endpoint/collection-create",
-                  "api-reference/endpoint/collection-describe",
-                  "api-reference/endpoint/collection-delete",
-                  "api-reference/endpoint/collection-configure"
+                  "reference/api/endpoint/collection-list",
+                  "reference/api/endpoint/collection-create",
+                  "reference/api/endpoint/collection-describe",
+                  "reference/api/endpoint/collection-delete",
+                  "reference/api/endpoint/collection-configure"
                 ]
               },
               {
                 "group": "Documents",
                 "pages": [
-                  "api-reference/endpoint/document-upsert",
-                  "api-reference/endpoint/document-get-bulk-upsert-url",
-                  "api-reference/endpoint/document-bulk-upsert",
-                  "api-reference/endpoint/document-update",
-                  "api-reference/endpoint/document-fetch",
-                  "api-reference/endpoint/document-delete"
+                  "reference/api/endpoint/document-upsert",
+                  "reference/api/endpoint/document-get-bulk-upsert-url",
+                  "reference/api/endpoint/document-bulk-upsert",
+                  "reference/api/endpoint/document-update",
+                  "reference/api/endpoint/document-fetch",
+                  "reference/api/endpoint/document-delete"
                 ]
               },
               {
-                "group": "Query",
+                "group": "Search",
                 "pages": [
-                  "api-reference/endpoint/document-query"
+                  "reference/api/endpoint/document-query"
                 ]
               }
+            ]
+          },
+          {
+            "group": "SDKs",
+            "pages": [
+              "reference/sdk/introduction"
             ]
           }
         ]

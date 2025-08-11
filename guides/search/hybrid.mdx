@@ -1,0 +1,150 @@
+---
+title: "Hybrid query"
+---
+
+A hybrid query combines vector search with lexical search to achieve better relevance by leveraging both semantic similarity and keyword matching.
+
+Full-text search and vector search use fundamentally different scoring mechanisms - text search typically uses relevance scores based on term frequency and document frequency, while vector search uses similarity distances. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
+
+LambdaDB supports three rescoring methods to combine results from different query types: `rrf` (Reciprocal Rank Fusion), `mm` (min-max), and `l2` (l2_norm).
+
+- **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods.
+- **MinMax** normalization scales scores to a 0-1 range before combining.
+- **L2 norm** uses Euclidean distance-based normalization to merge relevance scores from multiple query sources.
+
+<Info>
+
+  Regardless of the rescoring method used, the final combined score is always normalized to a value between 0 and 1.
+
+</Info>
+
+## Parameters
+
+### Rescoring methods
+
+| Method | Description                                           | Boost support |
+|:-------|:------------------------------------------------------|:--------------|
+| rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
+| mm     | Min-Max normalization scaling                         | Yes           |
+| l2     | Euclidean distance-based normalization                | Yes           |
+
+### Query object parameters
+
+Each query object within the rescoring method array can contain:
+
+| Parameter | Description                                      | Type   | Required | Default |
+|:----------|:-------------------------------------------------|:-------|:---------|:--------|
+| query     | Query object (queryString/knn/sparseVector/bool) | object | ✓        |         |
+| boost     | Score multiplier for relevance                   | float  |          | 0.5     |
+
+<Note>
+
+  A hybrid query can include up to two query objects. If you need to express more complex logic within a query object, use a `boolean query` to combine multiple conditions.
+ 
+</Note>
+
+### Boost constraints
+
+<Note>
+
+  - The boost parameter is only available for `mm` and `l2` rescoring methods.
+  - The sum of all boost values must equal to 1.0.
+  - Each individual boost value must be between 0 and 1.
+
+</Note>
+
+## Examples
+
+### L2-norm hybrid query
+
+```json
+{
+  "l2": [
+    {
+      "queryString": {
+        "query": "content:LambdaDB"
+      },
+      "boost": 0.7
+    },
+    {
+      "knn": {
+        "filter": {
+          "queryString": {
+            "query": '"https://lambdadb.ai"',
+            "defaultField": "metadata.url"
+          }
+        },
+        "field": "text_embedding",
+        "queryVector": [0.1, 0.2, 0.3],
+        "k": 5
+      },
+      "boost": 0.3
+    }
+  ]
+}
+```
+
+This example combines:
+- A `queryString` query with 0.7 boost weight.
+- A `knn` vector query with pre-filtering and 0.3 boost weight.
+- Uses L2-norm rescoring to merge the results.
+
+### MinMax hybrid query with sparse vector
+
+```json
+{
+  "mm": [
+    {
+      "sparseVector": {
+        "field": "sparse_embedding",
+        "queryVector": {
+          "machine": 0.8,
+          "learning": 0.6,
+          "AI": 0.4
+        }
+      },
+      "boost": 0.6
+    },
+    {
+      "knn": {
+        "field": "dense_embedding",
+        "queryVector": [0.1, 0.2, 0.3],
+        "k": 10
+      },
+      "boost": 0.4
+    }
+  ]
+}
+```
+
+This example combines:
+- A `sparseVector` query with 0.6 boost weight.
+- A `knn` dense vector query with 0.4 boost weight.
+- Uses MinMax normalization to merge the results.
+
+### RRF hybrid query
+
+```json
+{
+  "rrf": [
+    {
+      "queryString": {
+        "query": "machine learning"
+      }
+    },
+    {
+      "knn": {
+        "field": "content_embedding",
+        "queryVector": [0.1, 0.2, 0.3],
+        "k": 10
+      }
+    }
+  ]
+}
+```
+
+This example uses Reciprocal Rank Fusion to balance text and vector search results.
+
+<Warning>
+The final returned documents may not include the requested number of documents from the `knn` query. This is because the scores of documents returned solely from other queries may be higher than those of the top k documents returned from the `knn`.
+</Warning>

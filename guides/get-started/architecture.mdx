@@ -2,26 +2,26 @@
 title: Architecture
 ---
 
-LambdaDB operates as a collection of serverless functions and resources within AWS, completely separating database logic from infrastructure. User requests flow through a regional Gateway, which routes them to either Control or Data Functions. Builder Function periodically persists all buffered data to S3 storage.
+LambdaDB operates as a collection of serverless functions and resources within AWS, completely separating database logic from infrastructure. User requests flow through a regional Gateway, which routes them to either Control or Data functions. Builder function periodically persists all buffered data to S3 storage.
 
 ![Alt text describing the image](/images/architecture.svg)
 
 ### Gateway
 
-**Gateway** verifies the project API key in user requests for targeted projects. If the key is valid, it checks whether the project exceeds its configured rate limit. It then routes the request to either Control or Data Functions, based on the type of work needed.
+**Gateway** verifies the project API key in user requests for targeted projects. If the key is valid, it checks whether the project exceeds its configured rate limit. It then routes the request to either Control or Data functions, based on the type of work needed.
 
-### Control Functions
+### Control functions
 
-**Control Functions** handle project/collection CRUD operations and data management requests such as point-in-time restore and zero-copy clone. They also performs maintenance tasks, such as adjusting the number of virtual shards for each collection to enable parallel query execution based on collection size, triggered by EventBridge Scheduler. They use DynamoDB for storing metadata and conducting distributed coordination among concurrent readers, writers, and background tasks.
+**Control functions** handle project/collection CRUD operations and data management requests such as point-in-time restore and zero-copy clone. They also performs maintenance tasks, such as adjusting the number of virtual shards for each collection to enable parallel query execution based on collection size, triggered by EventBridge Scheduler. They use DynamoDB for storing metadata and conducting distributed coordination among concurrent readers, writers, and background tasks.
 
-### Data Functions
+### Data functions
 
-**Data Functions** perform actual data writes and reads. 
+**Data functions** perform actual data writes and reads. 
 
-#### The Write Path
+#### The write path
 
-When Writer Function receives a request to upsert, update, or delete records in a collection, it records the request details in a log along with a monotonically increasing sequence number. This request log is written into a durable, serverless write buffer (EFS) before returning a response to the client. Later, Builder function writes the buffered logs to S3 in batches and deletes them once the data is successfully committed. In S3, the data is organized as a tree structure where a root object contains intermediate objects pointing to leaf objects that store the actual data. So the root object basically acts like commit point that always contains a consistent collection view. This on-storage structure, combined with S3 versioning and lifecycle policies, enables us to implement multi-version concurrency control and advanced features like point-in-time restore efficiently and robustly without reinventing the wheel.
+When Writer function receives a request to upsert, update, or delete records in a collection, it records the request details in a log along with a monotonically increasing sequence number. This request log is written into a durable, serverless write buffer (EFS) before returning a response to the client. Later, Builder function writes the buffered logs to S3 in batches and deletes them once the data is successfully committed. In S3, the data is organized as a tree structure where a root object contains intermediate objects pointing to leaf objects that store the actual data. So the root object basically acts like commit point that always contains a consistent collection view. This on-storage structure, combined with S3 versioning and lifecycle policies, enables us to implement multi-version concurrency control and advanced features like point-in-time restore efficiently and robustly without reinventing the wheel.
 
-#### The Read Path
+#### The read path
 
-When a query is received, Router Function validates it and then invokes Executor Functions based on the number of virtual shards assigned to the collection by a control function. If the client specifies strong consistency, the router also runs the query against buffered logs. Each executor scans its assigned shard data and returns a list of top candidates to the router. The shard data is typically cached in the executor's memory and local storage. If data isn't cached, the executor fetches it from S3 in block units and caches it for future queries. The router then compiles all results, merges and deduplicates them with results from buffered logs if needed, selects the final top_k candidates and returns them to the client.
+When a query is received, Router function validates it and then invokes Executor functions based on the number of virtual shards assigned to the collection by a control function. If the client specifies strong consistency, the router also runs the query against buffered logs. Each executor scans its assigned shard data and returns a list of top candidates to the router. The shard data is typically cached in the executor's memory and local storage. If data isn't cached, the executor fetches it from S3 in block units and caches it for future queries. The router then compiles all results, merges and deduplicates them with results from buffered logs if needed, selects the final top_k candidates and returns them to the client.

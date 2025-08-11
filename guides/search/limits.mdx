@@ -1,0 +1,22 @@
+---
+title: "Query limits"
+---
+
+| Metric              | Limit  |
+|:------------------- |:------ |
+| Max `size` value    | 100    |
+| Max result size     | 6MB    |
+| Max execution time  | 30s    |
+| Max boolean clauses | 4,096  |
+| Max non-zero values for sparse vector query | 4,096  |
+| Value range for sparse vector query | 0-64  |
+
+The query result size is affected by the dimension of the vectors and
+whether vector values are included in the result.
+
+<Tip>
+
+  If a query fails due to exceeding the 6MB result size limit, choose a lower `size` value,
+  or `includeVectors=false` to exclude vector values from the result.
+
+</Tip>

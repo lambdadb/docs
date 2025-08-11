@@ -1,5 +1,5 @@
 ---
-title: Search Examples
+title: Search examples
 ---
 
 This guide demonstrates three powerful search techniques using the `cohere-wikipedia-en-100k` collection in the playground project. Each example showcases different approaches to finding the most relevant information from your data.
@@ -8,7 +8,7 @@ This guide demonstrates three powerful search techniques using the `cohere-wikip
 
 Before running these examples, ensure you have:
 
-**Required Credentials:**
+**Required credentials:**
 
 - **Cohere API key** from [cohere.com](https://www.cohere.com/)
 - **LambdaDB playground project API key**
@@ -25,7 +25,7 @@ Fill out [this form](https://share-na2.hsforms.com/1vBeXGa1ETXupo4_mIrtoEA40td9f
 pip install cohere lambdadb
 ```
 
-## ⚙️ Initial Setup
+## ⚙️ Initial setup
 
 ```python
 import cohere
@@ -68,7 +68,7 @@ def display_results(results, title, description=""):
 
 ```
 
-## 🎯 Example 1: Hybrid Search with Combined Scoring
+## 🎯 Example 1: Hybrid search with combined scoring
 
 **💡 When to use:** This is your go-to search method when you want the most comprehensive and accurate results. Perfect for general queries where you need both keyword relevance and semantic understanding.
 
@@ -76,7 +76,7 @@ def display_results(results, title, description=""):
 
 <Tip>
 
-Check out [this page](/guides/data/query-data#hybrid-query) for more details about hybrid query and scoring.
+Check out [this page](/guides/search/hybrid) for more details about hybrid query and scoring.
 
 </Tip>
 
@@ -134,7 +134,7 @@ hybrid_results = hybrid_search_example()
 
 ```
 
-**Expected Results:**
+**Expected results:**
 
 ```
 ============================================================
@@ -165,7 +165,7 @@ Text Preview: Although it began after the release of the first film, upon releas
 --------------------------------------------------
 ```
 
-## 🏷️ Example 2: Hybrid Search with Keyword Filtering
+## 🏷️ Example 2: Hybrid search with keyword filtering
 
 **💡 When to use:** Perfect when you want to search within a specific category or document type. Use this when you know the general category but need semantic ranking within that subset.
 
@@ -238,7 +238,7 @@ filtered_results = keyword_filtering_example()
 
 ```
 
-**Expected Results:**
+**Expected results:**
 
 ```
 ============================================================
@@ -287,7 +287,7 @@ Text Preview: This is a list of supermarket chains in Canada. For supermarkets o
 
 ```
 
-## 🎯 Example 3: Vector Search with Exact Match Filtering
+## 🎯 Example 3: Vector search with exact match filtering
 
 **💡 When to use:** Ideal when you know the exact document or URL and want to find the most relevant content within it. Perfect for document-specific Q&A scenarios.
 
@@ -343,7 +343,7 @@ exact_match_results = exact_match_filtering_example()
 
 ```
 
-**Expected Results:**
+**Expected results:**
 
 ```
 ============================================================
@@ -374,7 +374,7 @@ Text Preview: The Beatles, who, until 31 December 1960, were under contract with
 --------------------------------------------------
 ```
 
-## 🔧 Complete Working Example
+## 🔧 Complete working example
 
 Here's a complete script that runs all three examples with proper error handling:
 
@@ -565,7 +565,7 @@ class WikipediaSearchExamples:
 
         return hybrid_results, filtered_results, exact_results
 
-# Usage Example
+# Usage example
 if __name__ == "__main__":
     # Initialize with your API keys
     examples = WikipediaSearchExamples(
@@ -584,40 +584,36 @@ if __name__ == "__main__":
 
 ---
 
-## 📋 Search Method Comparison
+## 📋 Search method comparison
 
-| Method | Best For | Advantages | Use Cases |
+| Method | Best For | Advantages | Use cases |
 | --- | --- | --- | --- |
-| **Hybrid Search** | General queries | Best overall accuracy, combines keyword + semantic | User questions, general search |
-| **Keyword Filtering** | Category-specific search | Fast filtering + semantic ranking | Document type filtering, topic-specific search |
-| **Exact Match** | Document-specific queries | Precise targeting within known documents | Q&A on specific pages, document analysis |
+| **Hybrid search** | General queries | Best overall accuracy, combines keyword + semantic | User questions, general search |
+| **Keyword filtering** | Category-specific search | Fast filtering + semantic ranking | Document type filtering, topic-specific search |
+| **Exact match** | Document-specific queries | Precise targeting within known documents | Q&A on specific pages, document analysis |
 
----
+## 🎯 Best practices
 
-## 🎯 Best Practices
+### ✅ Configuration tips
 
-### ✅ Configuration Tips
+- **Set `skipSyntax: true`** for user inputs that may contain special characters.
+- **Use appropriate `k` values** (5-20 for most use cases).
+- **Choose RRF** for best overall search quality.
+- **Apply filters in `knn.filter`** for semantic search within filtered results.
 
-- **Set `skipSyntax: true`** for user inputs that may contain special characters
-- **Use appropriate `k` values** (5-20 for most use cases)
-- **Choose RRF** for best overall search quality
-- **Apply filters in `knn.filter`** for semantic search within filtered results
+### 🚀 Performance optimization
 
-### 🚀 Performance Optimization
+- Use smaller `k` values for faster vector search.
+- Combine multiple filters in boolean queries for precise targeting.
+- Consider using `l2` or `mm` (min-max) normalization for simpler score interpretation.
 
-- Use smaller `k` values for faster vector search
-- Combine multiple filters in boolean queries for precise targeting
-- Consider using `l2` or `mm` (min-max) normalization for simpler score interpretation
+## **➡️ Next step**
 
----
-
-## **➡️ Next Step**
-
-- **Apply for early access:** https://40td9f.share-na2.hsforms.com/2Ckykg-UgT1K1oqAtWG3zMQ
+- **Apply for early access:** [https://lambdadb.ai/early-access](https://lambdadb.ai/early-access?utm_source=docs)
 
 ## **🤝 Support**
 
 Need help with your implementation? Check out our:
 
-- **API reference:** [Comprehensive documentation for developers](/api-reference/introduction)
-- **Community forum:** [Get help from other developers](https://discord.gg/dnKm7WUHWg)
+- **API reference:** [Comprehensive documentation for developers](/reference/api/introduction)
+- **Community forum:** [Get help from other developers](https://discord.gg/6qtmgtj342)

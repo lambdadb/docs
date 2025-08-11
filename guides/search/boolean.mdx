@@ -1,0 +1,87 @@
+---
+title: "Boolean query"
+---
+
+A query that matches documents matching boolean combinations of other queries.
+The boolean query maps to [Lucene BooleanQuery](https://lucene.apache.org/core/10_2_2/core/org/apache/lucene/search/BooleanQuery.html).
+
+## Boolean Query Array Parameters
+When using within a bool query array, each object can contain:
+
+| Parameter | Description                    | Type   | Required | Default |
+|:----------|:-------------------------------|:-------|:---------|:--------|
+| query     | Query string object            | object | ✓        |         |
+| occur     | Boolean occurrence type        | string |          | should  |
+| boost     | Score multiplier for relevance | string |          | 1.0     |
+
+It is built using one or more boolean clauses, each clause with a typed occurrence. The occurrence types are:
+
+### Occur
+
+| Occur    | Description                                                                             |
+|:-------- |:--------------------------------------------------------------------------------------- |
+| filter   | The clause (query) must appear in matching documents. However, unlike `must`, the score of the query will be ignored. Each query defined under a `filter` acts as a logical "AND", returning only documents that match all the specified queries. |
+| must     | The clause (query) must appear in matching documents and will contribute to the score. Each query defined under a `must` acts as a logical "AND", returning only documents that match all the specified queries. |
+| must_not | The clause (query) must not appear in the matching documents. Each query defined under a `must_not` acts as a logical "NOT", returning only documents that do not match any of the specified queries. |
+| should   | The clause (query) should appear in the matching document. Each query defined under a `should` acts as a logical "OR", returning documents that match any of the specified queries. |
+
+### Boost
+
+Boost values that are less than 1.0 will give less importance to this query compared to other ones
+while values that are greater than 1.0 will give more importance to the scores returned by this query.
+
+
+## Examples
+
+### Boolean query with occur
+
+```json
+{
+  "bool": [
+    {
+      "queryString": {
+        "query": "node_type:NODE"
+      },
+      "occur" : "filter"
+    },
+    {
+      "queryString": {
+        "query": "content:LambdaDB"
+      },
+      "occur" : "should"
+    }
+  ]
+}
+```
+
+This query will return top documents that are both of type `NODE` and have the highest score value.
+
+
+### Boolean query with boost
+
+<Note>
+
+  The boost value must be greater than zero.
+
+</Note>
+
+```json
+{
+  "bool": [
+    {
+      "queryString": {
+        "query": "node_type:NODE"
+      },
+      "boost": 0.8
+    },
+    {
+      "queryString": {
+        "query": "content:LambdaDB"
+      },
+      "boost": 0.2
+    }
+  ]
+}
+```
+
+The final score of the matched document is calculated as proportional to the boost values.

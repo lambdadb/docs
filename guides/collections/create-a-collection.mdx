@@ -1,17 +1,58 @@
 ---
-title: Create a collection
+title: "Create a collection"
 ---
 
 This page shows you how to create a collection with various configurations.
 
+## Parameters
+
+| Parameter | Type | Required | Description |
+|:----------|:-----|:---------|:------------|
+| collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 |
+| indexConfigs | object |  | Field configuration for indexing. Required when creating from scratch |
+| sourceProjectName | string |  | Source project name for PITR or cloning operations |
+| sourceCollectionName | string |  | Source collection name for PITR or cloning operations |
+| sourceDatetime | string |  | ISO 8601 formatted datetime for PITR (e.g., "2024-01-15T10:30:00Z") |
+| sourceProjectApiKey | string |  | API key for the source project |
+
+
 ## Create a collection from scratch
 
-The simplest way to create a collection is to provide the collection name and the field indexConfigs.
+The simplest way to create a collection is to provide the collection name and the field [index configurations](/guides/collections/index-types).
 
-```bash
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY"
+)
+
+basic_config = {
+    "url": {"type": models.Type.KEYWORD},
+    "author": {"type": models.Type.KEYWORD},
+    "content": {
+      "type": models.TypeText.TEXT,
+      "analyzers": [
+          models.Analyzer.JAPANESE,
+          models.Analyzer.KOREAN,
+          models.Analyzer.ENGLISH,
+      ],
+    }
+}
+
+collection = lambda_db.collections.create(
+    collection_name="example-collection",
+    index_configs=basic_config
+)
+```
+
+```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X POST "https://{projectHost}/collections" \
+curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
@@ -22,30 +63,120 @@ curl -i -X POST "https://{projectHost}/collections" \
           },
           "author": {
             "type": "keyword"
+          },
+          "content": {
+            "type": models.TypeText.TEXT,
+            "analyzers": [
+              models.Analyzer.JAPANESE,
+              models.Analyzer.KOREAN,
+              models.Analyzer.ENGLISH,
+            ],
           }
         }
       }'
 ```
 
-## Create a collection cloned from another collection
+</CodeGroup>
 
-You can create a collection cloned from an existing collection by simply providing information
-related to the source collection.
+## Clone a collection with point-in-time recovery (PITR)
 
-```bash
+LambdaDB automatically maintains continuous backups at the collection level with a default retention period of 30 days. You can create a collection from a specific point in time using PITR functionality.
+
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+from datetime import datetime
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_TARGET_API_KEY"
+)
+
+# Restore from a specific point in time
+restored_collection = lambda_db.collections.create(
+    collection_name="restored-collection",
+    source_project_name="source-project-name",
+    source_project_api_key="YOUR_SOURCE_API_KEY"
+    source_collection_name="source-collection-name",
+    source_datetime="2024-01-15T10:30:00Z",
+)
+```
+
+```bash cURL
 LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
 LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
 
-curl -i -X POST "https://{projectHost}/collections" \
+curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{
-        "collectionName": "example-collection",
-        "sourceProjectId": "example-source-project-id",
-        "sourceProjectApiKey": $LAMBDADB_SOURCE_PROJECT_API_KEY,
-        "sourceIndexName": "example-source-collection-name"
+        "collectionName": "restored-collection",
+        "sourceProjectName": "source-project-name",
+        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'"
+        "sourceCollectionName": "source-collection-name",
+        "sourceDatetime": "2024-01-15T10:30:00Z",
       }'
 ```
-As shown above example, specifying `indexConfigs` is optional when cloning a collection.
-You can pass `indexConfigs` object only with additional indexConfigs based on the original collection's indexConfigs.
-Deleting or modifying the original collection's indexConfigs is not allowed.
+
+
+</CodeGroup>
+
+<Note>
+PITR allows you to restore collections to any point within the configured retention period. 
+The `sourceDatetime` parameter must be in ISO 8601 format (UTC timezone). If `sourceDatetime` is not specified, the collection will be restored from the most recent data available.
+</Note>
+
+## Clone a collection with additional index configs
+
+You can clone a collection based on an existing collection and extend it with additional indexConfigs. The original collection's configuration will be preserved, and you can only add new fields.
+
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_TARGET_API_KEY"
+)
+
+cloned_collection = lambda_db.collections.create(
+    collection_name="cloned-collection",
+    source_project_id="example-source-project-id",
+    source_project_api_key="YOUR_SOURCE_API_KEY",
+    source_collection_name="example-source-collection-name"
+    index_configs={
+      "newText": {
+        "type": "text,
+        "analyzers": [
+            "japanese",
+            "korean",
+            "english"
+        ],
+    },
+    }
+    source_datetime="2025-08-08T10:00:00Z"
+)
+```
+
+```bash cURL
+LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
+LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
+
+curl -i -X POST "$PROJECT_URL/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
+  -d '{
+        "collectionName": "cloned-collection",
+        "sourceProjectId": "example-source-project-id",
+        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
+        "sourceCollectionName": "example-source-collection-name",
+        "sourceDatetime"="2025-08-08T10:00:00Z"
+      }'
+```
+</CodeGroup>
+
+<Note>
+When cloning a collection, specifying `indexConfigs` is optional. You can pass additional `indexConfigs` to extend the original collection's configuration, but deleting or modifying the original collection's indexConfigs is not allowed.
+</Note>
