@@ -32,10 +32,16 @@ LambdaDB supports three rescoring methods to combine results from different quer
 
 Each query object within the rescoring method array can contain:
 
-| Parameter | Description                    | Type   | Required | Default |
-|:----------|:-------------------------------|:-------|:---------|:--------|
-| query     | Query object (queryString/knn) | object | ✓        |         |
-| boost     | Score multiplier for relevance | float  |          | 0.5     |
+| Parameter | Description                                      | Type   | Required | Default |
+|:----------|:-------------------------------------------------|:-------|:---------|:--------|
+| query     | Query object (queryString/knn/sparseVector/bool) | object | ✓        |         |
+| boost     | Score multiplier for relevance                   | float  |          | 0.5     |
+
+<Note>
+
+  A hybrid query can include up to two query objects. If you need to express more complex logic within a query object, use a `boolean query` to combine multiple conditions.
+ 
+</Note>
 
 ### Boost constraints
 
