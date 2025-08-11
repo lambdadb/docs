@@ -1,20 +1,27 @@
-LambdaDB supports a simple query string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_2_2/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
+---
+title: "Query string"
+---
 
+LambdaDB supports a simple string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_2_2/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
 Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operators`, and `special character escaping` are supported.
 
 ## Parameters
 
 | Parameter    | Description                              | Type     | Required | Default |
-|--------------|------------------------------------------|----------|----------|---------|
+|:-------------|:-----------------------------------------|:---------|:---------|:--------|
 | query        | Query string                             | object   | ✓        |         |
 | defaultField | Default field name to apply query        | string   |          |         |
 | skipSyntax   | Skip syntax check for special characters | boolean  |          | false   |
 
-> **Note:** A query to a collection with `object` field type requires special handling.
+<Note>
+  
+  A query to a collection with `object` field type requires special handling.
+
+</Note>
 
 ## Examples
 
-### Basic Query
+### Basic query
 
 ```json
 {
@@ -57,7 +64,7 @@ For handling special characters, use the `skipSyntax` option:
 }
 ```
 
-### Exact Match Query
+### Exact match query
 
 ```json
 {
@@ -104,23 +111,23 @@ For example, to search for the phrase hello world as a single keyword, use:
 ```
 
 
-### Range Query
+### Range query
 
 Range queries allow you to search for values within a specific range using range query syntax.
 
-#### Supported Field Types
+#### Supported field types
+
 Range queries work with the following field types:
 
-long - Integer numbers
-double - Floating-point numbers
-date - Date and datetime values
-
-Note: While keyword fields are technically supported, range queries on text or keyword fields may not execute if search.allow_expensive_queries is disabled for performance reasons.
+* `long`
+* `double`
+* `datetime`
+* `keyword` 
 
 #### Syntax
 
-- **Inclusive range**: `[min TO max]` - includes both lower and upper bounds
-- **Exclusive range**: `{min TO max}` - excludes both lower and upper bounds
+- **Inclusive range**: `[min TO max]` includes both lower and upper bounds.
+- **Exclusive range**: `{min TO max}` excludes both lower and upper bounds.
 
 ```json
 {

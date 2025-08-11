@@ -45,11 +45,16 @@
             "group": "Search",
             "pages": [
               "guides/search/overview",
-              "guides/search/query-string",
-              "guides/search/boolean",
-              "guides/search/vector",
-              "guides/search/sparse-vector",
-              "guides/search/hybrid",
+              {
+                "group": "Query objects",
+                "pages": [
+                  "guides/search/query-string",
+                  "guides/search/boolean",
+                  "guides/search/vector",
+                  "guides/search/sparse-vector",
+                  "guides/search/hybrid"
+                ]
+              },
               "guides/search/sort",
               "guides/search/limits"
             ]
@@ -62,34 +67,40 @@
           {
             "group": "APIs",
             "pages": [
-              "api-reference/introduction",
+              "reference/api/introduction",
               {
                 "group": "Collections",
                 "pages": [
-                  "api-reference/endpoint/collection-list",
-                  "api-reference/endpoint/collection-create",
-                  "api-reference/endpoint/collection-describe",
-                  "api-reference/endpoint/collection-delete",
-                  "api-reference/endpoint/collection-configure"
+                  "reference/api/endpoint/collection-list",
+                  "reference/api/endpoint/collection-create",
+                  "reference/api/endpoint/collection-describe",
+                  "reference/api/endpoint/collection-delete",
+                  "reference/api/endpoint/collection-configure"
                 ]
               },
               {
                 "group": "Documents",
                 "pages": [
-                  "api-reference/endpoint/document-upsert",
-                  "api-reference/endpoint/document-get-bulk-upsert-url",
-                  "api-reference/endpoint/document-bulk-upsert",
-                  "api-reference/endpoint/document-update",
-                  "api-reference/endpoint/document-fetch",
-                  "api-reference/endpoint/document-delete"
+                  "reference/api/endpoint/document-upsert",
+                  "reference/api/endpoint/document-get-bulk-upsert-url",
+                  "reference/api/endpoint/document-bulk-upsert",
+                  "reference/api/endpoint/document-update",
+                  "reference/api/endpoint/document-fetch",
+                  "reference/api/endpoint/document-delete"
                 ]
               },
               {
                 "group": "Search",
                 "pages": [
-                  "api-reference/endpoint/document-query"
+                  "reference/api/endpoint/document-query"
                 ]
               }
+            ]
+          },
+          {
+            "group": "SDKs",
+            "pages": [
+              "reference/sdk/introduction"
             ]
           }
         ]

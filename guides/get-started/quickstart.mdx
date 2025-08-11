@@ -16,7 +16,7 @@ pip install lambdadb
     We recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
 </Tip>
 
-## 🔑 Step 2: Get Your API Key
+## 🔑 Step 2: Get your API key
 
 To use LambdaDB, you'll need an API key. Fill out [this form](https://share-na2.hsforms.com/1vBeXGa1ETXupo4_mIrtoEA40td9f) to obtain playground credentials.
 
@@ -24,7 +24,13 @@ To use LambdaDB, you'll need an API key. Fill out [this form](https://share-na2.
     Keep your API key secure and consider storing it in environment variables rather than hardcoding it in your scripts.
 </Note>
 
-## 📚 Step 3: Create a Collection
+<Warning>
+
+    The playground project is publicly accessible and rate limited. Do not store any sensitive/production data to the playground project.
+
+</Warning>
+
+## 📚 Step 3: Create a collection
 
 A collection is where you'll store your documents and define how they should be indexed for search. LambdaDB supports 9 different index types: text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
 
@@ -90,12 +96,12 @@ CreateCollectionResponse(
 )
 ```
 
-**Key Configuration Details:**
+**Key configuration details:**
 - **Text field**: Supports multilingual search with English and Korean analyzers
 - **Vector field**: 10-dimensional vectors using cosine similarity
 - **Keyword field**: Added to support exact match filtering.
 
-## 📄 Step 4: Add Documents
+## 📄 Step 4: Add documents
 
 Now let's add some sample documents. Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
 
@@ -135,13 +141,13 @@ Response:
 MessageResponse(message='Upsert request is accepted')
 ```
 
-**Important Notes:**
+**Important notes:**
 
 - **Upsert behavior**: Documents with the same ID will be updated; new IDs create new documents.
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
 - **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
 - **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
-If your application require strong (read-after-write) consistency, set `consistentRead` to `true` when query or fetch data from a collection. 
+If your application requires strong (read-after-write) consistency, set `consistentRead` to `true` when query or fetch data from a collection. 
 
 **Check indexing status:** You can view collection stats to verify that your documents have been indexed:
 
@@ -150,7 +156,7 @@ If your application require strong (read-after-write) consistency, set `consiste
 res = lambda_db.collections.get(collection_name="quickstart")
 ```
 
-## 🔍 Step 5: Full-Text Search
+## 🔍 Step 5: Full-text search
 
 Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". This demonstrates LambdaDB's powerful query capabilities:
 
@@ -196,7 +202,7 @@ doc1  | 0.48  | serverless      | Serverless computing does not mean no servers 
 
 Why these results? doc3 scored highest because it directly mentions "manage servers", while doc1 matched on "server management" and "serverless computing".
 
-## 🔍 Step 6: Hybrid Search
+## 🔍 Step 6: Hybrid search
 
 Now let's combine full-text search with vector similarity for more comprehensive results. This is where LambdaDB really shines:
 
@@ -245,12 +251,12 @@ doc2  | 0.52  | cloud           | Instead, it refers to a cloud computing model 
 doc1  | 0.43  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
 ```
 
-**Score Normalization Options:**
+**Score normalization options:**
 - `rrf` (Reciprocal Rank Fusion): Great for combining rankings from different search methods
 - `l2` (L2 Normalization): Normalizes scores using L2 norm
 - `mm` (Min-Max Normalization): Simple linear scaling to 0-1 range
 
-## 🧹 Step 7: Clean Up
+## 🧹 Step 7: Clean up
 
 When you're finished experimenting, clean up your resources:
 
@@ -258,12 +264,12 @@ When you're finished experimenting, clean up your resources:
 lambda_db.collections.delete(collection_name=collection_name)
 ```
 
-## 🚀 Next Steps
+## 🚀 Next steps
 
-- **Advanced Queries**: Explore complex patterns in our [Query Guide](/guides/data/query-data)
-- **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](/guides/data/bulk-upsert-data)
-- **API Reference**: Comprehensive documentation at our [API Reference](/api-reference/introduction)
+- **Advanced Queries**: Explore complex patterns in our [Query Guide](/guides/search/overview)
+- **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](/guides/documents/bulk-upsert-data)
+- **API Reference**: Comprehensive documentation at our [API Reference](/reference/api/introduction)
 
 ## 🤝 Support
 
-Need help? Visit our [Community Forum](https://discord.gg/dnKm7WUHWg) for support and discussions.
+Need help? Visit our [Community Forum](https://discord.gg/6qtmgtj342) for support and discussions.

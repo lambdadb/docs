@@ -1,9 +1,13 @@
-A k-nearest neighbor(kNN) search finds the k nearest vectors to a query vector, as measured by a similarity metric.
+---
+title: "Vector query"
+---
+
+A vector query finds the k nearest vectors to a query vector, as measured by a similarity metric.
 
 ## Parameters
 
 | Parameter     | Description                                         | Type     | Required |
-| ------------- | --------------------------------------------------- | -------  | -------- |
+|:------------- |:--------------------------------------------------- |:-------  |:-------- |
 | field         | The name of the vector field to search against      | string   | ✓        |
 | queryVector   | Query vector                                        | float[]  | ✓        |
 | k             | Number of nearest neighbors to return as top `docs` | integer  | ✓        |
@@ -12,7 +16,7 @@ A k-nearest neighbor(kNN) search finds the k nearest vectors to a query vector, 
 
 ## Examples
 
-### Simple KNN Vector Query
+### Simple vector query
 
 ```json
 {
@@ -35,9 +39,10 @@ A k-nearest neighbor(kNN) search finds the k nearest vectors to a query vector, 
 }
 ```
 
-### Multi-Vector Field Search
+### Multi-fields vector query
 
-You can search across multiple vector fields simultaneously by wrapping multiple kNN objects in a bool query. This is useful when you have different types of embeddings (e.g., text embeddings, image embeddings) and want to combine their results.
+You can search across multiple vector fields simultaneously by wrapping multiple kNN objects in a boolean query. 
+This is useful when you have different types of embeddings (e.g., text embedding and image embedding) and want to combine their results.
 
 ```json
 {
@@ -82,9 +87,9 @@ You can search across multiple vector fields simultaneously by wrapping multiple
 }
 ```
 
-### KNN Vector Query with filter Query
+### Vector query with filter query
 
-An example vector query with a filter for better performance:
+An example vector query with a filter for better performance and relavance:
 
 ```json
 {
@@ -112,23 +117,3 @@ An example vector query with a filter for better performance:
   }
 }
 ```
-
-### includeVectors
-
-The `include_vectors` parameter controls whether vector embeddings are returned in the query results. By default, vector data is excluded from responses to reduce payload size and improve performance.
-
-```python python
-lambda_db = LambdaDB(
-    server_url="SERVER_URL",
-    project_api_key="YOUR_API_KEY",
-)
-
-results = lambda_db.collections.query(
-    collection_name=collection_name,
-    query={},
-    size=10,
-    include_vectors=True,
-)
-```
-
-**Note**: Setting `include_vectors=True` will increase response size significantly, especially for high-dimensional vectors. Use this option only when vector data is specifically needed for your application.

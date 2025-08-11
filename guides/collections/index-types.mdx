@@ -5,7 +5,7 @@ title: "Index types"
 LambdaDB currently supports eight types of indexes. Note that the whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean they are searchable.
 
 <Warning>
-The dot (.) character cannot be used as an index name and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
+The dot (.) character cannot be used as a field name and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
 </Warning>
 
 ## text
@@ -48,7 +48,13 @@ LambdaDB supports four analyzers for tokenization: `standard` (default), `korean
 
 ## keyword
 
-`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Keyword indexes are often used in sorting, aggregations, and term-level queries. Note that LambdaDB does not index any string longer than 4096 characters.
+`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Keyword indexes are often used in sorting, aggregations, and term-level queries.
+
+<Note>
+
+LambdaDB does not index any string longer than 4096 characters.
+
+</Note>
 
 You can also store multiple keyword values as an array for fields like tags or categories.
 
@@ -138,7 +144,7 @@ This type is for a double-precision 64-bit IEEE 754 floating point number, restr
 
 ## datetime
 
-This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6). `datetime` indexes are optimized for sorting and range queries, or to search for a specific time.
+This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6). `datetime` indexes are optimized for sorting and range queries.
 
 <CodeGroup>
 
@@ -171,9 +177,9 @@ print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
 
 The `vector` type indexes dense vectors of numeric values. `vector` indexes are primarily used for k-nearest neighbor (kNN) search. The vector type does not support aggregations or sorting. You add a vector field as an array of numeric values.
 
-A k-nearest neighbor (kNN) search finds the k nearest vectors to a query vector, as measured by a similarity metric. LambdaDB supports four similarity metrics: `euclidean`, `dot_product`, `cosine`, `max_inner_product`. You can define the vector similarity to use in kNN search.
+A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. LambdaDB supports four similarity metrics: `euclidean`, `dot_product`, `cosine`, `max_inner_product`. You can define the vector similarity to use in kNN search.
 
-LambdaDB supports `multi-vector field search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
+LambdaDB also supports `multi-field vector search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
 
 <CodeGroup>
 
@@ -269,7 +275,7 @@ JSON documents are hierarchical in nature: the document may contain inner object
 
 </CodeGroup>
 
-## Complete Example Configuration
+## Complete example configuration
 
 Here's a comprehensive example that demonstrates all index types:
 
@@ -375,19 +381,25 @@ complete_index_config = {
 
 </CodeGroup>
 
-## Supported Analyzers
+## Supported analyzers
 
 | Analyzer | Description |
-|----------|-------------|
+|:---------|:------------|
 | `standard` | Default general-purpose analyzer |
 | `english` | English language analyzer |
 | `korean` | Korean language analyzer |
 | `japanese` | Japanese language analyzer |
 
-## Supported Similarity Metrics
+<Note>
+
+Leave a comment in our [community channel](https://discord.gg/dnKm7WUHWg) or [contact us](https://lambdadb.ai/contact) if you need an analyzer not listed above.
+
+</Note>
+
+## Supported similarity metrics
 
 | Metric | Description | Use Case |
-|--------|-------------|----------|
+|:-------|:------------|:---------|
 | `cosine` | Cosine similarity | Most common for text embeddings |
 | `euclidean` | Euclidean distance | Geometric distance calculations |
 | `dot_product` | Dot product similarity | Fast similarity computation |

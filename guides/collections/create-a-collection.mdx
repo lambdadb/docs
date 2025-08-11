@@ -2,23 +2,23 @@
 title: "Create a collection"
 ---
 
-This page shows you how to create a collection with various configurations including basic field types and complex nested objects.
+This page shows you how to create a collection with various configurations.
 
 ## Parameters
 
 | Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
+|:----------|:-----|:---------|:------------|
 | collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 |
 | indexConfigs | object |  | Field configuration for indexing. Required when creating from scratch |
 | sourceProjectName | string |  | Source project name for PITR or cloning operations |
 | sourceCollectionName | string |  | Source collection name for PITR or cloning operations |
 | sourceDatetime | string |  | ISO 8601 formatted datetime for PITR (e.g., "2024-01-15T10:30:00Z") |
-| sourceProjectApiKey | string |  | API key for the source project when accessing cross-project resources |
+| sourceProjectApiKey | string |  | API key for the source project |
 
 
 ## Create a collection from scratch
 
-The simplest way to create a collection is to provide the collection name and the field indexConfigs.
+The simplest way to create a collection is to provide the collection name and the field [index configurations](/guides/collections/index-types).
 
 <CodeGroup>
 
@@ -26,13 +26,21 @@ The simplest way to create a collection is to provide the collection name and th
 from lambdadb import LambdaDB
 
 lambda_db = LambdaDB(
-    server_url="SERVER_URL",
+    server_url="PROJECT_URL",
     project_api_key="YOUR_API_KEY"
 )
 
 basic_config = {
     "url": {"type": models.Type.KEYWORD},
-    "author": {"type": models.Type.KEYWORD}
+    "author": {"type": models.Type.KEYWORD},
+    "content": {
+      "type": models.TypeText.TEXT,
+      "analyzers": [
+          models.Analyzer.JAPANESE,
+          models.Analyzer.KOREAN,
+          models.Analyzer.ENGLISH,
+      ],
+    }
 }
 
 collection = lambda_db.collections.create(
@@ -44,7 +52,7 @@ collection = lambda_db.collections.create(
 ```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X POST "$SERVER_URL" \
+curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
@@ -55,6 +63,14 @@ curl -i -X POST "$SERVER_URL" \
           },
           "author": {
             "type": "keyword"
+          },
+          "content": {
+            "type": models.TypeText.TEXT,
+            "analyzers": [
+              models.Analyzer.JAPANESE,
+              models.Analyzer.KOREAN,
+              models.Analyzer.ENGLISH,
+            ],
           }
         }
       }'
@@ -62,59 +78,9 @@ curl -i -X POST "$SERVER_URL" \
 
 </CodeGroup>
 
-## Create a collection with comprehensive field types
+## Clone a collection with point-in-time recovery (PITR)
 
-LambdaDB supports various field types including text, vector, and nested objects. Here's an example with all available field types:
-
-<CodeGroup>
-
-```python Python
-lambda_db = LambdaDB(
-    server_url="SERVER_URL",
-    project_api_key="YOUR_API_KEY"
-)
-
-comprehensive_config = {
-    "text": {
-        "type": models.TypeText.TEXT,
-        "analyzers": [
-            models.Analyzer.JAPANESE,
-            models.Analyzer.KOREAN,
-            models.Analyzer.ENGLISH,
-        ],
-    },
-    "keyword": {"type": models.Type.KEYWORD}
-}
-
-collection = lambda_db.collections.create(
-    collection_name="comprehensive-collection",
-    index_configs=comprehensive_config
-)
-```
-
-```bash cURL
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
-curl -i -X POST "$SERVER_URL" \
-  -H "content-type: application/json" \
-  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
-  -d '{
-    "text": {
-        "type": "text,
-        "analyzers": [
-            "japanese",
-            "korean",
-            "english"
-        ],
-    },
-    "keyword": {"type": "keyword"}
-}'
-```
-</CodeGroup>
-
-## Clone a collection with Point-in-Time Recovery (PITR)
-
-LambdaDB automatically maintains continuous backups at the project level with a default retention period of 30 days. You can create a collection from a specific point in time using PITR functionality.
+LambdaDB automatically maintains continuous backups at the collection level with a default retention period of 30 days. You can create a collection from a specific point in time using PITR functionality.
 
 <CodeGroup>
 
@@ -123,7 +89,7 @@ from lambdadb import LambdaDB
 from datetime import datetime
 
 lambda_db = LambdaDB(
-    server_url="SERVER_URL",
+    server_url="PROJECT_URL",
     project_api_key="YOUR_TARGET_API_KEY"
 )
 
@@ -141,7 +107,7 @@ restored_collection = lambda_db.collections.create(
 LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
 LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
 
-curl -i -X POST "$SERVER_URL" \
+curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{
@@ -157,10 +123,11 @@ curl -i -X POST "$SERVER_URL" \
 </CodeGroup>
 
 <Note>
-PITR allows you to restore collections to any point within the 30-day retention period. The `sourceDatetime` parameter must be in ISO 8601 format (UTC timezone). If `sourceDatetime` is not specified, the collection will be restored from the most recent data available.
+PITR allows you to restore collections to any point within the configured retention period. 
+The `sourceDatetime` parameter must be in ISO 8601 format (UTC timezone). If `sourceDatetime` is not specified, the collection will be restored from the most recent data available.
 </Note>
 
-## Clone a collection with additional indexConfigs
+## Clone a collection with additional index configs
 
 You can clone a collection based on an existing collection and extend it with additional indexConfigs. The original collection's configuration will be preserved, and you can only add new fields.
 
@@ -170,7 +137,7 @@ You can clone a collection based on an existing collection and extend it with ad
 from lambdadb import LambdaDB
 
 lambda_db = LambdaDB(
-    server_url="SERVER_URL",
+    server_url="PROJECT_URL",
     project_api_key="YOUR_TARGET_API_KEY"
 )
 
@@ -197,7 +164,7 @@ cloned_collection = lambda_db.collections.create(
 LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
 LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
 
-curl -i -X POST "$SERVER_URL" \
+curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{

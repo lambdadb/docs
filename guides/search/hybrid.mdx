@@ -1,43 +1,55 @@
-# Hybrid Query
+---
+title: "Hybrid query"
+---
 
-A query that combines vector search with traditional text-based queries to achieve better relevance by leveraging both semantic similarity and keyword matching.
+A hybrid query combines vector search with lexical search to achieve better relevance by leveraging both semantic similarity and keyword matching.
 
-Text search and vector search use fundamentally different scoring mechanisms - text search typically uses relevance scores based on term frequency and document frequency, while vector search uses similarity distances. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
+Full-text search and vector search use fundamentally different scoring mechanisms - text search typically uses relevance scores based on term frequency and document frequency, while vector search uses similarity distances. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
 
 LambdaDB supports three rescoring methods to combine results from different query types: `rrf` (Reciprocal Rank Fusion), `mm` (min-max), and `l2` (l2_norm).
 
-- **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods
-- **MinMax** normalization scales scores to a 0-1 range before combining
-- **L2 norm** uses Euclidean distance-based normalization to merge relevance scores from multiple query sources
+- **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods.
+- **MinMax** normalization scales scores to a 0-1 range before combining.
+- **L2 norm** uses Euclidean distance-based normalization to merge relevance scores from multiple query sources.
 
-Regardless of the rescoring method used, the final combined score is always normalized to a value between 0 and 1.
+<Info>
+
+  Regardless of the rescoring method used, the final combined score is always normalized to a value between 0 and 1.
+
+</Info>
+
 ## Parameters
 
-### Rescoring Methods
-| Method | Description                                           | Boost Support |
-|--------|-------------------------------------------------------|---------------|
+### Rescoring methods
+
+| Method | Description                                           | Boost support |
+|:-------|:------------------------------------------------------|:--------------|
 | rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
 | mm     | Min-Max normalization scaling                         | Yes           |
-| l2     | L2 norm Euclidean distance-based normalization       | Yes           |
+| l2     | Euclidean distance-based normalization                | Yes           |
 
-### Query Object Parameters
+### Query object parameters
+
 Each query object within the rescoring method array can contain:
 
 | Parameter | Description                    | Type   | Required | Default |
-|-----------|--------------------------------|--------|----------|---------|
+|:----------|:-------------------------------|:-------|:---------|:--------|
 | query     | Query object (queryString/knn) | object | ✓        |         |
-| boost     | Score multiplier for relevance | float  |          | 0.5       |
+| boost     | Score multiplier for relevance | float  |          | 0.5     |
 
-### Boost Constraints
+### Boost constraints
+
 <Note>
-- The boost parameter is only available for `mm` and `l2` rescoring methods
-- The sum of all boost values must equal 1.0
-- Each individual boost value must be between 0 and 1
+
+  - The boost parameter is only available for `mm` and `l2` rescoring methods.
+  - The sum of all boost values must equal to 1.0.
+  - Each individual boost value must be between 0 and 1.
+
 </Note>
 
 ## Examples
 
-### L2 Norm Hybrid Query
+### L2-norm hybrid query
 
 ```json
 {
@@ -67,11 +79,11 @@ Each query object within the rescoring method array can contain:
 ```
 
 This example combines:
-- A `queryString` query with 0.7 boost weight
-- A `knn` vector query with pre-filtering and 0.3 boost weight
-- Uses L2 norm rescoring to merge the results
+- A `queryString` query with 0.7 boost weight.
+- A `knn` vector query with pre-filtering and 0.3 boost weight.
+- Uses L2-norm rescoring to merge the results.
 
-### MinMax Hybrid Query with Sparse Vector
+### MinMax hybrid query with sparse vector
 
 ```json
 {
@@ -100,11 +112,11 @@ This example combines:
 ```
 
 This example combines:
-- A `sparseVector` query with 0.6 boost weight
-- A `knn` dense vector query with 0.4 boost weight
-- Uses MinMax normalization to merge the results
+- A `sparseVector` query with 0.6 boost weight.
+- A `knn` dense vector query with 0.4 boost weight.
+- Uses MinMax normalization to merge the results.
 
-### RRF Hybrid Query
+### RRF hybrid query
 
 ```json
 {
@@ -125,7 +137,7 @@ This example combines:
 }
 ```
 
-This example uses Reciprocal Rank Fusion without boost parameters to balance text and vector search results.
+This example uses Reciprocal Rank Fusion to balance text and vector search results.
 
 <Warning>
 The final returned documents may not include the requested number of documents from the `knn` query. This is because the scores of documents returned solely from other queries may be higher than those of the top k documents returned from the `knn`.
