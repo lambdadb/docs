@@ -8,12 +8,20 @@ This guide will walk you through creating your first collection and performing h
 
 The LambdaDB SDK provides convenient access to the LambdaDB APIs.
 
-```python
+<CodeGroup>
+
+```python Python
 pip install lambdadb
 ```
 
+```typescript TypeScript
+npm install @functional-systems/lambdadb
+```
+
+</CodeGroup>
+
 <Tip>
-    We recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
+    For Python, we recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
 </Tip>
 
 ## 🔑 Step 2: Get your API key
@@ -36,7 +44,9 @@ A collection is where you'll store your documents and define how they should be 
 
 Let's create a collection that combines text search with vector similarity:
 
-```python
+<CodeGroup>
+
+```python Python
 from lambdadb import LambdaDB, models
 
 # Initialize the LambdaDB client
@@ -45,7 +55,7 @@ lambda_db = LambdaDB(
     project_api_key="your_api_key_here"  # Replace with your actual API key
 )
 
-collection_name = "quickstart"
+collection_name = "your_collection_name_here" # Replace with unique project name
 
 # Create collection with text and vector indexes
 res = lambda_db.collections.create(
@@ -58,6 +68,9 @@ res = lambda_db.collections.create(
                 models.Analyzer.KOREAN    # Korean text support
             ],
         },
+        "keyword": {
+            "type": models.Type.KEYWORD
+        }
         "vector": {
             "type": models.TypeVector.VECTOR,
             "dimensions": 10,                        # Vector dimension
@@ -65,14 +78,52 @@ res = lambda_db.collections.create(
         },
     }
 )
+print(res)
 ```
+
+```typescript TypeScript
+import { LambdaDB } from "@functional-systems/lambdadb";
+
+// Initialize the LambdaDB client
+const lambdaDB = LambdaDB({
+    serverURL: "your_project_url_here", // Replace with your project url
+    projectApiKey: "your_api_key_here"  // Replace with your actual API key
+})
+
+const collectionName = "your_collection_name_here" // Replace with unique project name
+
+// Create collection with text and vector indexes
+res = await lambdaDB.collections.create({
+    collectionName: collectionName,
+    indexConfigs: {
+        text: {
+            type: "text",
+            analyzers: [
+                "english",  // English text support
+                "korean"    // Korean text support
+            ],
+        },
+        keyword: {
+            type: "keyword"
+        },
+        vector: {
+            type: "vector",
+            dimensions: 10,                        // Vector dimension
+            similarity: "cosine",  // Cosine similarity metric
+        },
+    }
+})
+console.log(res)
+```
+</CodeGroup>
 
 Response:
 
-```python
+<CodeGroup>
+```python Python
 CreateCollectionResponse(
     collection=CollectionResponse(
-        project_name='testProject',
+        project_name='playground',
         collection_name='quickstart',
         index_configs={
             'text': IndexConfigsText(
@@ -95,6 +146,18 @@ CreateCollectionResponse(
     )
 )
 ```
+```typescript TypeScript
+{
+  collection: {
+    projectName: 'playground',
+    collectionName: 'quickstart',
+    indexConfigs: { text: [Object], keyword: [Object], vector: [Object], id: [Object] },
+    numDocs: 0,
+    collectionStatus: 'CREATING'
+  }
+}
+```
+</CodeGroup>
 
 **Key configuration details:**
 - **Text field**: Supports multilingual search with English and Korean analyzers
@@ -105,7 +168,8 @@ CreateCollectionResponse(
 
 Now let's add some sample documents. Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
 
-```python
+<CodeGroup>
+```python Python
 # Prepare sample documents
 docs = [
     {
@@ -129,17 +193,58 @@ docs = [
 ]
 
 # Upload documents to the collection
-lambda_db.collections.docs.upsert(
+res = lambda_db.collections.docs.upsert(
     collection_name=collection_name,
     docs=docs
 )
+print(res)
 ```
+```typescript TypeScript
+// Prepare sample documents
+const docs = [
+    {
+        id: "doc1",
+        text: "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.",
+        keyword: "serverless",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    },
+    {
+        id: "doc2",
+        text: "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.",
+        keyword: "cloud",
+        vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
+    },
+    {
+        id: "doc3",
+        text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.",
+        keyword: ["serverless", "infrastructure"],  # Multiple keywords supported
+        vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
+    }
+]
+
+// Upload documents to the collection
+res = await lambdaDB.collections.docs.upsert({
+    collectionName: collectionName,
+    requestBody: {
+        docs: docs
+    }
+})
+console.log(res)
+```
+</CodeGroup>
 
 Response:
 
-```python
+<CodeGroup>
+```python Python
 MessageResponse(message='Upsert request is accepted')
 ```
+```typescript TypeScript
+{
+    message: "Upsert request is accepted"
+}
+```
+</CodeGroup>
 
 **Important notes:**
 
@@ -151,16 +256,25 @@ If your application requires strong (read-after-write) consistency, set `consist
 
 **Check indexing status:** You can view collection stats to verify that your documents have been indexed:
 
-```python
+<CodeGroup>
+```python Python
 # Check collection status and document count
-res = lambda_db.collections.get(collection_name="quickstart")
+res = lambda_db.collections.get(collection_name=collection_name)
+print(res)
 ```
+```typescript TypeScript
+// Check collection status and document count
+res = lambdaDB.collections.get({collectionName: collectionName})
+console.log(res)
+```
+</CodeGroup>
 
 ## 🔍 Step 5: Full-text search
 
 Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". This demonstrates LambdaDB's powerful query capabilities:
 
-```python
+<CodeGroup>
+```python Python
 res = lambda_db.collections.query(
     collection_name=collection_name,
     size=10,
@@ -192,13 +306,55 @@ for result in res.docs:
 
     print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
 ```
+```typescript TypeScript
+res = lambdaDB.collections.query({
+    collectionName: collectionName,
+    size: 10,
+    requestBody: {
+        query: {
+            bool: [
+                {
+                    queryString: {
+                        query: "I hate managing servers",  // Main search query
+                        defaultField: "text"               // Search in text field
+                    }
+                },
+                {
+                    queryString: {
+                        query: "keyword:serverless"       // Filter by keyword
+                    },
+                    occur: "must"
+                }
+            ]
+        }
+    }
+})
+
+// Display results
+console.log("🔍 Search Results:")
+for (const result of res.docs) {
+    const docId = String(result.doc.id);
+    const score = result.score.toFixed(2);
+    const keyword = String(result.doc.keyword);
+    const text = String(result.doc.text);
+
+    console.log(`${docId.padEnd(5)} | ${score.padEnd(5)} | ${keyword.padEnd(15)} | ${text}`);
+}
+```
+</CodeGroup>
 
 Response:
 
-```python
+<CodeGroup>
+```python Python
 doc3  | 0.92  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
 doc1  | 0.48  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
 ```
+```typescript TypeScript
+doc3  | 0.92  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc1  | 0.48  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+```
+</CodeGroup>
 
 Why these results? doc3 scored highest because it directly mentions "manage servers", while doc1 matched on "server management" and "serverless computing".
 
@@ -206,7 +362,8 @@ Why these results? doc3 scored highest because it directly mentions "manage serv
 
 Now let's combine full-text search with vector similarity for more comprehensive results. This is where LambdaDB really shines:
 
-```python
+<CodeGroup>
+```python Python
 res = lambda_db.collections.query(
     collection_name=collection_name,
     size=10,
@@ -242,14 +399,61 @@ for result in res.docs:
 
     print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
 ```
+```typescript TypeScript
+res = lambdaDB.collections.query({
+    collectionName: collectionName,
+    size: 10,
+    requestBody: {
+        query: {
+            l2: [  // L2 normalization combines scores
+                {
+                    queryString: {
+                        query: "I hate managing servers",
+                        defaultField: "text"
+                    }
+                },
+                {
+                    knn: {  // K-nearest neighbors vector search
+                        field: "vector",
+                        k: 5,
+                        queryVector: [
+                            0.9, 0.8, 0.7, 0.6, 0.5,
+                            0.4, 0.3, 0.2, 0.1, 1.0
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+})
+
+// Display hybrid search results
+console.log("🔄 Hybrid Search Results:")
+for (const result of res.docs) {
+    const docId = String(result.doc.id);
+    const score = result.score.toFixed(2);
+    const keyword = String(result.doc.keyword);
+    const text = String(result.doc.text);
+
+    console.log(`${docId.padEnd(5)} | ${score.padEnd(5)} | ${keyword.padEnd(15)} | ${text}`);
+}
+```
+</CodeGroup>
 
 Response:
 
-```python
+<CodeGroup>
+```python Python
 doc3  | 0.71  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
 doc2  | 0.52  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
 doc1  | 0.43  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
 ```
+```typescript TypeScript
+doc3  | 0.71  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc2  | 0.52  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
+doc1  | 0.43  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+```
+</CodeGroup>
 
 **Score normalization options:**
 - `rrf` (Reciprocal Rank Fusion): Great for combining rankings from different search methods
@@ -260,9 +464,14 @@ doc1  | 0.43  | serverless      | Serverless computing does not mean no servers 
 
 When you're finished experimenting, clean up your resources:
 
-```python
+<CodeGroup>
+```python Python
 lambda_db.collections.delete(collection_name=collection_name)
 ```
+```typescript TypeScript
+lambdaDB.collections.delete({collectionName: collectionName})
+```
+</CodeGroup>
 
 ## 🚀 Next steps
 
