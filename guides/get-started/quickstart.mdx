@@ -93,7 +93,7 @@ const lambdaDB = LambdaDB({
 const collectionName = "your_collection_name_here" // Replace with unique project name
 
 // Create collection with text and vector indexes
-res = await lambdaDB.collections.create({
+const res = await lambdaDB.collections.create({
     collectionName: collectionName,
     indexConfigs: {
         text: {
@@ -217,13 +217,13 @@ const docs = [
     {
         id: "doc3",
         text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.",
-        keyword: ["serverless", "infrastructure"],  # Multiple keywords supported
+        keyword: ["serverless", "infrastructure"],  // Multiple keywords supported
         vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
     }
 ]
 
 // Upload documents to the collection
-res = await lambdaDB.collections.docs.upsert({
+const res = await lambdaDB.collections.docs.upsert({
     collectionName: collectionName,
     requestBody: {
         docs: docs
@@ -264,7 +264,7 @@ print(res)
 ```
 ```typescript TypeScript
 // Check collection status and document count
-res = lambdaDB.collections.get({collectionName: collectionName})
+const res = await lambdaDB.collections.get({collectionName: collectionName})
 console.log(res)
 ```
 </CodeGroup>
@@ -307,10 +307,10 @@ for result in res.docs:
     print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
 ```
 ```typescript TypeScript
-res = lambdaDB.collections.query({
+const res = await lambdaDB.collections.query({
     collectionName: collectionName,
-    size: 10,
     requestBody: {
+        size: 10,
         query: {
             bool: [
                 {
@@ -400,10 +400,10 @@ for result in res.docs:
     print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
 ```
 ```typescript TypeScript
-res = lambdaDB.collections.query({
+const res = await lambdaDB.collections.query({
     collectionName: collectionName,
-    size: 10,
     requestBody: {
+        size: 10,
         query: {
             l2: [  // L2 normalization combines scores
                 {
@@ -469,7 +469,7 @@ When you're finished experimenting, clean up your resources:
 lambda_db.collections.delete(collection_name=collection_name)
 ```
 ```typescript TypeScript
-lambdaDB.collections.delete({collectionName: collectionName})
+await lambdaDB.collections.delete({collectionName: collectionName})
 ```
 </CodeGroup>
 
