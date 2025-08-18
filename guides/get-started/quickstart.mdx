@@ -293,7 +293,8 @@ res = lambda_db.collections.query(
                 "occur": "must"
             }
         ]
-    }
+    },
+    consistent_read=True
 )
 
 # Display results
@@ -326,7 +327,8 @@ const res = await lambdaDB.collections.query({
                     occur: "must"
                 }
             ]
-        }
+        },
+        consistentRead: true
     }
 })
 
@@ -388,7 +390,8 @@ res = lambda_db.collections.query(
                 }
             }
         ]
-    }
+    },
+    consistent_read=True
 )
 
 # Display hybrid search results
@@ -425,7 +428,8 @@ const res = await lambdaDB.collections.query({
                     }
                 }
             ]
-        }
+        },
+        consistentRead: true
     }
 })
 
