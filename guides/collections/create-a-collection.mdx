@@ -14,6 +14,7 @@ This page shows you how to create a collection with various configurations.
 | sourceCollectionName | string |  | Source collection name for PITR or cloning operations |
 | sourceDatetime | string |  | ISO 8601 formatted datetime for PITR (e.g., "2024-01-15T10:30:00Z") |
 | sourceProjectApiKey | string |  | API key for the source project |
+| partitionConfig | object |  | Partition configuration |
 
 
 ## Create a collection from scratch
@@ -72,6 +73,76 @@ curl -i -X POST "$PROJECT_URL/collections" \
               models.Analyzer.ENGLISH,
             ],
           }
+        }
+      }'
+```
+
+</CodeGroup>
+
+## Create a partitioned collection
+
+LambdaDB supports a hash-based partitioning for a specified field.
+
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+lambda_db = LambdaDB(
+    server_url="PROJECT_URL",
+    project_api_key="YOUR_API_KEY"
+)
+
+basic_config = {
+    "url": {"type": models.Type.KEYWORD},
+    "author": {"type": models.Type.KEYWORD},
+    "content": {
+      "type": models.TypeText.TEXT,
+      "analyzers": [
+          models.Analyzer.JAPANESE,
+          models.Analyzer.KOREAN,
+          models.Analyzer.ENGLISH,
+      ],
+    }
+}
+
+collection = lambda_db.collections.create(
+    collection_name="example-collection",
+    index_configs=basic_config,
+    partition_config={
+        "field_name": "url",
+        "num_partitions": 4
+    }
+)
+```
+
+```bash cURL
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "$PROJECT_URL/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+        "collectionName": "example-collection",
+        "indexConfigs": {
+          "url": {
+            "type": "keyword"
+          },
+          "author": {
+            "type": "keyword"
+          },
+          "content": {
+            "type": models.TypeText.TEXT,
+            "analyzers": [
+              models.Analyzer.JAPANESE,
+              models.Analyzer.KOREAN,
+              models.Analyzer.ENGLISH,
+            ],
+          }
+        },
+        "partitionConfig": {
+          "fieldName": "url",
+          "numPartitions" 4
         }
       }'
 ```
