@@ -61,7 +61,7 @@ Upload your documents as a one object using the provided URL and call `bulk-upse
       "id": "bulk_33201222",
       "url": "https://en.wikipedia.org/wiki/LambdaDB",
       "title": "LambdaDB",
-      "text": "LambdaDB is a serverless-native search engine for AI... ",
+      "text": "LambdaDB is an AI-native database ... ",
       "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
       "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}
     }
@@ -93,7 +93,7 @@ Upload your documents as a one object using the provided URL and call `bulk-upse
           "id": "bulk_33201222",
           "url": "https://en.wikipedia.org/wiki/LambdaDB",
           "title": "LambdaDB",
-          "text": "LambdaDB is a serverless-native search engine for AI... ",
+          "text": "LambdaDB is an AI-native database ... ",
           "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
           "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}
         }
@@ -125,5 +125,10 @@ After successful bulk upsert initiation, you'll receive:
 ```
 
 <Note>
-Bulk upsert operations are processed asynchronously. It may take some time for the documents to be fully indexed and available for search.
+
+  Bulk upsert operations are processed asynchronously in the background.
+  Consequently, newly uploaded documents may not be immediately available for search or fetch requests,
+  <strong>even if <code>consistentRead</code> is set to <code>true</code></strong>.
+  The documents will become available only after the indexing process is fully complete.
+
 </Note>

@@ -197,6 +197,30 @@
             }
           }
       },
+      "FieldsSelector": {
+        "type": "object",
+        "description": "An object to specify a list of field names to include and/or exclude in the result.",
+        "properties": {
+          "include": {
+            "type": "array",
+            "description": "List of field names to include in the result.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exclude": {
+            "type": "array",
+            "description": "List of field names to exclude in the result.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "anyOf": [
+          { "required": ["include"] },
+          { "required": ["exclude"] }
+        ]
+      },
       "PartitionFilter": {
         "title": "PartitionFilter",
         "type": "object",
@@ -400,8 +424,8 @@
                       ]
                     }
                   },
-                  "clonedCollection": {
-                    "summary": "Example response for a list of cloned collections",
+                  "forkedCollection": {
+                    "summary": "Example response for a list of forked collections",
                     "value": {
                       "collections": [
                         {
@@ -421,11 +445,9 @@
                             }
                           },
                           "numDocs": 10000,
-                          "cloneSourceInfo": {
-                            "sourceProjectName": "example-source-project-name",
-                            "sourceCollectionName": "example-source-collection-name",
-                            "sourceCollectionVersionId": "example-source-collection-version-id"
-                          },
+                          "sourceProjectName": "example-source-project-name",
+                          "sourceCollectionName": "example-source-collection-name",
+                          "sourceCollectionVersionId": "example-source-collection-version-id",
                           "collectionStatus": "ACTIVE"
                         }
                       ]
@@ -572,8 +594,8 @@
                     }
                   }
                 },
-                "cloneCollection": {
-                  "summary": "Example request body for collection cloning",
+                "forkedCollection": {
+                  "summary": "Example request body for collection fork",
                   "value": {
                     "collectionName": "example-collection-name",
                     "sourceProjectName": "example-source-project-name",
@@ -2018,6 +2040,9 @@
                   "includeVectors": {
                     "$ref": "#/components/schemas/IncludeVectors"
                   },
+                  "fields": {
+                    "$ref":"#/components/schemas/FieldsSelector"
+                  },
                   "partitionFilter": {
                     "$ref":"#/components/schemas/PartitionFilter"
                   }
@@ -2248,11 +2273,7 @@
                     }
                   },
                   "fields": {
-                    "type": "array",
-                    "description": "List of field name to include in results",
-                    "items": {
-                      "type": "string"
-                    }
+                    "$ref":"#/components/schemas/FieldsSelector"
                   },
                   "partitionFilter": {
                     "$ref":"#/components/schemas/PartitionFilter"

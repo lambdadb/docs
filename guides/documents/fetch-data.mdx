@@ -6,9 +6,10 @@ This page shows you how to use the fetch endpoint to fetch documents by IDs from
 
 | Parameter      | Description                                                   | Type       | Required | Default |
 | :------------- | :------------------------------------------------------------ | :--------- | :------- | :------ |
-| ids            | The document IDs to fetch up to 1,00.                         | string[]   | ✓        |         |
+| ids            | The document IDs to fetch up to 100.                         | string[]   | ✓        |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
+| fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | partitionFilter | Partition filter. | object |  |  |
 
 To fetch documents, specify the document IDs (up to 100 IDs).
@@ -26,7 +27,10 @@ To fetch documents, specify the document IDs (up to 100 IDs).
   res_fetch = lambda_db.collections.docs.fetch(
       collection_name=collection_name, 
       ids=["33201222"], 
-      include_vectors=True
+      include_vectors=True,
+      fields={
+        "includes": ["url", "title", "text"]
+      }
   )
   ```
 
@@ -36,7 +40,10 @@ To fetch documents, specify the document IDs (up to 100 IDs).
     -H "x-api-key: ${YOUR_API_KEY}" \
     -d '{
       "ids": ["33201222"],
-      "includeVectors": true
+      "includeVectors": true,
+      "fields": {
+        "includes": ["url", "title", "text"]
+      }
     }'
   ```
 
@@ -55,8 +62,16 @@ The response will look like this:
         "id": "33201222",
         "url": "https://en.wikipedia.org/wiki/LambdaDB",
         "title": "LambdaDB",
-        "text": "LambdaDB is a freeware audio player for Windows, Android and Linux (through Wine) ... "
+        "text": "LambdaDB is a AI-native database ... ",
+        "vector": [0.6, -0.12, 0.65, 0.2, 0.3, ...]
       }
     }
   ]
 }
+```
+
+<Note>
+
+  The order of the returned documents is not guaranteed to match the order of the IDs in the request.
+
+</Note>

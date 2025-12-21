@@ -33,9 +33,9 @@ LambdaDB provides a RESTful JSON-based API for interacting with document data. Y
 
 These CRUD-like operations can take place at both individual document level and collection level, giving you flexibility in how you manage your data.
 
-## Zero-copy collection clone
+## Zero-copy branching
 
-Zero-copy collection clone is a powerful feature that allows you to create a new collection by referencing an existing collection's data, without physically copying the underlying data.
+Zero-copy collection fork is a powerful feature that allows you to create a new collection by referencing an existing collection's data, without physically copying the underlying data.
 
 This feature is useful when you want to create a new collection with the same configurations and data as an existing collection,
 in order to load-test, develop, and experiment in an isolated environment.
@@ -43,7 +43,7 @@ in order to load-test, develop, and experiment in an isolated environment.
 ### Key benefits
 
 - **Instant creation**: Collections are created immediately without waiting for data transfer.
-- **Storage efficiency**: No additional storage space required for the cloned data.
+- **Storage efficiency**: No additional storage space required for the forked collection.
 - **Isolated environment**: Perfect for load testing, development, and experimentation.
 - **Same configurations**: Inherits all index configurations and data from the source collection.
 
@@ -59,6 +59,6 @@ This feature is particularly useful when you want to:
 
 <Info>
 
-Changes made to documents in a zero-copy cloned collection do not affect the original collection, ensuring complete isolation while maintaining efficiency.
+Changes made to documents in a forked collection do not affect the original collection, ensuring complete isolation while maintaining efficiency.
 
 </Info>

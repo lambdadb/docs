@@ -18,7 +18,7 @@ Common parameters for the request body of a query are as follows:
 | query          | Query object (details in the [subsections](/guides/search/query-string))                         | object  | ✓        |         |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
-| fields         | A list of field names to include in the result. Use dot notation (e.g., user.name) to specify nested fields. | string[]  |          |    |
+| fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)) | object[] | | |
 | partitionFilter | Partition filter | object |  |  |
 

@@ -10,8 +10,8 @@ This page shows you how to create a collection with various configurations.
 |:----------|:-----|:---------|:------------|
 | collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 |
 | indexConfigs | object |  | Field configuration for indexing. Required when creating from scratch |
-| sourceProjectName | string |  | Source project name for PITR or cloning operations |
-| sourceCollectionName | string |  | Source collection name for PITR or cloning operations |
+| sourceProjectName | string |  | Source project name for PITR or branching operations |
+| sourceCollectionName | string |  | Source collection name for PITR or branching operations |
 | sourceDatetime | string |  | ISO 8601 formatted datetime for PITR (e.g., "2024-01-15T10:30:00Z") |
 | sourceProjectApiKey | string |  | API key for the source project |
 | partitionConfig | object |  | Partition configuration |
@@ -149,9 +149,10 @@ curl -i -X POST "$PROJECT_URL/collections" \
 
 </CodeGroup>
 
-## Clone a collection with point-in-time recovery (PITR)
+## Point-in-time recovery (PITR)
 
-LambdaDB automatically maintains continuous backups at the collection level with a default retention period of 30 days. You can create a collection from a specific point in time using PITR functionality.
+LambdaDB automatically maintains continuous backups at the collection level with a default retention period of 30 days. 
+You can create a collection from a specific point in time using PITR functionality.
 
 <CodeGroup>
 
@@ -198,9 +199,9 @@ PITR allows you to restore collections to any point within the configured retent
 The `sourceDatetime` parameter must be in ISO 8601 format (UTC timezone). If `sourceDatetime` is not specified, the collection will be restored from the most recent data available.
 </Note>
 
-## Clone a collection with additional index configs
+## Fork a collection with additional index configs
 
-You can clone a collection based on an existing collection and extend it with additional indexConfigs. The original collection's configuration will be preserved, and you can only add new fields.
+You can fork a collection based on an existing collection and extend it with additional indexConfigs. The original collection's configuration will be preserved, and you can only add new fields.
 
 <CodeGroup>
 
@@ -212,8 +213,8 @@ lambda_db = LambdaDB(
     project_api_key="YOUR_TARGET_API_KEY"
 )
 
-cloned_collection = lambda_db.collections.create(
-    collection_name="cloned-collection",
+forked = lambda_db.collections.create(
+    collection_name="forked-collection",
     source_project_id="example-source-project-id",
     source_project_api_key="YOUR_SOURCE_API_KEY",
     source_collection_name="example-source-collection-name"
@@ -239,7 +240,7 @@ curl -i -X POST "$PROJECT_URL/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{
-        "collectionName": "cloned-collection",
+        "collectionName": "forked-collection",
         "sourceProjectId": "example-source-project-id",
         "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
         "sourceCollectionName": "example-source-collection-name",
@@ -249,5 +250,16 @@ curl -i -X POST "$PROJECT_URL/collections" \
 </CodeGroup>
 
 <Note>
-When cloning a collection, specifying `indexConfigs` is optional. You can pass additional `indexConfigs` to extend the original collection's configuration, but deleting or modifying the original collection's indexConfigs is not allowed.
+
+  When forking a collection, specifying `indexConfigs` is optional. 
+  You can pass additional `indexConfigs` to extend the original collection's configuration, 
+  but deleting or modifying the original collection's indexConfigs is not allowed.
+
 </Note>
+
+## Collection limits
+
+| Metric              | Limit  |
+|:------------------- |:------ |
+| Max number of collections    | unlimited    |
+| Max forked childs per collection     | 30    |

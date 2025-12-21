@@ -12,7 +12,7 @@ LambdaDB operates as a collection of serverless functions and resources within A
 
 ### Control functions
 
-**Control functions** handle project/collection CRUD operations and data management requests such as point-in-time restore and zero-copy clone. They also performs maintenance tasks, such as adjusting the number of virtual shards for each collection to enable parallel query execution based on collection size, triggered by EventBridge Scheduler. They use DynamoDB for storing metadata and conducting distributed coordination among concurrent readers, writers, and background tasks.
+**Control functions** handle project/collection CRUD operations and data management requests such as point-in-time restore and zero-copy fork. They also performs maintenance tasks, such as adjusting the number of virtual shards for each collection to enable parallel query execution based on collection size, triggered by EventBridge Scheduler. They use DynamoDB for storing metadata and conducting distributed coordination among concurrent readers, writers, and background tasks.
 
 ### Data functions
 
