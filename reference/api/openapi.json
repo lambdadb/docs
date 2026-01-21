@@ -289,7 +289,8 @@
           "collectionName",
           "indexConfigs",
           "numDocs",
-          "collectionStatus"
+          "collectionStatus",
+          "numPartitions"
         ]
       },
       "MessageResponse": {
