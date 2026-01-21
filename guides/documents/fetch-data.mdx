@@ -12,6 +12,12 @@ This page shows you how to use the fetch endpoint to fetch documents by IDs from
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | partitionFilter | Partition filter. | object |  |  |
 
+<Tip>
+
+  `include` is applied first, and than `exclude` is applied to the included fields when you set both `include` and `exclude` in `fields` parameter.
+
+</Tip>
+
 To fetch documents, specify the document IDs (up to 100 IDs).
 
 <CodeGroup>
@@ -29,7 +35,8 @@ To fetch documents, specify the document IDs (up to 100 IDs).
       ids=["33201222"], 
       include_vectors=True,
       fields={
-        "includes": ["url", "title", "text"]
+        "includes": ["url", "title", "text"],
+        "excludes": ["metadata.raw"]
       }
   )
   ```

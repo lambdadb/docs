@@ -36,6 +36,12 @@ Common parameters for the request body of a query are as follows:
 
 </Tip>
 
+<Tip>
+
+  `include` is applied first, and than `exclude` is applied to the included fields when you both set `include` and `exclude` in `fields` parameter.
+
+</Tip>
+
 <Note>
 
   LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
