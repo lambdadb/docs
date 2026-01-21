@@ -1200,7 +1200,9 @@
             "name": "size",
             "description": "Max number of documents to return at once.",
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
             }
           },
           {
