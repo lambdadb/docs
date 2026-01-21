@@ -260,6 +260,10 @@
           "partitionConfig": {
             "$ref": "#/components/schemas/PartitionConfig"
           },
+          "numPartitions": {
+            "type": "integer",
+            "description": "Total number of partitions including the default partition."
+          },
           "numDocs": {
             "type": "integer",
             "description": "Total number of documents."
@@ -1078,6 +1082,186 @@
                       },
                       "numDocs": 1000,
                       "collectionStatus": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{collectionName}/docs": {
+      "get": {
+        "tags": ["collections.docs"],
+        "operationId": "listDocs",
+        "description": "List documents in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of documents to return at once.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Next page token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documents list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "docs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "description": "A list of documents."
+                    },
+                    "nextPageToken": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "docs"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents list",
+                    "value": {
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "example-field1": "example-value1",
+                            "example-field2": [0.1, 0.2, 0.3]
+                          }
+                        },
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "example-field1": "example-value2",
+                            "example-field2": [0.4, 0.5, 0.6]
+                          }
+                        }
+                      ],
+                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0="
                     }
                   }
                 }
