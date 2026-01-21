@@ -174,6 +174,74 @@
           ]
         }
       },
+      "PartitionConfig": {
+        "title": "PartitionConfig",
+        "type": "object",
+        "properties": {
+            "fieldName": {
+              "type": "string",
+              "description": "Partition field name."
+            },
+            "dataType": {
+              "type": "string",
+              "description": "Partition field data type.",
+              "enum": [
+                    "keyword"
+                  ]
+            },
+            "numPartitions": {
+              "type": "integer",
+              "description": "The number of partitions.",
+              "minimum": 2,
+              "maximum": 1024
+            }
+          }
+      },
+      "FieldsSelector": {
+        "type": "object",
+        "description": "An object to specify a list of field names to include and/or exclude in the result.",
+        "properties": {
+          "include": {
+            "type": "array",
+            "description": "List of field names to include in the result.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exclude": {
+            "type": "array",
+            "description": "List of field names to exclude in the result.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "anyOf": [
+          { "required": ["include"] },
+          { "required": ["exclude"] }
+        ]
+      },
+      "PartitionFilter": {
+        "title": "PartitionFilter",
+        "type": "object",
+        "properties": {
+            "field": {
+              "type": "string",
+              "description": "Partition field name."
+            },
+            "in": {
+              "type": "array",
+              "description": "Partition values to filter.",
+              "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "required": [
+          "field",
+          "in"
+        ]
+      },
       "CollectionResponse": {
         "title": "CollectionResponse",
         "type": "object",
@@ -188,6 +256,13 @@
           },
           "indexConfigs": {
             "$ref": "#/components/schemas/IndexConfigs"
+          },
+          "partitionConfig": {
+            "$ref": "#/components/schemas/PartitionConfig"
+          },
+          "numPartitions": {
+            "type": "integer",
+            "description": "Total number of partitions including the default partition."
           },
           "numDocs": {
             "type": "integer",
@@ -353,8 +428,8 @@
                       ]
                     }
                   },
-                  "clonedCollection": {
-                    "summary": "Example response for a list of cloned collections",
+                  "forkedCollection": {
+                    "summary": "Example response for a list of forked collections",
                     "value": {
                       "collections": [
                         {
@@ -374,11 +449,9 @@
                             }
                           },
                           "numDocs": 10000,
-                          "cloneSourceInfo": {
-                            "sourceProjectName": "example-source-project-name",
-                            "sourceCollectionName": "example-source-collection-name",
-                            "sourceCollectionVersionId": "example-source-collection-version-id"
-                          },
+                          "sourceProjectName": "example-source-project-name",
+                          "sourceCollectionName": "example-source-collection-name",
+                          "sourceCollectionVersionId": "example-source-collection-version-id",
                           "collectionStatus": "ACTIVE"
                         }
                       ]
@@ -485,6 +558,9 @@
                   "indexConfigs": {
                     "$ref": "#/components/schemas/IndexConfigs"
                   },
+                  "partitionConfig": {
+                    "$ref": "#/components/schemas/PartitionConfig"
+                  },
                   "sourceProjectName": {
                     "type": "string"
                   },
@@ -522,8 +598,8 @@
                     }
                   }
                 },
-                "cloneCollection": {
-                  "summary": "Example request body for collection cloning",
+                "forkedCollection": {
+                  "summary": "Example request body for collection fork",
                   "value": {
                     "collectionName": "example-collection-name",
                     "sourceProjectName": "example-source-project-name",
@@ -1006,6 +1082,188 @@
                       },
                       "numDocs": 1000,
                       "collectionStatus": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{collectionName}/docs": {
+      "get": {
+        "tags": ["collections.docs"],
+        "operationId": "listDocs",
+        "description": "List documents in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of documents to return at once.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Next page token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documents list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "docs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "description": "A list of documents."
+                    },
+                    "nextPageToken": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "docs"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents list",
+                    "value": {
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "example-field1": "example-value1",
+                            "example-field2": [0.1, 0.2, 0.3]
+                          }
+                        },
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "example-field1": "example-value2",
+                            "example-field2": [0.4, 0.5, 0.6]
+                          }
+                        }
+                      ],
+                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0="
                     }
                   }
                 }
@@ -1792,6 +2050,9 @@
                       "type": "object",
                       "additionalProperties": true,
                       "description": "Query filter."
+                    },
+                    "partitionFilter": {
+                      "$ref":"#/components/schemas/PartitionFilter"
                     }
                 }
               },
@@ -1964,6 +2225,12 @@
                   },
                   "includeVectors": {
                     "$ref": "#/components/schemas/IncludeVectors"
+                  },
+                  "fields": {
+                    "$ref":"#/components/schemas/FieldsSelector"
+                  },
+                  "partitionFilter": {
+                    "$ref":"#/components/schemas/PartitionFilter"
                   }
                 },
                 "required": [
@@ -2192,11 +2459,10 @@
                     }
                   },
                   "fields": {
-                    "type": "array",
-                    "description": "List of field name to include in results",
-                    "items": {
-                      "type": "string"
-                    }
+                    "$ref":"#/components/schemas/FieldsSelector"
+                  },
+                  "partitionFilter": {
+                    "$ref":"#/components/schemas/PartitionFilter"
                   }
                 },
                 "required": [
