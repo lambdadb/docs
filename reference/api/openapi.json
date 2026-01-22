@@ -2286,12 +2286,21 @@
                           "doc"
                         ]
                       }
+                    },
+                    "isDocsInline": {
+                      "type": "boolean",
+                      "description": "Whether the list of documents is included."
+                    },
+                    "docsUrl": {
+                      "type": "string",
+                      "description": "Download URL for the list of documents."
                     }
                   },
                   "required": [
                     "total",
                     "took",
-                    "docs"
+                    "docs",
+                    "isDocsInline"
                   ]
                 },
                 "examples": {
@@ -2315,7 +2324,8 @@
                             "example-field2": [0.4, 0.5, 0.6]
                           }
                         }
-                      ]
+                      ],
+                      "isDocsInline": true
                     }
                   }
                 }
@@ -2530,12 +2540,21 @@
                           "doc"
                         ]
                       }
+                    },
+                    "isDocsInline": {
+                      "type": "boolean",
+                      "description": "Whether the list of documents is included."
+                    },
+                    "docsUrl": {
+                      "type": "string",
+                      "description": "Optional download URL for the list of documents."
                     }
                   },
                   "required": [
                     "took",
                     "total",
-                    "docs"
+                    "docs",
+                    "isDocsInline"
                   ]
                 },
                 "examples": {
@@ -2562,7 +2581,8 @@
                             "example-field2": [0.4, 0.5, 0.6]
                           }
                         }
-                      ]
+                      ],
+                      "isDocsInline": true
                     }
                   }
                 }
