@@ -111,6 +111,7 @@ collection = lambda_db.collections.create(
     index_configs=basic_config,
     partition_config={
         "field_name": "url",
+        "data_type": "keyword"
         "num_partitions": 4
     }
 )
@@ -142,12 +143,19 @@ curl -i -X POST "$PROJECT_URL/collections" \
         },
         "partitionConfig": {
           "fieldName": "url",
+          "dataType": "keyword",
           "numPartitions" 4
         }
       }'
 ```
 
 </CodeGroup>
+
+<Note>
+
+  Currently, only `keyword` type is supported for partitioning.
+  
+</Note>
 
 ## Point-in-time recovery (PITR)
 
