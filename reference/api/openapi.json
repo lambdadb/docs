@@ -20,7 +20,7 @@
       "variables": {
         "projectHost": {
           "description": "The project URL of the API",
-          "default": "api.lambdadb.com/projects/default"
+          "default": "api.lambdadb.ai/projects/playground"
         }
       }
     }
@@ -282,6 +282,18 @@
           },
           "collectionStatus": {
             "$ref": "#/components/schemas/Status"
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "Collection creation time in seconds since the Unix epoch."
+          },
+          "updatedAt": {
+            "type": "integer",
+            "description": "Collection last update time in seconds since the Unix epoch."
+          },
+          "dataUpdatedAt": {
+            "type": "integer",
+            "description": "Collection data last update time in seconds since the Unix epoch."
           }
         },
         "required": [
@@ -290,7 +302,10 @@
           "indexConfigs",
           "numDocs",
           "collectionStatus",
-          "numPartitions"
+          "numPartitions",
+          "createdAt",
+          "updatedAt",
+          "dataUpdatedAt"
         ]
       },
       "MessageResponse": {
@@ -383,6 +398,26 @@
             "ProjectApiKey": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of collections to return at once.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Next page token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "A list of collections matched with a projectName.",
@@ -396,6 +431,10 @@
                       "items": {
                         "$ref": "#/components/schemas/CollectionResponse"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Next page token."
                     }
                   },
                   "required": [
