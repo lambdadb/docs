@@ -672,23 +672,25 @@
                   "example": {
                     "summary": "Example response for a created collection",
                     "value": {
-                      "projectName": "example-project-name",
-                      "collectionName": "example-collection-name",
-                      "indexConfigs": {
-                        "example-field1": {
-                          "type": "text",
-                          "analyzers": [
-                            "english"
-                          ]
+                      "collection": {
+                        "projectName": "example-project-name",
+                        "collectionName": "example-collection-name",
+                        "indexConfigs": {
+                          "example-field1": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ]
+                          },
+                          "example-field2": {
+                            "type": "vector",
+                            "dimensions": 128,
+                            "similarity": "cosine"
+                          }
                         },
-                        "example-field2": {
-                          "type": "vector",
-                          "dimensions": 128,
-                          "similarity": "cosine"
-                        }
-                      },
-                      "numDocs": 0,
-                      "collectionStatus": "CREATING"
+                        "numDocs": 0,
+                        "collectionStatus": "CREATING"
+                      }
                     }
                   }
                 }
@@ -930,23 +932,25 @@
                   "normalCollection": {
                     "summary": "Example response for an existing collection",
                     "value": {
-                      "projectName": "example-project-name",
-                      "collectionName": "example-collection-name",
-                      "indexConfigs": {
-                        "example-field1": {
-                          "type": "text",
-                          "analyzers": [
-                            "english"
-                          ]
+                      "collection": {
+                        "projectName": "example-project-name",
+                        "collectionName": "example-collection-name",
+                        "indexConfigs": {
+                          "example-field1": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ]
+                          },
+                          "example-field2": {
+                            "type": "vector",
+                            "dimensions": 128,
+                            "similarity": "cosine"
+                          }
                         },
-                        "example-field2": {
-                          "type": "vector",
-                          "dimensions": 128,
-                          "similarity": "cosine"
-                        }
-                      },
-                      "numDocs": 1000,
-                      "collectionStatus": "ACTIVE"
+                        "numDocs": 1000,
+                        "collectionStatus": "ACTIVE"
+                      }
                     }
                   }
                 }
@@ -1102,26 +1106,28 @@
                   "normalCollection": {
                     "summary": "Example response for an updated collection",
                     "value": {
-                      "projectName": "example-project-name",
-                      "collectionName": "example-collection-name",
-                      "indexConfigs": {
-                        "example-field1": {
-                          "type": "text",
-                          "analyzers": [
-                            "english"
-                          ]
+                      "collection": {
+                        "projectName": "example-project-name",
+                        "collectionName": "example-collection-name",
+                        "indexConfigs": {
+                          "example-field1": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ]
+                          },
+                          "example-field2": {
+                            "type": "vector",
+                            "dimensions": 128,
+                            "similarity": "cosine"
+                          },
+                          "example-field3": {
+                            "type": "keyword"
+                          }
                         },
-                        "example-field2": {
-                          "type": "vector",
-                          "dimensions": 128,
-                          "similarity": "cosine"
-                        },
-                        "example-field3": {
-                          "type": "keyword"
-                        }
-                      },
-                      "numDocs": 1000,
-                      "collectionStatus": "ACTIVE"
+                        "numDocs": 1000,
+                        "collectionStatus": "ACTIVE"
+                      }
                     }
                   }
                 }
