@@ -1,0 +1,81 @@
+---
+title: List data
+---
+
+This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over all documents (for example, to export or scan) without filtering by query.
+
+| Parameter   | Description                                      | Type    | Required | Default |
+| :---------- | :----------------------------------------------- | :------ | :------- | :------ |
+| size        | Max number of documents to return per page (1–100). | integer |          |         |
+| pageToken   | Token for the next page of results.              | string  |          |         |
+
+<CodeGroup>
+
+  ```python Python
+  from lambdadb import LambdaDB
+
+  lambda_db = LambdaDB(
+      server_url="PROJECT_URL",
+      project_api_key="YOUR_API_KEY"
+  )
+
+  # List first page of documents
+  res = lambda_db.collections.docs.list(
+      collection_name=collection_name,
+      size=10
+  )
+
+  # List next page using the token from the previous response
+  if res.next_page_token:
+      res_next = lambda_db.collections.docs.list(
+          collection_name=collection_name,
+          size=10,
+          page_token=res.next_page_token
+      )
+  ```
+
+  ```bash cURL
+  # List first page
+  curl -X GET "$PROJECT_URL/collections/${collection_name}/docs?size=10" \
+    -H "x-api-key: ${YOUR_API_KEY}"
+
+  # List next page (use nextPageToken from previous response)
+  curl -X GET "$PROJECT_URL/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
+    -H "x-api-key: ${YOUR_API_KEY}"
+  ```
+
+</CodeGroup>
+
+The response includes the total count, the current page of documents, and an optional token for the next page:
+
+```json
+{
+  "total": 2,
+  "docs": [
+    {
+      "collection": "example-collection-name",
+      "doc": {
+        "id": "doc-1",
+        "example-field1": "example-value1",
+        "example-field2": [0.1, 0.2, 0.3]
+      }
+    },
+    {
+      "collection": "example-collection-name",
+      "doc": {
+        "id": "doc-2",
+        "example-field1": "example-value2",
+        "example-field2": [0.4, 0.5, 0.6]
+      }
+    }
+  ],
+  "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+  "isDocsInline": true
+}
+```
+
+<Note>
+
+  To fetch specific documents by ID, use the [fetch](/guides/documents/fetch-data) endpoint. To search or filter documents, use the [query](/guides/search/search-overview) API.
+
+</Note>

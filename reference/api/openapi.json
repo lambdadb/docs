@@ -1281,11 +1281,18 @@
                     },
                     "nextPageToken": {
                       "type": "string"
+                    },
+                    "isDocsInline": {
+                      "type": "boolean"
+                    },
+                    "docsUrl": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "total",
-                    "docs"
+                    "docs",
+                    "isDocsInline"
                   ]
                 },
                 "examples": {
@@ -1309,7 +1316,8 @@
                           }
                         }
                       ],
-                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0="
+                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "isDocsInline": true
                     }
                   }
                 }
