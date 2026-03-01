@@ -1275,9 +1275,20 @@
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "additionalProperties": true
-                      },
-                      "description": "A list of documents."
+                        "properties": {
+                          "collection": {
+                            "type": "string"
+                          },
+                          "doc": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "collection",
+                          "doc"
+                        ]
+                      }
                     },
                     "nextPageToken": {
                       "type": "string"
