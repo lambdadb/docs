@@ -38,6 +38,7 @@
               "guides/documents/bulk-upsert-data",
               "guides/documents/update-data",
               "guides/documents/fetch-data",
+              "guides/documents/list-data",
               "guides/documents/delete-data"
             ]
           },
