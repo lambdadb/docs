@@ -18,6 +18,10 @@ pip install lambdadb
 npm install @functional-systems/lambdadb
 ```
 
+```go Go
+go get github.com/lambdadb/go-lambdadb
+```
+
 </CodeGroup>
 
 <Tip>
@@ -49,71 +53,86 @@ Let's create a collection that combines text search with vector similarity:
 ```python Python
 from lambdadb import LambdaDB, models
 
-# Initialize the LambdaDB client
-lambda_db = LambdaDB(
-    server_url="your_project_url_here", # Replace with your project url
-    project_api_key="your_api_key_here"  # Replace with your actual API key
-)
-
-collection_name = "your_collection_name_here" # Replace with unique project name
-
-# Create collection with text and vector indexes
-res = lambda_db.collections.create(
-    collection_name=collection_name,
-    index_configs={
-        "text": {
-            "type": models.TypeText.TEXT,
-            "analyzers": [
-                models.Analyzer.ENGLISH,  # English text support
-                models.Analyzer.KOREAN    # Korean text support
-            ],
+# Initialize the LambdaDB client (replace with your base URL and project name, or omit to use defaults)
+with LambdaDB(
+    project_api_key="your_api_key_here",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    collection_name = "your_collection_name_here"
+    res = client.collections.create(
+        collection_name=collection_name,
+        index_configs={
+            "text": {
+                "type": models.TypeText.TEXT,
+                "analyzers": [models.Analyzer.ENGLISH, models.Analyzer.KOREAN],
+            },
+            "keyword": {"type": models.Type.KEYWORD},
+            "vector": {
+                "type": models.TypeVector.VECTOR,
+                "dimensions": 10,
+                "similarity": models.Similarity.COSINE,
+            },
         },
-        "keyword": {
-            "type": models.Type.KEYWORD
-        },
-        "vector": {
-            "type": models.TypeVector.VECTOR,
-            "dimensions": 10,                        # Vector dimension
-            "similarity": models.Similarity.COSINE,  # Cosine similarity metric
-        },
-    }
-)
-print(res)
+    )
+    print(res)
 ```
 
 ```typescript TypeScript
-import { LambdaDB } from "@functional-systems/lambdadb";
+import { LambdaDBClient } from "@functional-systems/lambdadb";
 
-// Initialize the LambdaDB client
-const lambdaDB = LambdaDB({
-    serverURL: "your_project_url_here", // Replace with your project url
-    projectApiKey: "your_api_key_here"  // Replace with your actual API key
-})
+// Initialize the LambdaDB client (replace with your base URL and project name, or omit to use defaults)
+const client = new LambdaDBClient({
+  projectApiKey: "your_api_key_here",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+const collectionName = "your_collection_name_here";
+const res = await client.createCollection({
+  collectionName,
+  indexConfigs: {
+    text: { type: "text", analyzers: ["english", "korean"] },
+    keyword: { type: "keyword" },
+    vector: { type: "vector", dimensions: 10, similarity: "cosine" },
+  },
+});
+console.log(res);
+```
 
-const collectionName = "your_collection_name_here" // Replace with unique project name
+```go Go
+package main
 
-// Create collection with text and vector indexes
-const res = await lambdaDB.collections.create({
-    collectionName: collectionName,
-    indexConfigs: {
-        text: {
-            type: "text",
-            analyzers: [
-                "english",  // English text support
-                "korean"    // Korean text support
-            ],
-        },
-        keyword: {
-            type: "keyword"
-        },
-        vector: {
-            type: "vector",
-            dimensions: 10,                        // Vector dimension
-            similarity: "cosine",  // Cosine similarity metric
-        },
-    }
-})
-console.log(res)
+import (
+  "context"
+  "fmt"
+  "log"
+  lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func main() {
+  ctx := context.Background()
+  client := lambdadb.New(
+    lambdadb.WithBaseURL("YOUR_BASE_URL"),
+    lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+    lambdadb.WithAPIKey("your_api_key_here"),
+  )
+  collectionName := "your_collection_name_here"
+  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+    CollectionName: collectionName,
+    IndexConfigs: map[string]interface{}{
+      "text":    map[string]interface{}{"type": "text", "analyzers": []string{"english", "korean"}},
+      "keyword": map[string]interface{}{"type": "keyword"},
+      "vector":  map[string]interface{}{"type": "vector", "dimensions": 10, "similarity": "cosine"},
+    },
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+  if res != nil && res.Collection != nil {
+    c := res.Collection
+    log.Printf("Collection: project=%s collection=%s numDocs=%d status=%s", c.ProjectName, c.CollectionName, c.NumDocs, c.CollectionStatus)
+  }
+}
 ```
 </CodeGroup>
 
@@ -157,6 +176,9 @@ CreateCollectionResponse(
   }
 }
 ```
+```go Go
+Collection: project=playground collection=quickstart numDocs=0 status=CREATING
+```
 </CodeGroup>
 
 **Key configuration details:**
@@ -170,66 +192,39 @@ Now let's add some sample documents. Each document contains text for full-text s
 
 <CodeGroup>
 ```python Python
-# Prepare sample documents
-docs = [
-    {
-        "id": "doc1",
-        "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.",
-        "keyword": "serverless",
-        "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    },
-    {
-        "id": "doc2",
-        "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.",
-        "keyword": "cloud",
-        "vector": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
-    },
-    {
-        "id": "doc3",
-        "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.",
-        "keyword": ["serverless", "infrastructure"],  # Multiple keywords supported
-        "vector": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
-    }
-]
-
-# Upload documents to the collection
-res = lambda_db.collections.docs.upsert(
-    collection_name=collection_name,
-    docs=docs
-)
-print(res)
+with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    coll = client.collection(collection_name)
+    docs = [
+        {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]},
+        {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]},
+        {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": ["serverless", "infrastructure"], "vector": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]},
+    ]
+    res = coll.docs.upsert(docs=docs)
+    print(res)
 ```
 ```typescript TypeScript
-// Prepare sample documents
+const client = new LambdaDBClient({ projectApiKey: "your_api_key_here", baseUrl: "YOUR_BASE_URL", projectName: "YOUR_PROJECT_NAME" });
+const collection = client.collection(collectionName);
 const docs = [
-    {
-        id: "doc1",
-        text: "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.",
-        keyword: "serverless",
-        vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    },
-    {
-        id: "doc2",
-        text: "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.",
-        keyword: "cloud",
-        vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
-    },
-    {
-        id: "doc3",
-        text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.",
-        keyword: ["serverless", "infrastructure"],  // Multiple keywords supported
-        vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
-    }
-]
-
-// Upload documents to the collection
-const res = await lambdaDB.collections.docs.upsert({
-    collectionName: collectionName,
-    requestBody: {
-        docs: docs
-    }
-})
-console.log(res)
+  { id: "doc1", text: "Serverless computing does not mean no servers are involved...", keyword: "serverless", vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
+  { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications...", keyword: "cloud", vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1] },
+  { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers...", keyword: ["serverless", "infrastructure"], vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] },
+];
+const res = await collection.docs.upsert({ docs });
+console.log(res);
+```
+```go Go
+coll := client.Collection(collectionName)
+docs := []map[string]interface{}{
+  {"id": "doc1", "text": "Serverless computing does not mean no servers...", "keyword": "serverless", "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
+  {"id": "doc2", "text": "Instead, it refers to a cloud computing model...", "keyword": "cloud", "vector": []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1}},
+  {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision...", "keyword": []string{"serverless", "infrastructure"}, "vector": []float64{0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2}},
+}
+res, err := coll.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{Docs: docs})
+if err != nil { log.Fatal(err) }
+if res != nil {
+  log.Printf("message: %s", res.Message)
+}
 ```
 </CodeGroup>
 
@@ -244,11 +239,14 @@ MessageResponse(message='Upsert request is accepted')
     message: "Upsert request is accepted"
 }
 ```
+```go Go
+message: Upsert request is accepted
+```
 </CodeGroup>
 
 **Important notes:**
 
-- **Upsert behavior**: Documents with the same ID will be updated; new IDs create new documents.
+- **Upsert behavior**: Documents with the same ID will be replaced; new IDs create new documents.
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
 - **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
 - **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
@@ -258,14 +256,17 @@ If your application requires strong (read-after-write) consistency, set `consist
 
 <CodeGroup>
 ```python Python
-# Check collection status and document count
-res = lambda_db.collections.get(collection_name=collection_name)
+res = client.collection(collection_name).get()  # or client.collections.get(collection_name=collection_name)
 print(res)
 ```
 ```typescript TypeScript
-// Check collection status and document count
-const res = await lambdaDB.collections.get({collectionName: collectionName})
-console.log(res)
+const res = await client.collection(collectionName).get();
+console.log(res);
+```
+```go Go
+meta, err := client.Collection(collectionName).Get(ctx)
+if err != nil { log.Fatal(err) }
+_ = meta
 ```
 </CodeGroup>
 
@@ -275,72 +276,69 @@ Let's search for documents that match "I hate managing servers" while filtering 
 
 <CodeGroup>
 ```python Python
-res = lambda_db.collections.query(
-    collection_name=collection_name,
-    size=10,
-    query={
-        "bool": [
-            {
-                "queryString": {
-                    "query": "I hate managing servers",  # Main search query
-                    "defaultField": "text"               # Search in text field
-                }
-            },
-            {
-                "queryString": {
-                    "query": "keyword:serverless"       # Filter by keyword
-                },
-                "occur": "must"
-            }
-        ]
-    },
-    consistent_read=True
-)
-
-# Display results
-print("🔍 Search Results:")
-for result in res.docs:
-    doc_id = str(result.doc['id'])
-    score = f"{result.score:.2f}"
-    keyword = str(result.doc['keyword'])
-    text = str(result.doc['text'])
-
-    print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
-```
-```typescript TypeScript
-const res = await lambdaDB.collections.query({
-    collectionName: collectionName,
-    requestBody: {
-        size: 10,
-        query: {
-            bool: [
-                {
-                    queryString: {
-                        query: "I hate managing servers",  // Main search query
-                        defaultField: "text"               // Search in text field
-                    }
-                },
-                {
-                    queryString: {
-                        query: "keyword:serverless"       // Filter by keyword
-                    },
-                    occur: "must"
-                }
+with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    coll = client.collection(collection_name)
+    res = coll.query(
+        size=10,
+        query={
+            "bool": [
+                {"queryString": {"query": "I hate managing servers", "defaultField": "text"}},
+                {"queryString": {"query": "keyword:serverless"}, "occur": "must"},
             ]
         },
-        consistentRead: true
-    }
+        consistent_read=True,
+    )
+    print("🔍 Search Results:")
+    for result in res.results:  # or res.documents for doc bodies only
+        doc_id = str(result.doc.get("id"))
+        score = f"{result.score:.2f}"
+        keyword = str(result.doc.get("keyword"))
+        text = str(result.doc.get("text", ""))[:60]
+        print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}...")
+```
+```typescript TypeScript
+const collection = client.collection(collectionName);
+const res = await collection.query({
+  size: 10,
+  query: {
+    bool: [
+      { queryString: { query: "I hate managing servers", defaultField: "text" } },
+      { queryString: { query: "keyword:serverless" }, occur: "must" },
+    ],
+  },
+  consistentRead: true,
+});
+console.log("🔍 Search Results:");
+for (const result of res.docs ?? []) {
+  const docId = String(result.doc?.id);
+  const score = result.score?.toFixed(2);
+  const keyword = String(result.doc?.keyword);
+  const text = String(result.doc?.text ?? "").slice(0, 60);
+  console.log(`${docId.padEnd(5)} | ${score} | ${keyword.padEnd(15)} | ${text}...`);
+}
+```
+```go Go
+coll := client.Collection(collectionName)
+res, err := coll.Query(ctx, lambdadb.QueryCollectionInput{
+  Size: 10,
+  Query: map[string]interface{}{
+    "bool": []interface{}{
+      map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
+      map[string]interface{}{"queryString": map[string]interface{}{"query": "keyword:serverless"}, "occur": "must"},
+    },
+  },
+  ConsistentRead: lambdadb.Ptr(true),
 })
-
-// Display results
-console.log("🔍 Search Results:")
-for (const result of res.docs) {
-    const docId = String(result.doc.id);
-    const score = result.score.toFixed(2);
-    const keyword = String(result.doc.keyword);
-    const text = String(result.doc.text);
-
-    console.log(`${docId.padEnd(5)} | ${score.padEnd(5)} | ${keyword.padEnd(15)} | ${text}`);
+if err != nil { log.Fatal(err) }
+log.Println("🔍 Search Results:")
+for _, r := range res.Docs {
+  doc := r.Doc
+  docID := fmt.Sprintf("%v", doc["id"])
+  score := r.Score
+  keyword := fmt.Sprintf("%v", doc["keyword"])
+  text := fmt.Sprintf("%v", doc["text"])
+  if len(text) > 60 { text = text[:60] }
+  log.Printf("%-5s | %.2f | %-15s | %s...", docID, score, keyword, text)
 }
 ```
 </CodeGroup>
@@ -358,6 +356,11 @@ doc1  | 0.80  | serverless      | Serverless computing does not mean no servers 
 doc3  | 0.83  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
 doc1  | 0.80  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
 ```
+```go Go
+🔍 Search Results:
+doc3  | 0.83  | [serverless infrastructure] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc1  | 0.80  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+```
 </CodeGroup>
 
 Why these results? doc3 scored highest because it directly mentions "manage servers", while doc1 matched on "server management" and "serverless computing".
@@ -368,80 +371,59 @@ Now let's combine full-text search with vector similarity for more comprehensive
 
 <CodeGroup>
 ```python Python
-res = lambda_db.collections.query(
-    collection_name=collection_name,
-    size=10,
-    query={
-        "l2": [  # L2 normalization combines scores
-            {
-                "queryString": {
-                    "query": "I hate managing servers",
-                    "defaultField": "text"
-                }
-            },
-            {
-                "knn": {  # K-nearest neighbors vector search
-                    "field": "vector",
-                    "k": 5,
-                    "queryVector": [
-                        0.9, 0.8, 0.7, 0.6, 0.5,
-                        0.4, 0.3, 0.2, 0.1, 1.0
-                    ]
-                }
-            }
-        ]
-    },
-    consistent_read=True
-)
-
-# Display hybrid search results
-print("🔄 Hybrid Search Results:")
-for result in res.docs:
-    doc_id = str(result.doc['id'])
-    score = f"{result.score:.2f}"
-    keyword = str(result.doc['keyword'])
-    text = str(result.doc['text'])
-
-    print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}")
-```
-```typescript TypeScript
-const res = await lambdaDB.collections.query({
-    collectionName: collectionName,
-    requestBody: {
-        size: 10,
-        query: {
-            l2: [  // L2 normalization combines scores
-                {
-                    queryString: {
-                        query: "I hate managing servers",
-                        defaultField: "text"
-                    }
-                },
-                {
-                    knn: {  // K-nearest neighbors vector search
-                        field: "vector",
-                        k: 5,
-                        queryVector: [
-                            0.9, 0.8, 0.7, 0.6, 0.5,
-                            0.4, 0.3, 0.2, 0.1, 1.0
-                        ]
-                    }
-                }
+with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    coll = client.collection(collection_name)
+    res = coll.query(
+        size=10,
+        query={
+            "l2": [
+                {"queryString": {"query": "I hate managing servers", "defaultField": "text"}},
+                {"knn": {"field": "vector", "k": 5, "queryVector": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0]}},
             ]
         },
-        consistentRead: true
-    }
+        consistent_read=True,
+    )
+    print("🔄 Hybrid Search Results:")
+    for result in res.results:
+        print(f"{result.doc.get('id')} | {result.score:.2f} | {result.doc.get('text', '')[:50]}...")
+```
+```typescript TypeScript
+const res = await collection.query({
+  size: 10,
+  query: {
+    l2: [
+      { queryString: { query: "I hate managing servers", defaultField: "text" } },
+      { knn: { field: "vector", k: 5, queryVector: [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0] } },
+    ],
+  },
+  consistentRead: true,
+});
+console.log("🔄 Hybrid Search Results:");
+for (const result of res.docs ?? []) {
+  console.log(`${result.doc?.id} | ${result.score?.toFixed(2)} | ${String(result.doc?.text).slice(0, 50)}...`);
+}
+```
+```go Go
+res, err = coll.Query(ctx, lambdadb.QueryCollectionInput{
+  Size: 10,
+  Query: map[string]interface{}{
+    "l2": []interface{}{
+      map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
+      map[string]interface{}{"knn": map[string]interface{}{"field": "vector", "k": 5, "queryVector": []float64{0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0}}},
+    },
+  },
+  ConsistentRead: lambdadb.Ptr(true),
 })
-
-// Display hybrid search results
-console.log("🔄 Hybrid Search Results:")
-for (const result of res.docs) {
-    const docId = String(result.doc.id);
-    const score = result.score.toFixed(2);
-    const keyword = String(result.doc.keyword);
-    const text = String(result.doc.text);
-
-    console.log(`${docId.padEnd(5)} | ${score.padEnd(5)} | ${keyword.padEnd(15)} | ${text}`);
+if err != nil { log.Fatal(err) }
+log.Println("🔄 Hybrid Search Results:")
+for _, r := range res.Docs {
+  doc := r.Doc
+  docID := fmt.Sprintf("%v", doc["id"])
+  score := r.Score
+  keyword := fmt.Sprintf("%v", doc["keyword"])
+  text := fmt.Sprintf("%v", doc["text"])
+  if len(text) > 50 { text = text[:50] }
+  log.Printf("%s | %.2f | %s | %s...", docID, score, keyword, text)
 }
 ```
 </CodeGroup>
@@ -456,6 +438,12 @@ doc1  | 0.62  | serverless      | Serverless computing does not mean no servers 
 doc2  | 0.33  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
 ```
 ```typescript TypeScript
+🔄 Hybrid Search Results:
+doc3  | 0.66  | serverless,infrastructure | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
+doc1  | 0.62  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
+doc2  | 0.33  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
+```
+```go Go
 🔄 Hybrid Search Results:
 doc3  | 0.66  | serverless,infrastructure | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
 doc1  | 0.62  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
@@ -474,10 +462,14 @@ When you're finished experimenting, clean up your resources:
 
 <CodeGroup>
 ```python Python
-lambda_db.collections.delete(collection_name=collection_name)
+client.collections.delete(collection_name=collection_name)
 ```
 ```typescript TypeScript
-await lambdaDB.collections.delete({collectionName: collectionName})
+await client.collection(collectionName).delete();
+```
+```go Go
+err := client.Collection(collectionName).Delete(ctx)
+if err != nil { log.Fatal(err) }
 ```
 </CodeGroup>
 

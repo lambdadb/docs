@@ -14,33 +14,91 @@ This page shows you how to use the list endpoint to list documents in a collecti
   ```python Python
   from lambdadb import LambdaDB
 
-  lambda_db = LambdaDB(
-      server_url="PROJECT_URL",
-      project_api_key="YOUR_API_KEY"
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+      # List first page of documents
+      res = coll.docs.list(size=10)
+      # res.results has full items; res.documents has document bodies only
+      for doc in res.results:
+          print(doc)
+
+      # List next page using the token from the previous response
+      if res.next_page_token:
+          res_next = coll.docs.list(size=10, page_token=res.next_page_token)
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  const collection = client.collection("my_collection");
+
+  // List first page
+  const res = await collection.docs.list({ size: 20 });
+  console.log(res.docs?.length, res.total);
+
+  // List next page
+  if (res.nextPageToken) {
+    const resNext = await collection.docs.list({
+      size: 20,
+      pageToken: res.nextPageToken,
+    });
+  }
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+    lambdadb "github.com/lambdadb/go-lambdadb"
   )
 
-  # List first page of documents
-  res = lambda_db.collections.docs.list(
-      collection_name=collection_name,
-      size=10
-  )
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+    lambdadb.WithBaseURL("YOUR_BASE_URL"),
+    lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+    coll := client.Collection("my_collection")
 
-  # List next page using the token from the previous response
-  if res.next_page_token:
-      res_next = lambda_db.collections.docs.list(
-          collection_name=collection_name,
-          size=10,
-          page_token=res.next_page_token
-      )
+    // List first page
+    res, err := coll.Docs().List(ctx, &lambdadb.ListDocsOpts{Size: lambdadb.Int64(10)})
+    if err != nil {
+      log.Fatal(err)
+    }
+    for _, d := range res.Docs {
+      _ = d
+    }
+
+    // List next page
+    if res.NextPageToken != nil {
+      resNext, _ := coll.Docs().List(ctx, &lambdadb.ListDocsOpts{
+        Size:      lambdadb.Int64(10),
+        PageToken: res.NextPageToken,
+      })
+      _ = resNext
+    }
+  }
   ```
 
   ```bash cURL
-  # List first page
-  curl -X GET "$PROJECT_URL/collections/${collection_name}/docs?size=10" \
+  # List first page ($BASE_URL and $PROJECT_NAME match SDK base_url / project_name)
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10" \
     -H "x-api-key: ${YOUR_API_KEY}"
 
   # List next page (use nextPageToken from previous response)
-  curl -X GET "$PROJECT_URL/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
     -H "x-api-key: ${YOUR_API_KEY}"
   ```
 

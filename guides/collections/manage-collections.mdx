@@ -6,31 +6,79 @@ This page shows you how to manage your existing collections including listing, d
 
 ## List collections
 
-Retrieve a complete list of all collections in your project along with their metadata and status information.
+Retrieve a complete list of all collections in your project along with their metadata and status information. The endpoint supports optional pagination.
+
+| Parameter  | Description                                      | Type    | Required | Default |
+| :--------- | :----------------------------------------------- | :------ | :------- | :------ |
+| size       | Max number of collections to return in one page. | integer |          |         |
+| pageToken  | Token for the next page of results.              | string  |          |         |
 
 <CodeGroup>
 
 ```python Python
 from lambdadb import LambdaDB
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    # First page (optional: size, page_token)
+    res = client.collections.list(size=20)
+    for c in res.collections:
+        print(c.collection_name, c.num_docs)
+    # Next page (if res.next_page_token is set)
+    if res.next_page_token:
+        res_next = client.collections.list(size=20, page_token=res.next_page_token)
+```
 
-lambda_db.collections.list()
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+// First page (optional: size, pageToken)
+const res = await client.listCollections({ size: 20 });
+console.log(res.collections);
+// Next page (if res.nextPageToken is set)
+if (res.nextPageToken) {
+  const resNext = await client.listCollections({ size: 20, pageToken: res.nextPageToken });
+}
+```
+
+```go Go
+client := lambdadb.New(
+  lambdadb.WithBaseURL("YOUR_BASE_URL"),
+  lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+  lambdadb.WithAPIKey("YOUR_API_KEY"),
+)
+// First page (optional: Size, PageToken)
+opts := &lambdadb.ListCollectionsOpts{Size: lambdadb.Int64(20)}
+res, err := client.Collections.List(ctx, opts)
+if err != nil { log.Fatal(err) }
+for _, c := range res.Collections { _ = c }
+// Next page (if res.NextPageToken != nil)
+if res.NextPageToken != nil {
+  resNext, _ := client.Collections.List(ctx, &lambdadb.ListCollectionsOpts{Size: lambdadb.Int64(20), PageToken: res.NextPageToken})
+  _ = resNext
+}
 ```
 
 ```bash cURL
+# $BASE_URL and $PROJECT_NAME match SDK base_url / project_name (e.g. https://api.lambdadb.ai, playground)
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X GET "$PROJECT_URL/collections" \
+# First page (optional: size, pageToken)
+curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections?size=20" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+# Next page (use nextPageToken from previous response)
+curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections?size=20&pageToken=YOUR_PAGE_TOKEN" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
 </CodeGroup>
 
-The response includes detailed information about each collection:
+The response includes detailed information about each collection. When there are more results, the response may include `nextPageToken` for fetching the next page:
 
 ```json
 {
@@ -48,7 +96,8 @@ The response includes detailed information about each collection:
       "sourceCollectionVersionId": "wR0NyDJbqDiHMaaV597GjczO2oGQyG7T",
       "collectionStatus": "ACTIVE"
     }
-  ]
+  ],
+  "nextPageToken": "eyJ..."
 }
 ```
 
@@ -59,20 +108,23 @@ Get detailed information about a specific collection, including its configuratio
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    meta = client.collection("example-collection").get()
+    # or client.collections.get(collection_name="example-collection")
+```
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
+```typescript TypeScript
+const meta = await client.collection("example-collection").get();
+console.log(meta);
+```
 
-lambda_db.collections.get(collection_name="example-collection")
+```go Go
+meta, err := client.Collection("example-collection").Get(ctx)
+if err != nil { log.Fatal(err) }
 ```
 
 ```bash cURL
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
-curl -i -X GET "$PROJECT_URL/collections/example-collection" \
+curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
@@ -110,20 +162,20 @@ Permanently delete a collection and all of its associated data and resources. Th
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB
+client.collections.delete(collection_name="collection-to-delete")
+```
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
+```typescript TypeScript
+await client.collection("collection-to-delete").delete();
+```
 
-lambda_db.collections.delete(collection_name="collection-to-delete")
+```go Go
+err := client.Collection("collection-to-delete").Delete(ctx)
+if err != nil { log.Fatal(err) }
 ```
 
 ```bash cURL
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
-curl -i -X DELETE "$PROJECT_URL/collections/collection-to-delete" \
+curl -i -X DELETE "$BASE_URL/projects/$PROJECT_NAME/collections/collection-to-delete" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 

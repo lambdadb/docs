@@ -9,38 +9,67 @@ This page shows you how to update documents in a collection.
   ```python Python
   from lambdadb import LambdaDB
 
-  lambda_db = LambdaDB(
-      server_url="PROJECT_URL",
-      project_api_key="YOUR_API_KEY"
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+      docs = [
+          {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... "},
+          {"id": "33201223", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp v2", "text": "Winamp v2 is a media player for Windows, macOS and Android, originally developed by Nullsoft."},
+      ]
+      coll.docs.update(docs=docs)
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  await client.collection("my_collection").docs.update({
+    docs: [
+      { id: "33201222", title: "LambdaDB", text: "LambdaDB is an AI-native database ... " },
+      { id: "33201223", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp v2", text: "Winamp v2 is a media player for Windows, macOS and Android." },
+    ],
+  });
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+    lambdadb "github.com/lambdadb/go-lambdadb"
   )
 
-  # Prepare update documents
-  docs = [
-      {
-        "id": "33201222",
-        "title": "LambdaDB",
-        "text": "LambdaDB is an AI-native database ... "
-      },
-      {
-        "id": "33201223",
-        "url": "https://en.wikipedia.org/wiki/Winamp",
-        "title": "Winamp v2",
-        "text": "Winamp v2 is a media player for Windows, macOS and Android, originally developed by Justin Frankel and Dmitry Boldyrev by their company Nullsoft, which they later sold to AOL, who sold to Radionomy in January 2014."
-      }
-  ]
-
-  # Execute update
-  update_docs_test = lambda_db.collections.docs.update(
-      collection_name=collection_name,
-      docs=docs,
-  )
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+    docs := []map[string]interface{}{
+      {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... "},
+      {"id": "33201223", "title": "Winamp v2", "text": "Winamp v2 is a media player for Windows, macOS and Android."},
+    }
+    _, err := client.Collection("my_collection").Docs().Update(ctx, lambdadb.UpdateDocsInput{Docs: docs})
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
   ```
 
   ```bash cURL
   LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
   curl -X POST \
-    "$PROJECT_URL/collections/{collectionName}/docs/update" \
+    "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/update" \
     -H 'content-type: application/json' \
     -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
     -d '{
