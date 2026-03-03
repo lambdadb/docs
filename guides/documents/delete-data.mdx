@@ -14,23 +14,56 @@ deleting by ID is the most efficient way to remove specific records.
   ```python Python
   from lambdadb import LambdaDB
 
-  lambda_db = LambdaDB(
-      server_url="PROJECT_URL",
-      project_api_key="YOUR_API_KEY"
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("your_collection_name")
+      coll.docs.delete(ids=["example-doc-id-1", "example-doc-id-2"])
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  await client.collection("your_collection_name").docs.delete({
+    ids: ["example-doc-id-1", "example-doc-id-2"],
+  });
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+    lambdadb "github.com/lambdadb/go-lambdadb"
   )
 
-  res = lambda_db.collections.docs.delete(
-      collection_name="your_collection_name", 
-      ids=[
-          "example-doc-id-1",
-          "example-doc-id-2",
-      ]
-  )
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+    _, err := client.Collection("your_collection_name").Docs().Delete(ctx, lambdadb.DeleteDocsInput{
+      Ids: []string{"example-doc-id-1", "example-doc-id-2"},
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
   ```
 
   ```bash cURL
   curl -i -X POST \
-    --url "$PROJECT_URL/collections/{collectionName}/docs/delete" \
+    --url "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/delete" \
     --header 'content-type: application/json' \
     --header 'x-api-key: <YOUR_API_KEY>' \
     --data '{
@@ -53,19 +86,29 @@ For example, to delete all documents with genre "documentary" and year 2019 from
 <CodeGroup>
   
   ```python Python
-  res = lambda_db.collections.docs.delete(
-      collection_name="your_collection_name",
-      filter_={
-          "queryString": {
-              "query": "genre:documentary AND year:2019"
-          }
-      }
-  )
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("your_collection_name")
+      coll.docs.delete(query_filter={"queryString": {"query": "genre:documentary AND year:2019"}})
+  ```
+
+  ```typescript TypeScript
+  await client.collection("your_collection_name").docs.delete({
+    filter: { queryString: { query: "genre:documentary AND year:2019" } },
+  });
+  ```
+
+  ```go Go
+  filter := &lambdadb.QueryFilter{QueryString: &lambdadb.QueryStringFilter{Query: "genre:documentary AND year:2019"}}
+  _, err := client.Collection("your_collection_name").Docs().Delete(ctx, lambdadb.DeleteDocsInput{Filter: filter})
   ```
 
   ```bash cURL
   curl -i -X POST \
-    --url "$PROJECT_URL/collections/{collectionName}/docs/delete" \
+    --url "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/delete" \
     --header 'content-type: application/json' \
     --header 'x-api-key: <YOUR_API_KEY>' \
     --data '{

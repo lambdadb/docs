@@ -25,24 +25,64 @@ To fetch documents, specify the document IDs (up to 100 IDs).
   ```python Python
   from lambdadb import LambdaDB
 
-  lambda_db = LambdaDB(
-      server_url="PROJECT_URL",
-      project_api_key="YOUR_API_KEY"
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+      res = coll.docs.fetch(
+          ids=["33201222"],
+          include_vectors=True,
+          fields={"includes": ["url", "title", "text"], "excludes": ["metadata.raw"]},
+      )
+      # res.results or res.documents
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  const res = await client.collection("my_collection").docs.fetch({
+    ids: ["33201222"],
+    includeVectors: true,
+    fields: { includes: ["url", "title", "text"], excludes: ["metadata.raw"] },
+  });
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+    lambdadb "github.com/lambdadb/go-lambdadb"
   )
 
-  res_fetch = lambda_db.collections.docs.fetch(
-      collection_name=collection_name, 
-      ids=["33201222"], 
-      include_vectors=True,
-      fields={
-        "includes": ["url", "title", "text"],
-        "excludes": ["metadata.raw"]
-      }
-  )
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+    res, err := client.Collection("my_collection").Docs().Fetch(ctx, lambdadb.FetchDocsInput{
+      Ids: []string{"33201222"},
+      // Optional: IncludeVectors, Fields (includes/excludes)
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+    _ = res
+  }
   ```
 
   ```bash cURL
-  curl -X POST "$PROJECT_URL/collections/${collection_name}/fetch" \
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/fetch" \
     -H "Content-Type: application/json" \
     -H "x-api-key: ${YOUR_API_KEY}" \
     -d '{

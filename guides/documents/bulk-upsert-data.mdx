@@ -5,36 +5,128 @@ title: Bulk upsert data
 Besides the upsert operation which has 6MB maximum payload size limit,
 LambdaDB also supports bulk upsert operation to insert or update multiple documents up to 200MB at once.
 
-##  Get bulk upsert information
+## Recommended: One-step bulk upsert
 
-First, get the required information to upload payload to object storage:
+The easiest way to bulk upsert is to use the SDK’s one-step method. The client uploads your documents to the presigned URL and completes the bulk upsert for you (up to 200MB).
 
 <CodeGroup>
-    
+
+  ```python Python
+  from lambdadb import LambdaDB
+
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+      docs = [
+          {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
+          {"id": "bulk_2", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp", "text": "Winamp is a media player for Windows, macOS and Android ...", "dense_vector": [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]},
+      ]
+      coll.docs.bulk_upsert_docs(docs=docs)
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  const collection = client.collection("my_collection");
+  const docs = [
+    { id: "bulk_1", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is an AI-native database ... ", denseVector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparseVector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+    { id: "bulk_2", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", denseVector: [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0] },
+  ];
+  await collection.docs.bulkUpsertDocs({ docs });
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+    lambdadb "github.com/lambdadb/go-lambdadb"
+  )
+
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+    coll := client.Collection("my_collection")
+    docs := []map[string]interface{}{
+      {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
+      {"id": "bulk_2", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp", "text": "Winamp is a media player for Windows, macOS and Android ...", "dense_vector": []float64{1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0}},
+    }
+    _, err := coll.Docs().BulkUpsertDocuments(ctx, docs)
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
+  ```
+
+</CodeGroup>
+
+After a successful request you'll receive a message such as `"Upsert request is accepted"`. Documents are processed asynchronously and become searchable after indexing completes.
+
+---
+
+## Two-step: Get presigned URL, then upload and complete
+
+If you need to control the upload yourself (e.g. from a different process or storage), use this flow: (1) get bulk upsert info (presigned URL and `objectKey`), (2) upload the payload to the presigned URL, then (3) call the bulk-upsert API with the `objectKey`.
+
+### Step 1: Get bulk upsert information
+
+<CodeGroup>
+
 ```python Python
 from lambdadb import LambdaDB
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
-
-get_bulk_upsert = lambda_db.collections.docs.get_bulk_upsert(
-    collection_name=collection_name
-)
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    coll = client.collection("my_collection")
+    get_bulk_upsert = coll.docs.get_bulk_upsert()
+    # get_bulk_upsert.url, get_bulk_upsert.object_key, get_bulk_upsert.size_limit_bytes
 ```
-  
-```bash cURL
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+const info = await client.collection("my_collection").docs.getBulkUpsert();
+// info.url, info.objectKey, info.sizeLimitBytes
+```
+
+```go Go
+info, err := client.Collection("my_collection").Docs().GetBulkUpsertInfo(ctx)
+if err != nil {
+  log.Fatal(err)
+}
+// info.URL, info.ObjectKey, info.SizeLimitBytes
+```
+
+```bash cURL
 curl -i -X GET \
-  "$PROJECT_URL/collections/{collectionName}/docs/bulk-upsert" \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert" \
   -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY'
 ```
 
 </CodeGroup>
 
-The response will look like this:
+Response:
 
 ```json
 {
@@ -46,9 +138,9 @@ The response will look like this:
 }
 ```
 
-## Upload documents and execute bulk upsert
+### Step 2: Upload to presigned URL and call bulk-upsert
 
-Upload your documents as a one object using the provided URL and call `bulk-upsert` API with the corresponding `objectKey`:
+Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert API with the `objectKey` from step 1.
 
 <CodeGroup>
 
@@ -57,66 +149,76 @@ Upload your documents as a one object using the provided URL and call `bulk-upse
   import requests
 
   docs = [
-    {
-      "id": "bulk_33201222",
-      "url": "https://en.wikipedia.org/wiki/LambdaDB",
-      "title": "LambdaDB",
-      "text": "LambdaDB is an AI-native database ... ",
-      "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-      "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}
-    }
+      {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
   ]
-
-  # Upload documents to the provided URL
-  put_documents = requests.put(
+  # Upload to presigned URL
+  resp = requests.put(
       get_bulk_upsert.url,
       data=json.dumps({"docs": docs}),
       headers={"Content-Type": "application/json"},
   )
+  resp.raise_for_status()
+  # Complete bulk upsert
+  coll.docs.bulk_upsert(object_key=get_bulk_upsert.object_key)
+  ```
 
-  # Execute bulk upsert
-  bulk_upsert = lambda_db.collections.docs.bulk_upsert(
-      collection_name=collection_name, 
-      object_key=get_bulk_upsert.object_key
-  )
+  ```typescript TypeScript
+  const docs = [
+    { id: "bulk_33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is an AI-native database ... ", denseVector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparseVector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+  ];
+  // Upload to presigned URL
+  const uploadRes = await fetch(info.url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ docs }),
+  });
+  if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+  // Complete bulk upsert
+  await client.collection("my_collection").docs.bulkUpsert({ objectKey: info.objectKey });
+  ```
+
+  ```go Go
+  // Assume bytes, encoding/json, net/http are imported
+  docs := []map[string]interface{}{
+    {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
+  }
+  payload, _ := json.Marshal(map[string]interface{}{"docs": docs})
+  req, _ := http.NewRequestWithContext(ctx, "PUT", info.URL, bytes.NewReader(payload))
+  req.Header.Set("Content-Type", "application/json")
+  uploadRes, err := http.DefaultClient.Do(req)
+  if err != nil {
+    log.Fatal(err)
+  }
+  uploadRes.Body.Close()
+  if uploadRes.StatusCode < 200 || uploadRes.StatusCode >= 300 {
+    log.Fatalf("upload failed: %s", uploadRes.Status)
+  }
+  // Complete bulk upsert
+  _, err = client.Collection("my_collection").Docs().BulkUpsert(ctx, lambdadb.BulkUpsertDocsInput{ObjectKey: info.ObjectKey})
+  if err != nil {
+    log.Fatal(err)
+  }
   ```
 
   ```bash cURL
-  # First, upload your documents to the provided URL using PUT request
-  # (Replace <provided_url> with the actual URL from step 1)
-  curl -X PUT \
-    "<provided_url>" \
+  # 1. Upload to the presigned URL from step 1
+  curl -X PUT "<provided_url>" \
     -H 'Content-Type: application/json' \
-    -d '{
-      "docs": [
-        {
-          "id": "bulk_33201222",
-          "url": "https://en.wikipedia.org/wiki/LambdaDB",
-          "title": "LambdaDB",
-          "text": "LambdaDB is an AI-native database ... ",
-          "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-          "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}
-        }
-      ]
-    }'
+    -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}]}'
 
-  # Then execute bulk upsert with the objectKey
-  LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
+  # 2. Complete bulk upsert with the objectKey from step 1
   curl -i -X POST \
-    "$PROJECT_URL/collections/{collectionName}/docs/bulk-upsert" \
+    "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert" \
     -H 'content-type: application/json' \
     -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
-    -d '{
-      "objectKey": "<string>"
-    }'
+    -d '{"objectKey": "<objectKey from step 1>"}'
   ```
 
 </CodeGroup>
 
 ## Response
 
-After successful bulk upsert initiation, you'll receive:
+After successful bulk upsert initiation you'll receive:
 
 ```json
 {

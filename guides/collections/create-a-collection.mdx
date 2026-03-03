@@ -24,55 +24,70 @@ The simplest way to create a collection is to provide the collection name and th
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB
+from lambdadb import LambdaDB, models
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
-
-basic_config = {
-    "url": {"type": models.Type.KEYWORD},
-    "author": {"type": models.Type.KEYWORD},
-    "content": {
-      "type": models.TypeText.TEXT,
-      "analyzers": [
-          models.Analyzer.JAPANESE,
-          models.Analyzer.KOREAN,
-          models.Analyzer.ENGLISH,
-      ],
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    basic_config = {
+        "url": {"type": models.Type.KEYWORD},
+        "author": {"type": models.Type.KEYWORD},
+        "content": {
+            "type": models.TypeText.TEXT,
+            "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH],
+        },
     }
-}
+    client.collections.create(collection_name="example-collection", index_configs=basic_config)
+```
 
-collection = lambda_db.collections.create(
-    collection_name="example-collection",
-    index_configs=basic_config
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+await client.createCollection({
+  collectionName: "example-collection",
+  indexConfigs: {
+    url: { type: "keyword" },
+    author: { type: "keyword" },
+    content: { type: "text", analyzers: ["japanese", "korean", "english"] },
+  },
+});
+```
+
+```go Go
+client := lambdadb.New(
+  lambdadb.WithBaseURL("YOUR_BASE_URL"),
+  lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+  lambdadb.WithAPIKey("YOUR_API_KEY"),
 )
+_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+  CollectionName: "example-collection",
+  IndexConfigs: map[string]interface{}{
+    "url":     map[string]interface{}{"type": "keyword"},
+    "author":  map[string]interface{}{"type": "keyword"},
+    "content": map[string]interface{}{"type": "text", "analyzers": []string{"japanese", "korean", "english"}},
+  },
+})
 ```
 
 ```bash cURL
 LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
-curl -i -X POST "$PROJECT_URL/collections" \
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
         "collectionName": "example-collection",
         "indexConfigs": {
-          "url": {
-            "type": "keyword"
-          },
-          "author": {
-            "type": "keyword"
-          },
-          "content": {
-            "type": models.TypeText.TEXT,
-            "analyzers": [
-              models.Analyzer.JAPANESE,
-              models.Analyzer.KOREAN,
-              models.Analyzer.ENGLISH,
-            ],
-          }
+          "url": { "type": "keyword" },
+          "author": { "type": "keyword" },
+          "content": { "type": "text", "analyzers": ["japanese", "korean", "english"] }
         }
       }'
 ```
@@ -86,66 +101,37 @@ LambdaDB supports a hash-based partitioning for a specified field.
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB
+from lambdadb import LambdaDB, models
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_API_KEY"
-)
-
-basic_config = {
-    "url": {"type": models.Type.KEYWORD},
-    "author": {"type": models.Type.KEYWORD},
-    "content": {
-      "type": models.TypeText.TEXT,
-      "analyzers": [
-          models.Analyzer.JAPANESE,
-          models.Analyzer.KOREAN,
-          models.Analyzer.ENGLISH,
-      ],
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    basic_config = {
+        "url": {"type": models.Type.KEYWORD},
+        "author": {"type": models.Type.KEYWORD},
+        "content": {"type": models.TypeText.TEXT, "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH]},
     }
-}
+    client.collections.create(
+        collection_name="example-collection",
+        index_configs=basic_config,
+        partition_config={"field_name": "url", "data_type": "keyword", "num_partitions": 4},
+    )
+```
 
-collection = lambda_db.collections.create(
-    collection_name="example-collection",
-    index_configs=basic_config,
-    partition_config={
-        "field_name": "url",
-        "data_type": "keyword"
-        "num_partitions": 4
-    }
-)
+```typescript TypeScript
+await client.createCollection({
+  collectionName: "example-collection",
+  indexConfigs: { url: { type: "keyword" }, author: { type: "keyword" }, content: { type: "text", analyzers: ["japanese", "korean", "english"] } },
+  partitionConfig: { fieldName: "url", dataType: "keyword", numPartitions: 4 },
+});
 ```
 
 ```bash cURL
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
-curl -i -X POST "$PROJECT_URL/collections" \
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
         "collectionName": "example-collection",
-        "indexConfigs": {
-          "url": {
-            "type": "keyword"
-          },
-          "author": {
-            "type": "keyword"
-          },
-          "content": {
-            "type": models.TypeText.TEXT,
-            "analyzers": [
-              models.Analyzer.JAPANESE,
-              models.Analyzer.KOREAN,
-              models.Analyzer.ENGLISH,
-            ],
-          }
-        },
-        "partitionConfig": {
-          "fieldName": "url",
-          "dataType": "keyword",
-          "numPartitions" 4
-        }
+        "indexConfigs": { "url": {"type": "keyword"}, "author": {"type": "keyword"}, "content": {"type": "text", "analyzers": ["japanese", "korean", "english"]} },
+        "partitionConfig": { "fieldName": "url", "dataType": "keyword", "numPartitions": 4 }
       }'
 ```
 
@@ -166,28 +152,22 @@ You can create a collection from a specific point in time using PITR functionali
 
 ```python Python
 from lambdadb import LambdaDB
-from datetime import datetime
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_TARGET_API_KEY"
-)
-
-# Restore from a specific point in time
-restored_collection = lambda_db.collections.create(
-    collection_name="restored-collection",
-    source_project_name="source-project-name",
-    source_project_api_key="YOUR_SOURCE_API_KEY"
-    source_collection_name="source-collection-name",
-    source_datetime="2024-01-15T10:30:00Z",
-)
+with LambdaDB(project_api_key="YOUR_TARGET_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    restored_collection = client.collections.create(
+        collection_name="restored-collection",
+        source_project_name="source-project-name",
+        source_project_api_key="YOUR_SOURCE_API_KEY",
+        source_collection_name="source-collection-name",
+        source_datetime="2024-01-15T10:30:00Z",
+    )
 ```
 
 ```bash cURL
 LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
 LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
 
-curl -i -X POST "$PROJECT_URL/collections" \
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{
@@ -214,37 +194,26 @@ You can fork a collection based on an existing collection and extend it with add
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB
+from lambdadb import LambdaDB, models
 
-lambda_db = LambdaDB(
-    server_url="PROJECT_URL",
-    project_api_key="YOUR_TARGET_API_KEY"
-)
-
-forked = lambda_db.collections.create(
-    collection_name="forked-collection",
-    source_project_id="example-source-project-id",
-    source_project_api_key="YOUR_SOURCE_API_KEY",
-    source_collection_name="example-source-collection-name"
-    index_configs={
-      "newText": {
-        "type": "text,
-        "analyzers": [
-            "japanese",
-            "korean",
-            "english"
-        ],
-    },
-    }
-    source_datetime="2025-08-08T10:00:00Z"
-)
+with LambdaDB(project_api_key="YOUR_TARGET_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    forked = client.collections.create(
+        collection_name="forked-collection",
+        source_project_name="source-project-name",
+        source_project_api_key="YOUR_SOURCE_API_KEY",
+        source_collection_name="example-source-collection-name",
+        source_datetime="2025-08-08T10:00:00Z",
+        index_configs={
+            "newText": {"type": models.TypeText.TEXT, "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH]},
+        },
+    )
 ```
 
 ```bash cURL
 LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
 LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
 
-curl -i -X POST "$PROJECT_URL/collections" \
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
   -d '{

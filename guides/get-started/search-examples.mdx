@@ -34,11 +34,12 @@ from lambdadb import LambdaDB
 # Initialize clients
 co = cohere.Client("<YOUR_COHERE_API_KEY>")
 lambda_db = LambdaDB(
-    server_url="<PLAYGROUND_PROJECT_URL>",
-    project_api_key="<YOUR_LAMBDADB_API_KEY>"
+    project_api_key="<YOUR_LAMBDADB_API_KEY>",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
 )
-
 collection_name = "cohere-wikipedia-en-100k"
+coll = lambda_db.collection(collection_name)
 
 def generate_embedding(query_text):
     """Generate embedding for search queries"""
@@ -115,11 +116,7 @@ def hybrid_search_example():
     }
 
     # Execute search
-    results = lambda_db.collections.query(
-        collection_name=collection_name,
-        size=3,  # Return top 3 results
-        query=hybrid_query
-    )
+    results = coll.query(size=3, query=hybrid_query)
 
     display_results(
         results,
@@ -219,11 +216,7 @@ def keyword_filtering_example():
     }
 
     # Execute search
-    results = lambda_db.collections.query(
-        collection_name=collection_name,
-        size=3,
-        query=filtered_query
-    )
+    results = coll.query(size=3, query=filtered_query)
 
     display_results(
         results,
@@ -324,11 +317,7 @@ def exact_match_filtering_example():
     }
 
     # Execute search
-    results = lambda_db.collections.query(
-        collection_name=collection_name,
-        size=3,
-        query=exact_match_query
-    )
+    results = coll.query(size=3, query=exact_match_query)
 
     display_results(
         results,
@@ -387,10 +376,12 @@ class WikipediaSearchExamples:
         """Initialize the search examples with API credentials"""
         self.co = cohere.Client(cohere_api_key)
         self.lambda_db = LambdaDB(
-            server_url="<PLAYGROUND_PROJECT_URL>",
-            project_api_key=lambdadb_api_key
+            project_api_key=lambdadb_api_key,
+            base_url="YOUR_BASE_URL",
+            project_name="YOUR_PROJECT_NAME",
         )
         self.collection_name = "cohere-wikipedia-en-100k"
+        self.coll = self.lambda_db.collection(self.collection_name)
 
     def generate_embedding(self, text):
         """Generate embedding for search queries"""
@@ -432,11 +423,7 @@ class WikipediaSearchExamples:
             ]
         }
 
-        return self.lambda_db.collections.query(
-            collection_name=self.collection_name,
-            size=3,
-            query=query
-        )
+        return self.coll.query(size=3, query=query)
 
     def run_keyword_filtering(self):
         """Example 2: Keyword Filtering with Vector Search"""
@@ -476,11 +463,7 @@ class WikipediaSearchExamples:
             ]
         }
 
-        return self.lambda_db.collections.query(
-            collection_name=self.collection_name,
-            size=3,
-            query=query
-        )
+        return self.coll.query(size=3, query=query)
 
     def run_exact_match(self):
         """Example 3: Exact Match Filtering with Vector Search"""
@@ -507,11 +490,7 @@ class WikipediaSearchExamples:
             }
         }
 
-        return self.lambda_db.collections.query(
-            collection_name=self.collection_name,
-            size=3,
-            query=query
-        )
+        return self.coll.query(size=3, query=query)
 
     def display_results(self, results, title, description=""):
         """Display search results in a consistent format"""
