@@ -2,9 +2,45 @@
 title: Quickstart
 ---
 
-This guide will walk you through creating your first collection and performing hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
+This guide will walk you through getting a **project API key**, installing the SDK, creating your first collection, and running hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
 
-## 🚀 Step 1: Install the SDK
+## 🔑 Step 1: Get your API key
+
+You'll use a **project API key** from **[LambdaDB Cloud](https://app.lambdadb.ai)** starting in Step 3.
+
+<Note>
+    **LambdaDB Cloud** is in **public preview**.
+</Note>
+
+1. **Create a Cloud account** — Open [app.lambdadb.ai](https://app.lambdadb.ai), sign up if you need an account, and sign in.
+
+2. **Playground project (default)** — New accounts include a **Playground** project so you can try the product immediately. It is a **shared environment**: the same project is visible to other users, and data you index there can be read by others. Use it **only** for feature testing—not for private, sensitive, or production workloads.
+
+3. **Add a payment method** — When you add a **payment method**, the Playground project is removed from your account and you can **create your own projects**. Project creation, billing, and the rest of the console capabilities are enabled once a payment method is on file. LambdaDB uses a **serverless-native architecture**: it is built from **serverless** components only (for example **AWS Lambda** and **Amazon S3**), so **there is no monthly minimum fee**—you pay for **measured usage** only. For why we built it this way, see the blog post ["Serverless" Database Is Dead — It's Time to Evolve](https://lambdadb.ai/blog/serverless-database-is-dead). For how usage is metered and current rates, see [Understanding costs](/guides/costs/understanding-costs).
+
+4. **Create a project and save your key** — When you **create a project**, choose an **AWS region** that fits latency and data-residency needs. After the project is created, your **API key is shown only once**—copy it immediately and store it somewhere safe (for example a password manager or a local environment variable). Use it with the **base URL** and **project name** from the console starting in Step 3.
+
+<Info>
+
+  **Regional coverage:** LambdaDB Cloud is available in **all standard AWS commercial Regions**—the same broad regional footprint AWS exposes for most services (30+ Regions in the public preview), rather than a short list that grows over time. Pick any supported Region shown in the console when you create a project.
+
+</Info>
+
+If you are still on **Playground only** (before adding a payment method), use the **API key** and **connection details** shown in the console for the Playground project—the same Step 3 code paths apply once you substitute those values.
+
+<Tip>
+    The Cloud console also supports loading data and running queries in the GUI, alongside the SDK examples in this guide.
+</Tip>
+
+<Note>
+    Keep your API key out of source control and prefer environment variables instead of hardcoding it in scripts.
+</Note>
+
+<Warning>
+    The Playground project is shared with other users and is subject to rate limits. Do not put sensitive or production data in Playground.
+</Warning>
+
+## 🚀 Step 2: Install the SDK
 
 The LambdaDB SDK provides convenient access to the LambdaDB APIs.
 
@@ -27,20 +63,6 @@ go get github.com/lambdadb/go-lambdadb
 <Tip>
     For Python, we recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
 </Tip>
-
-## 🔑 Step 2: Get your API key
-
-To use LambdaDB, you'll need an API key. Fill out [this form](https://share-na2.hsforms.com/1vBeXGa1ETXupo4_mIrtoEA40td9f) to obtain playground credentials.
-
-<Note>
-    Keep your API key secure and consider storing it in environment variables rather than hardcoding it in your scripts.
-</Note>
-
-<Warning>
-
-    The playground project is publicly accessible and rate limited. Do not store any sensitive/production data to the playground project.
-
-</Warning>
 
 ## 📚 Step 3: Create a collection
 
@@ -475,11 +497,10 @@ if err != nil { log.Fatal(err) }
 
 ## 🚀 Next steps
 
-- **Apply for early access:** [https://lambdadb.ai/early-access](https://lambdadb.ai/early-access?utm_source=docs)
 - **Advanced Queries**: Explore complex patterns in our [Query Guide](/guides/search/overview)
 - **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](/guides/documents/bulk-upsert-data)
 - **API Reference**: Comprehensive documentation at our [API Reference](/reference/api/introduction)
 
 ## 🤝 Support
 
-Need help? Visit our [Community Forum](https://discord.gg/6qtmgtj342) for support and discussions.
+Need help? Visit our [Community Slack](https://join.slack.com/t/lambdadbcommunity/shared_invite/zt-3sg7565zm-sCTW3odRkEQt~auWUVVsTw) for support and discussions.
