@@ -1,0 +1,43 @@
+---
+title: Understanding costs
+---
+
+LambdaDB usage is metered in three dimensions: **read usage**, **write usage**, and **storage usage**. Charges are based on actual measured usage at the rates below.
+
+## Read usage
+
+Read usage is billed at **$5 per read PB** (petabyte) of measured usage.
+
+The following requests contribute to read usage based on **collection size**:
+
+- **Collection query** ([document query](/reference/api/endpoint/document-query))
+- **Document fetch** ([document fetch](/reference/api/endpoint/document-fetch))
+- **Document list** ([document list](/reference/api/endpoint/document-list))
+
+For these operations, the size of the collection is reflected in read usage.
+
+**Per-request minimum:** each request is counted as at least **1 GB** of read usage.
+
+**Strong consistency:** for **query** and **fetch** requests, if you set `consistentRead` to `true`, an **additional 1 GB** is added to read usage for that request (on top of the per-request minimum and the collection-size basis). See also [Search overview](/guides/search/search-overview) and [Fetch data](/guides/documents/fetch-data).
+
+## Write usage
+
+Write usage is billed at **$1 per write GB** of measured usage.
+
+**Upsert**, **update**, and **bulk-upsert** ([document upsert](/reference/api/endpoint/document-upsert), [document update](/reference/api/endpoint/document-update), [document bulk upsert](/reference/api/endpoint/document-bulk-upsert)) are measured from the **size in bytes of the document payload** you send in the request body.
+
+**Per-request minimum** for upsert, update, and bulk-upsert: **50 KB**.
+
+**Delete** ([document delete](/reference/api/endpoint/document-delete)): **100 KB** of write usage is added **per delete request** (fixed amount).
+
+## Storage usage
+
+Storage is billed on **physical storage** at **$0.33 per GB-month**.
+
+If you use **branching**, logical storage and physical storage can differ; billing follows **physical** storage.
+
+Usage is computed from **hourly averages** of stored data. Those averages are summed into **GB-hours** over the billing period (not a single end-of-month snapshot).
+
+## Billing cycle
+
+On the **first day of each calendar month**, usage for the **previous month**—read, write, and storage—is aggregated and invoiced.

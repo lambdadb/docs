@@ -59,6 +59,12 @@
               "guides/search/sort",
               "guides/search/limits"
             ]
+          },
+          {
+            "group": "Manage Costs",
+            "pages": [
+              "guides/costs/understanding-costs"
+            ]
           }
         ]
       },
