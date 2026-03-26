@@ -26,6 +26,8 @@ Write usage is billed at **$1 per write GB** of measured usage.
 
 **Upsert**, **update**, and **bulk-upsert** ([document upsert](/reference/api/endpoint/document-upsert), [document update](/reference/api/endpoint/document-update), [document bulk upsert](/reference/api/endpoint/document-bulk-upsert)) are measured from the **size in bytes of the document payload** you send in the request body.
 
+**Update** ([document update](/reference/api/endpoint/document-update)) only: each request always runs an internal **document fetch** with strong consistency (equivalent to **fetch** with `consistentRead` set to `true`). That work is billed as **read usage** under [Read usage](#read-usage)—including collection-size basis, the per-request minimum, and the **Strong consistency** rule.
+
 **Per-request minimum** for upsert, update, and bulk-upsert: **50 KB**.
 
 **Delete** ([document delete](/reference/api/endpoint/document-delete)): **100 KB** of write usage is added **per delete request** (fixed amount).
