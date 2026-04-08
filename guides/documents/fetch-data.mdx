@@ -36,7 +36,8 @@ To fetch documents, specify the document IDs (up to 100 IDs).
           include_vectors=True,
           fields={"includes": ["url", "title", "text"], "excludes": ["metadata.raw"]},
       )
-      # res.results or res.documents
+      # `res.docs` contains items (each item includes `doc` and metadata).
+      # `res.documents` contains document bodies only.
   ```
 
   ```typescript TypeScript

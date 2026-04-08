@@ -68,7 +68,8 @@ from lambdadb import LambdaDB
 with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
     coll = client.collection("my_collection")
     results = coll.query(query={"queryString": {"query": "*:*"}}, size=10)
-    # results.results or results.documents
+    # `results.docs` contains items (each item includes `doc` and `score`).
+    # `results.documents` contains document bodies only (no scores).
 ```
 
 ```typescript TypeScript

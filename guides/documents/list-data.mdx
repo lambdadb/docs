@@ -22,9 +22,10 @@ This page shows you how to use the list endpoint to list documents in a collecti
       coll = client.collection("my_collection")
       # List first page of documents
       res = coll.docs.list(size=10)
-      # res.results has full items; res.documents has document bodies only
-      for doc in res.results:
-          print(doc)
+      # `res.docs` contains items (each item includes `doc` and metadata).
+      # `res.documents` contains document bodies only.
+      for item in res.docs:
+          print(item)
 
       # List next page using the token from the previous response
       if res.next_page_token:
