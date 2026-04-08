@@ -2,6 +2,8 @@
 title: Overview
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 A search query, or query, is a request for information about data in LambdaDB collections.
 
 LambdaDB supports several search methods:
@@ -71,6 +73,8 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
     # `results.docs` contains items (each item includes `doc` and `score`).
     # `results.documents` contains document bodies only (no scores).
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";

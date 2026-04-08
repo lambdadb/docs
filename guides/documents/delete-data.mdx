@@ -2,6 +2,8 @@
 title: Delete data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to use the delete endpoint to remove documents from a collection.
 
 ## Delete documents by IDs
@@ -22,6 +24,8 @@ deleting by ID is the most efficient way to remove specific records.
       coll = client.collection("your_collection_name")
       coll.docs.delete(ids=["example-doc-id-1", "example-doc-id-2"])
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";

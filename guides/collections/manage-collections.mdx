@@ -2,6 +2,8 @@
 title: "Manage collections"
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to manage your existing collections including listing, describing, and deleting operations.
 
 ## List collections
@@ -27,6 +29,8 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
     if res.next_page_token:
         res_next = client.collections.list(size=20, page_token=res.next_page_token)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";

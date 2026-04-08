@@ -2,6 +2,8 @@
 title: Fetch data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to use the fetch endpoint to fetch documents by IDs from a collection.
 
 | Parameter      | Description                                                   | Type       | Required | Default |
@@ -39,6 +41,8 @@ To fetch documents, specify the document IDs (up to 100 IDs).
       # `res.docs` contains items (each item includes `doc` and metadata).
       # `res.documents` contains document bodies only.
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";

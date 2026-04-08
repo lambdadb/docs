@@ -2,6 +2,8 @@
 title: Upsert data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to upsert documents into a collection.
 
 
@@ -21,6 +23,8 @@ This page shows you how to upsert documents into a collection.
       ]
       coll.docs.upsert(docs=docs)
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";

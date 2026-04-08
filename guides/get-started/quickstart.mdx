@@ -2,6 +2,8 @@
 title: Quickstart
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This guide will walk you through getting a **project API key**, installing the SDK, creating your first collection, and running hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
 
 ## 🔑 Step 1: Get your API key
@@ -99,6 +101,8 @@ with LambdaDB(
     )
     print(res)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";

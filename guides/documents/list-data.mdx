@@ -2,6 +2,8 @@
 title: List data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over all documents (for example, to export or scan) without filtering by query.
 
 | Parameter   | Description                                      | Type    | Required | Default |
@@ -31,6 +33,8 @@ This page shows you how to use the list endpoint to list documents in a collecti
       if res.next_page_token:
           res_next = coll.docs.list(size=10, page_token=res.next_page_token)
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";

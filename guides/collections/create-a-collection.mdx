@@ -2,6 +2,8 @@
 title: "Create a collection"
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to create a collection with various configurations.
 
 ## Parameters
@@ -41,6 +43,8 @@ with LambdaDB(
     }
     client.collections.create(collection_name="example-collection", index_configs=basic_config)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";

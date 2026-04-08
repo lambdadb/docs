@@ -2,6 +2,8 @@
 title: Bulk upsert data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 Besides the upsert operation which has 6MB maximum payload size limit,
 LambdaDB also supports bulk upsert operation to insert or update multiple documents up to 200MB at once.
 
@@ -26,6 +28,8 @@ The easiest way to bulk upsert is to use the SDK’s one-step method. The client
       ]
       coll.docs.bulk_upsert_docs(docs=docs)
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
