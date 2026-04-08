@@ -126,4 +126,5 @@ For example, to delete all documents with genre "documentary" and year 2019 from
 
 To remove all documents from a collection,
 [delete the collection](/guides/collections/manage-collections#delete-a-collection) and
-[recreate it](/guides/collections/create-a-collection#create-a-collection-from-scratch)
+[recreate it](/guides/collections/create-a-collection#create-a-collection-from-scratch).
+Deletion is asynchronous: if you reuse the **same** collection name, wait until the name is fully released (for example by polling describe until the collection returns not found) before calling create—see [Wait for deletion before recreating](/guides/collections/manage-collections#wait-for-deletion-before-recreating).

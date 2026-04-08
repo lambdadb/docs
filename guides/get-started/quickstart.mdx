@@ -139,7 +139,7 @@ func main() {
     lambdadb.WithAPIKey("your_api_key_here"),
   )
   collectionName := "your_collection_name_here"
-  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
     CollectionName: collectionName,
     IndexConfigs: map[string]interface{}{
       "text":    map[string]interface{}{"type": "text", "analyzers": []string{"english", "korean"}},

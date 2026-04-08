@@ -66,7 +66,7 @@ client := lambdadb.New(
   lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
   lambdadb.WithAPIKey("YOUR_API_KEY"),
 )
-_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
   CollectionName: "example-collection",
   IndexConfigs: map[string]interface{}{
     "url":     map[string]interface{}{"type": "keyword"},
