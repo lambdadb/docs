@@ -7,14 +7,14 @@ This page shows you how to use the fetch endpoint to fetch documents by IDs from
 | Parameter      | Description                                                   | Type       | Required | Default |
 | :------------- | :------------------------------------------------------------ | :--------- | :------- | :------ |
 | ids            | The document IDs to fetch up to 100.                         | string[]   | ✓        |         |
-| includeVectors | Indicates whether vector values are included in the response. | boolean    |          | false   |
-| consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean          |          | false   |
+| includeVectors | Indicates whether vector values are included in the response. (Python: `include_vectors`) | boolean    |          | false   |
+| consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. (Python: `consistent_read`) | boolean          |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | partitionFilter | Partition filter. | object |  |  |
 
 <Tip>
 
-  `include` is applied first, and than `exclude` is applied to the included fields when you set both `include` and `exclude` in `fields` parameter.
+  `includes` is applied first, and then `excludes` is applied to the included fields when you set both in the `fields` parameter.
 
 </Tip>
 

@@ -230,7 +230,7 @@ After successful bulk upsert initiation you'll receive:
 
   Bulk upsert operations are processed asynchronously in the background.
   Consequently, newly uploaded documents may not be immediately available for search or fetch requests,
-  <strong>even if <code>consistentRead</code> is set to <code>true</code></strong>.
+  <strong>even if <code>consistentRead</code> (Python: <code>consistent_read</code>) is set to <code>true</code></strong>.
   The documents will become available only after the indexing process is fully complete.
 
 </Note>

@@ -31,21 +31,21 @@ Common parameters for the request body of a query are as follows:
 
 <Tip>
 
-  Setting `includeVectors=True` will increase response size significantly, especially for high-dimensional vectors. 
+  Setting `includeVectors` (or `include_vectors` in Python) to `true` will increase response size significantly, especially for high-dimensional vectors. 
   Use this option only when vector data is specifically needed for your application.
 
 </Tip>
 
 <Tip>
 
-  `include` is applied first, and than `exclude` is applied to the included fields when you both set `include` and `exclude` in `fields` parameter.
+  `includes` is applied first, and then `excludes` is applied to the included fields when you set both in the `fields` parameter.
 
 </Tip>
 
 <Note>
 
   LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
-  If your application requires strong (read-after-write) consistency, set consistentRead to true when query data from a collection, at the expense of potential high latency and cost.
+  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying data from a collection, at the expense of potential higher latency and cost.
 
 </Note>
 
