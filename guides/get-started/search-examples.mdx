@@ -59,12 +59,12 @@ def display_results(results, title, description=""):
     print(f"📊 Found {len(results.docs)} results")
     print(f"{'='*60}")
 
-    for i, result in enumerate(results.docs, 1):
+    for i, item in enumerate(results.docs, 1):
         print(f"\n--- Result {i} ---")
-        print(f"Title: {result.doc['title']}")
-        print(f"URL: {result.doc['url']}")
-        print(f"Score: {result.score}")
-        print(f"Text Preview: {result.doc['text'][:200]}...")
+        print(f"Title: {item.doc['title']}")
+        print(f"URL: {item.doc['url']}")
+        print(f"Score: {item.score}")
+        print(f"Text Preview: {item.doc['text'][:200]}...")
         print("-" * 50)
 
 ```
@@ -505,12 +505,12 @@ class WikipediaSearchExamples:
         print(f"📊 Found {len(results.docs)} results")
         print(f"{'='*60}")
 
-        for i, result in enumerate(results.docs, 1):
+        for i, item in enumerate(results.docs, 1):
             print(f"\n--- Result {i} ---")
-            print(f"Title: {result.doc['title']}")
-            print(f"URL: {result.doc['url']}")
-            print(f"Score: {result.score}")
-            print(f"Text Preview: {result.doc['text'][:200]}...")
+            print(f"Title: {item.doc['title']}")
+            print(f"URL: {item.doc['url']}")
+            print(f"Score: {item.score}")
+            print(f"Text Preview: {item.doc['text'][:200]}...")
             print("-" * 50)
 
     def run_all_examples(self):

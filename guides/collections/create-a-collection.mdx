@@ -2,6 +2,8 @@
 title: "Create a collection"
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to create a collection with various configurations.
 
 ## Parameters
@@ -32,15 +34,17 @@ with LambdaDB(
     project_name="YOUR_PROJECT_NAME",
 ) as client:
     basic_config = {
-        "url": {"type": models.Type.KEYWORD},
-        "author": {"type": models.Type.KEYWORD},
+        "url": {"type": "keyword"},
+        "author": {"type": "keyword"},
         "content": {
-            "type": models.TypeText.TEXT,
-            "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH],
+            "type": "text",
+            "analyzers": ["japanese", "korean", "english"],
         },
     }
     client.collections.create(collection_name="example-collection", index_configs=basic_config)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
@@ -66,7 +70,7 @@ client := lambdadb.New(
   lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
   lambdadb.WithAPIKey("YOUR_API_KEY"),
 )
-_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
   CollectionName: "example-collection",
   IndexConfigs: map[string]interface{}{
     "url":     map[string]interface{}{"type": "keyword"},
@@ -105,9 +109,9 @@ from lambdadb import LambdaDB, models
 
 with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
     basic_config = {
-        "url": {"type": models.Type.KEYWORD},
-        "author": {"type": models.Type.KEYWORD},
-        "content": {"type": models.TypeText.TEXT, "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH]},
+        "url": {"type": "keyword"},
+        "author": {"type": "keyword"},
+        "content": {"type": "text", "analyzers": ["japanese", "korean", "english"]},
     }
     client.collections.create(
         collection_name="example-collection",
@@ -204,7 +208,7 @@ with LambdaDB(project_api_key="YOUR_TARGET_API_KEY", base_url="YOUR_BASE_URL", p
         source_collection_name="example-source-collection-name",
         source_datetime="2025-08-08T10:00:00Z",
         index_configs={
-            "newText": {"type": models.TypeText.TEXT, "analyzers": [models.Analyzer.JAPANESE, models.Analyzer.KOREAN, models.Analyzer.ENGLISH]},
+            "newText": {"type": "text", "analyzers": ["japanese", "korean", "english"]},
         },
     )
 ```

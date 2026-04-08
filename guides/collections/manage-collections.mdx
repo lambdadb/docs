@@ -2,6 +2,8 @@
 title: "Manage collections"
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to manage your existing collections including listing, describing, and deleting operations.
 
 ## List collections
@@ -27,6 +29,8 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
     if res.next_page_token:
         res_next = client.collections.list(size=20, page_token=res.next_page_token)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
@@ -159,6 +163,8 @@ The response provides comprehensive collection details:
 
 Permanently delete a collection and all of its associated data and resources. This operation cannot be undone.
 
+Deletion is **asynchronous**: the API returns **202 Accepted** and queues the work in the background. Until the job finishes, the collection name is still reserved—you may see `collectionStatus` **`DELETING`** from [Describe a collection](#describe-a-collection), and creating a collection with the same name can fail with a resource-already-exists error. For large collections (for example thousands of documents), this phase can take **a minute or longer**. Use the [wait-for-deletion pattern](#wait-for-deletion-before-recreating) before calling create again with the same name.
+
 <CodeGroup>
 
 ```python Python
@@ -193,4 +199,134 @@ Collections can have the following status values:
 |:-----------|:------------|
 | `CREATING` | Collection is being created and not yet available |
 | `ACTIVE`   | Collection is ready for read/write operations |
-| `DELETING` | Collection is being deleted |
+| `DELETING` | Collection is being deleted asynchronously; the name stays reserved until removal completes |
+
+## Wait for deletion before recreating
+
+If you delete a collection and immediately call create with the **same** `collectionName`, the create request may fail (for example **Resource already exists** / `ResourceAlreadyExists`) even though you already issued delete. That is expected while the collection is still being removed.
+
+**What to do:** After a successful delete call, poll **Describe** (`get`) until the collection **no longer exists** (typically HTTP **404** / `ResourceNotFound` from the API), then create. Checking `collectionStatus === "DELETING"` on each successful `get` confirms you are still in the teardown phase.
+
+**Prefer `get` over `list` for this:** `list` can still include the collection for some time after delete; describe-by-name reflects the lifecycle more directly for a single collection.
+
+<CodeGroup>
+
+```python Python
+import time
+
+collection_name = "knowledge-layer"
+poll_interval_s = 2.0
+max_wait_s = 900.0  # allow long-running deletes for large collections
+
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    client.collections.delete(collection_name=collection_name)
+
+    deadline = time.monotonic() + max_wait_s
+    while time.monotonic() < deadline:
+        try:
+            meta = client.collections.get(collection_name=collection_name)
+        except Exception as exc:
+            # When the collection is fully gone, describe returns 404 — use the not-found type your SDK maps to that response.
+            code = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+            if code == 404:
+                break
+            raise
+        # Still present (often with status=DELETING); the name is not free yet.
+        time.sleep(poll_interval_s)
+    else:
+        raise TimeoutError(f"Timed out after {max_wait_s}s waiting for {collection_name!r} to be removed")
+
+    # Use the same index_configs you would pass to a normal create.
+    client.collections.create(collection_name=collection_name, index_configs=your_index_configs)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+const collectionName = "knowledge-layer";
+const pollMs = 2000;
+const timeoutMs = 900_000;
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+
+await client.collection(collectionName).delete();
+
+const deadline = Date.now() + timeoutMs;
+while (Date.now() < deadline) {
+  try {
+    // Still present (often with status=DELETING); the name is not free yet.
+    await client.collection(collectionName).get();
+    await new Promise((r) => setTimeout(r, pollMs));
+  } catch (e: unknown) {
+    // When the collection is fully removed, describe should fail with a not-found style error (often HTTP 404).
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.toLowerCase().includes("not found") || msg.includes("404")) break;
+    throw e;
+  }
+}
+if (Date.now() >= deadline) throw new Error(`Timeout waiting for ${collectionName} to be removed`);
+
+await client.createCollection({
+  collectionName,
+  indexConfigs: {
+    /* same fields as a normal create */
+  },
+});
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"errors"
+	"log"
+	"time"
+
+	lambdadb "github.com/lambdadb/go-lambdadb"
+	"github.com/lambdadb/go-lambdadb/models/apierrors"
+	"github.com/lambdadb/go-lambdadb/models/components"
+)
+
+func example(ctx context.Context, client *lambdadb.Client) {
+	poll := 2 * time.Second
+	deadline := time.Now().Add(900 * time.Second)
+	name := "knowledge-layer"
+
+	if _, err := client.Collection(name).Delete(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	for time.Now().Before(deadline) {
+		meta, err := client.Collection(name).Get(ctx)
+		if err != nil {
+			var nf *apierrors.ResourceNotFoundError
+			if errors.As(err, &nf) {
+				break
+			}
+			log.Fatal(err)
+		}
+		_ = meta // still present (often with status=DELETING); the name is not free yet
+		time.Sleep(poll)
+	}
+	if time.Now().After(deadline) {
+		log.Fatalf("timeout waiting for collection %q to be removed", name)
+	}
+
+	_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
+		CollectionName: name,
+		IndexConfigs: map[string]interface{}{
+			/* same fields as a normal create */
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</CodeGroup>

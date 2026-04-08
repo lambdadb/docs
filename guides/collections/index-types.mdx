@@ -21,11 +21,11 @@ LambdaDB supports four analyzers for tokenization: `standard` (default), `korean
 ```python Python
 {
     "content": {
-        "type": models.TypeText.TEXT,
+        "type": "text",
         "analyzers": [
-            models.Analyzer.ENGLISH,
-            models.Analyzer.KOREAN,
-            models.Analyzer.JAPANESE
+            "english",
+            "korean",
+            "japanese"
         ]
     }
 }
@@ -62,8 +62,8 @@ You can also store multiple keyword values as an array for fields like tags or c
 
 ```python Python
 {
-    "status": {"type": models.Type.KEYWORD},
-    "category": {"type": models.Type.KEYWORD}
+    "status": {"type": "keyword"},
+    "category": {"type": "keyword"}
 }
 ```
 
@@ -84,8 +84,8 @@ This type is for a signed 64-bit integer with a minimum value of $-2^{63}$ and a
 
 ```python Python
 {
-    "user_id": {"type": models.Type.LONG},
-    "timestamp": {"type": models.Type.LONG}
+    "user_id": {"type": "long"},
+    "timestamp": {"type": "long"}
 }
 ```
 
@@ -106,8 +106,8 @@ This type is for a double-precision 64-bit IEEE 754 floating point number, restr
 
 ```python Python
 {
-    "score": {"type": models.Type.DOUBLE},
-    "price": {"type": models.Type.DOUBLE}
+    "score": {"type": "double"},
+    "price": {"type": "double"}
 }
 ```
 
@@ -128,8 +128,8 @@ This type is for a double-precision 64-bit IEEE 754 floating point number, restr
 
 ```python Python
 {
-    "is_active": {"type": models.Type.BOOLEAN},
-    "published": {"type": models.Type.BOOLEAN}
+    "is_active": {"type": "boolean"},
+    "published": {"type": "boolean"}
 }
 ```
 
@@ -159,8 +159,8 @@ print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
 
 # Index configuration
 {
-    "created_at": {"type": models.Type.DATETIME},
-    "updated_at": {"type": models.Type.DATETIME}
+    "created_at": {"type": "datetime"},
+    "updated_at": {"type": "datetime"}
 }
 ```
 
@@ -186,14 +186,14 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 ```python Python
 {
     "embedding": {
-        "type": models.TypeVector.VECTOR,
+        "type": "vector",
         "dimensions": 768,
-        "similarity": models.Similarity.COSINE
+        "similarity": "cosine"
     },
     "image_vector": {
-        "type": models.TypeVector.VECTOR,
+        "type": "vector",
         "dimensions": 512,
-        "similarity": models.Similarity.EUCLIDEAN
+        "similarity": "euclidean"
     }
 }
 ```
@@ -223,7 +223,7 @@ The `sparseVector` type is designed for storing and indexing sparse vectors, whe
 
 ```python Python
 {
-    "sparse_embedding": {"type": models.Type.SPARSE_VECTOR}
+    "sparse_embedding": {"type": "sparseVector"}
 }
 ```
 
@@ -244,13 +244,13 @@ JSON documents are hierarchical in nature: the document may contain inner object
 ```python Python
 {
     "metadata": {
-        "type": models.TypeObject.OBJECT,
+        "type": "object",
         "objectIndexConfigs": {
-            "url": {"type": models.Type.KEYWORD},
-            "author": {"type": models.Type.KEYWORD},
+            "url": {"type": "keyword"},
+            "author": {"type": "keyword"},
             "content": {
-                "type": models.TypeText.TEXT,
-                "analyzers": [models.Analyzer.ENGLISH, models.Analyzer.KOREAN]
+                "type": "text",
+                "analyzers": ["english", "korean"]
             }
         }
     }
@@ -286,46 +286,46 @@ from lambdadb import models
 
 complete_index_config = {
     "text": {
-        "type": models.TypeText.TEXT,
+        "type": "text",
         "analyzers": [
-            models.Analyzer.JAPANESE,
-            models.Analyzer.KOREAN,
-            models.Analyzer.ENGLISH,
+            "japanese",
+            "korean",
+            "english",
         ],
     },
-    "keyword": {"type": models.Type.KEYWORD},
-    "long": {"type": models.Type.LONG},
-    "double": {"type": models.Type.DOUBLE},
-    "boolean": {"type": models.Type.BOOLEAN},
-    "datetime": {"type": models.Type.DATETIME},
+    "keyword": {"type": "keyword"},
+    "long": {"type": "long"},
+    "double": {"type": "double"},
+    "boolean": {"type": "boolean"},
+    "datetime": {"type": "datetime"},
     "vector": {
-        "type": models.TypeVector.VECTOR,
+        "type": "vector",
         "dimensions": 10,
-        "similarity": models.Similarity.COSINE,
+        "similarity": "cosine",
     },
-    "sparseVector": {"type": models.Type.SPARSE_VECTOR},
+    "sparseVector": {"type": "sparseVector"},
     "object": {
-        "type": models.TypeObject.OBJECT,
+        "type": "object",
         "objectIndexConfigs": {
             "text": {
-                "type": models.TypeText.TEXT,
+                "type": "text",
                 "analyzers": [
-                    models.Analyzer.JAPANESE,
-                    models.Analyzer.KOREAN,
-                    models.Analyzer.ENGLISH,
+                    "japanese",
+                    "korean",
+                    "english",
                 ],
             },
-            "keyword": {"type": models.Type.KEYWORD},
-            "long": {"type": models.Type.LONG},
-            "double": {"type": models.Type.DOUBLE},
-            "boolean": {"type": models.Type.BOOLEAN},
-            "datetime": {"type": models.Type.DATETIME},
+            "keyword": {"type": "keyword"},
+            "long": {"type": "long"},
+            "double": {"type": "double"},
+            "boolean": {"type": "boolean"},
+            "datetime": {"type": "datetime"},
             "vector": {
-                "type": models.TypeVector.VECTOR,
+                "type": "vector",
                 "dimensions": 10,
-                "similarity": models.Similarity.COSINE,
+                "similarity": "cosine",
             },
-            "sparseVector": {"type": models.Type.SPARSE_VECTOR},
+            "sparseVector": {"type": "sparseVector"},
         },
     },
 }

@@ -2,6 +2,8 @@
 title: Update data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to update documents in a collection.
 
 <CodeGroup>
@@ -21,6 +23,8 @@ This page shows you how to update documents in a collection.
       ]
       coll.docs.update(docs=docs)
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";

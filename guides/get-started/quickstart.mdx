@@ -2,6 +2,8 @@
 title: Quickstart
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This guide will walk you through getting a **project API key**, installing the SDK, creating your first collection, and running hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
 
 ## 🔑 Step 1: Get your API key
@@ -86,19 +88,21 @@ with LambdaDB(
         collection_name=collection_name,
         index_configs={
             "text": {
-                "type": models.TypeText.TEXT,
-                "analyzers": [models.Analyzer.ENGLISH, models.Analyzer.KOREAN],
+                "type": "text",
+                "analyzers": ["english", "korean"],
             },
-            "keyword": {"type": models.Type.KEYWORD},
+            "keyword": {"type": "keyword"},
             "vector": {
-                "type": models.TypeVector.VECTOR,
+                "type": "vector",
                 "dimensions": 10,
-                "similarity": models.Similarity.COSINE,
+                "similarity": "cosine",
             },
         },
     )
     print(res)
 ```
+
+<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
@@ -139,7 +143,7 @@ func main() {
     lambdadb.WithAPIKey("your_api_key_here"),
   )
   collectionName := "your_collection_name_here"
-  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionInput{
+  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
     CollectionName: collectionName,
     IndexConfigs: map[string]interface{}{
       "text":    map[string]interface{}{"type": "text", "analyzers": []string{"english", "korean"}},
@@ -272,7 +276,7 @@ message: Upsert request is accepted
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
 - **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
 - **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
-If your application requires strong (read-after-write) consistency, set `consistentRead` to `true` when query or fetch data from a collection. 
+If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when you query or fetch data from a collection. 
 
 **Check indexing status:** You can view collection stats to verify that your documents have been indexed:
 
@@ -311,11 +315,13 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         consistent_read=True,
     )
     print("🔍 Search Results:")
-    for result in res.results:  # or res.documents for doc bodies only
-        doc_id = str(result.doc.get("id"))
-        score = f"{result.score:.2f}"
-        keyword = str(result.doc.get("keyword"))
-        text = str(result.doc.get("text", ""))[:60]
+    # Query responses expose items in `res.docs` (each item includes `doc` and `score`).
+    # Use `res.documents` if you want document bodies only (no scores).
+    for item in res.docs:
+        doc_id = str(item.doc.get("id"))
+        score = f"{item.score:.2f}"
+        keyword = str(item.doc.get("keyword"))
+        text = str(item.doc.get("text", ""))[:60]
         print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}...")
 ```
 ```typescript TypeScript
@@ -331,11 +337,11 @@ const res = await collection.query({
   consistentRead: true,
 });
 console.log("🔍 Search Results:");
-for (const result of res.docs ?? []) {
-  const docId = String(result.doc?.id);
-  const score = result.score?.toFixed(2);
-  const keyword = String(result.doc?.keyword);
-  const text = String(result.doc?.text ?? "").slice(0, 60);
+for (const item of res.docs ?? []) {
+  const docId = String(item.doc?.id);
+  const score = item.score?.toFixed(2);
+  const keyword = String(item.doc?.keyword);
+  const text = String(item.doc?.text ?? "").slice(0, 60);
   console.log(`${docId.padEnd(5)} | ${score} | ${keyword.padEnd(15)} | ${text}...`);
 }
 ```
@@ -406,8 +412,8 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         consistent_read=True,
     )
     print("🔄 Hybrid Search Results:")
-    for result in res.results:
-        print(f"{result.doc.get('id')} | {result.score:.2f} | {result.doc.get('text', '')[:50]}...")
+    for item in res.docs:
+        print(f"{item.doc.get('id')} | {item.score:.2f} | {item.doc.get('text', '')[:50]}...")
 ```
 ```typescript TypeScript
 const res = await collection.query({
@@ -421,8 +427,8 @@ const res = await collection.query({
   consistentRead: true,
 });
 console.log("🔄 Hybrid Search Results:");
-for (const result of res.docs ?? []) {
-  console.log(`${result.doc?.id} | ${result.score?.toFixed(2)} | ${String(result.doc?.text).slice(0, 50)}...`);
+for (const item of res.docs ?? []) {
+  console.log(`${item.doc?.id} | ${item.score?.toFixed(2)} | ${String(item.doc?.text).slice(0, 50)}...`);
 }
 ```
 ```go Go

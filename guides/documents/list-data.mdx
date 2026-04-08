@@ -2,6 +2,8 @@
 title: List data
 ---
 
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
 This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over all documents (for example, to export or scan) without filtering by query.
 
 | Parameter   | Description                                      | Type    | Required | Default |
@@ -22,14 +24,17 @@ This page shows you how to use the list endpoint to list documents in a collecti
       coll = client.collection("my_collection")
       # List first page of documents
       res = coll.docs.list(size=10)
-      # res.results has full items; res.documents has document bodies only
-      for doc in res.results:
-          print(doc)
+      # `res.docs` contains items (each item includes `doc` and metadata).
+      # `res.documents` contains document bodies only.
+      for item in res.docs:
+          print(item)
 
       # List next page using the token from the previous response
       if res.next_page_token:
           res_next = coll.docs.list(size=10, page_token=res.next_page_token)
   ```
+
+<PythonClientLifecycleNote />
 
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
