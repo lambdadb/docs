@@ -22,11 +22,13 @@ The response will look like this:
 {
   "projects": [
     {
-      "id": "<string>",
+      "projectId": "<string>",
       "projectName": "<string>",
       "apiKey": "<string>",
-      "rateLimit": 123,
-      "status": "CREATING"
+      "rateLimit": 10.0,
+      "snapshotRetentionInDays": 30,
+      "status": "CREATING",
+      "quotaEnabled": false
     }
   ]
 }
@@ -48,17 +50,21 @@ The response will look like this:
 
 ```json
 {
-  "id": "<string>",
-  "projectName": "<string>",
-  "apiKey": "<string>",
-  "rateLimit": 123,
-  "status": "ACTIVE"
+  "project": {
+    "projectId": "<string>",
+    "projectName": "<string>",
+    "apiKey": "<string>",
+    "rateLimit": 10.0,
+    "snapshotRetentionInDays": 30,
+    "status": "ACTIVE",
+    "quotaEnabled": false
+  }
 }
 ```
 
 ## Configure a project
 
-Use the update endpoint to change the rate limit for a project:
+Use the update endpoint to change the project configuration (for example `rateLimit`, `quotaEnabled`, `quota`):
 
 ```bash
 LAMBDADB_ADMIN_API_KEY="ADMIN_API_KEY"
@@ -67,7 +73,14 @@ curl -i -X PATCH "https://{baseUrl}/projects/{projectName}" \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_ADMIN_API_KEY" \
   -d '{
-    "rateLimit": 20.0
+    "rateLimit": 20.0,
+    "quotaEnabled": true,
+    "quota": {
+      "period": "monthly",
+      "read": { "limit": 1000000 },
+      "write": { "limit": 500000 },
+      "storage": { "limit": 10737418240 }
+    }
   }'
 ```
 
@@ -75,13 +88,30 @@ The response will look like this:
 
 ```json
 {
-  "id": "<string>",
-  "projectName": "<string>",
-  "apiKey": "<string>",
-  "rateLimit": 20.0,
-  "status": "ACTIVE"
+  "project": {
+    "projectId": "<string>",
+    "projectName": "<string>",
+    "apiKey": "<string>",
+    "rateLimit": 20.0,
+    "snapshotRetentionInDays": 30,
+    "status": "ACTIVE",
+    "quotaEnabled": true,
+    "quota": {
+      "period": "monthly",
+      "read": { "limit": 1000000 },
+      "write": { "limit": 500000 },
+      "storage": { "limit": 10737418240 }
+    }
+  }
 }
 ```
+
+<Note>
+`PATCH /projects/{projectName}` requires at least one of `rateLimit` or `quotaEnabled`.
+If `quotaEnabled` is `true`, `quota` is required. If `quotaEnabled` is `false` or omitted, `quota` must be `null`/omitted.
+When `quotaEnabled` is `true`, `quota.period` must be one of `daily`, `weekly`, `monthly`.
+Also, all of `quota.read.limit`, `quota.write.limit`, and `quota.storage.limit` are required.
+</Note>
 
 ## Delete a project
 
