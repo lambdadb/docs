@@ -24,3 +24,18 @@ Each project has a rate limit that is set by the organization admin.
 The rate limit is the maximum number of requests that can be made to the LambdaDB APIs in a given time period.
 If the rate limit is exceeded, the API will return a `429 Too Many Requests` error.
 The rate limit can be adjusted via [project update API](/guides/projects/manage-projects#configure-a-project) with an admin API key.
+
+## Snapshot retention
+
+Each project has `snapshotRetentionInDays`, which controls how long snapshots are retained.
+Use `-1` to retain snapshots permanently.
+
+## Project quota
+
+Projects can optionally enable quota by setting `quotaEnabled` to `true`.
+When quota is enabled, provide a `quota` configuration with:
+
+- `period`
+- `read.limit`
+- `write.limit`
+- `storage.limit`
