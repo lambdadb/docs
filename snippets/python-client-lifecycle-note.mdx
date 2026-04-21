@@ -1,4 +1,4 @@
 <Note>
-  Python: `LambdaDB` supports context manager usage. `__enter__` returns the client, and `__exit__` calls `client.close()` (closing the SDK-owned HTTP client) and makes the client unusable after the `with` block. If you don’t use `with`, call `client.close()` when you’re done. If you pass a custom `client=`/`async_client=`, you own closing it.
+  Python: `LambdaDB` supports context manager usage. `__enter__` returns the client, and `__exit__` calls `client.close()` (closing the SDK-owned HTTP client) and makes the client unusable after the `with` block. If you don't use `with`, call `client.close()` when you're done. If you pass a custom `client=`/`async_client=`, you own closing it.
 </Note>
 
