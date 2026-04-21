@@ -178,7 +178,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -d '{
         "collectionName": "restored-collection",
         "sourceProjectName": "source-project-name",
-        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'"
+        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
         "sourceCollectionName": "source-collection-name",
         "sourceDatetime": "2024-01-15T10:30:00Z",
       }'
@@ -226,7 +226,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
         "sourceProjectId": "example-source-project-id",
         "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
         "sourceCollectionName": "example-source-collection-name",
-        "sourceDatetime"="2025-08-08T10:00:00Z"
+        "sourceDatetime": "2025-08-08T10:00:00Z"
       }'
 ```
 </CodeGroup>
@@ -244,4 +244,4 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 | Metric              | Limit  |
 |:------------------- |:------ |
 | Max number of collections    | unlimited    |
-| Max forked childs per collection     | 30    |
+| Max forked children per collection     | 30    |
