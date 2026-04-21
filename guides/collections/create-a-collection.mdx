@@ -1,5 +1,5 @@
 ---
-title: Create a collection
+title: Create a new collection
 description: Create LambdaDB collections with index configurations, partitioning, and point-in-time restore using Python, TypeScript, Go, or the REST API.
 ---
 
@@ -11,7 +11,7 @@ This page shows you how to create a collection with various configurations.
 
 | Parameter | Type | Required | Description |
 |:----------|:-----|:---------|:------------|
-| collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 |
+| collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 characters |
 | indexConfigs | object |  | Field configuration for indexing. Required when creating from scratch |
 | sourceProjectName | string |  | Source project name for PITR or branching operations |
 | sourceCollectionName | string |  | Source collection name for PITR or branching operations |
@@ -101,7 +101,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 ## Create a partitioned collection
 
-LambdaDB supports a hash-based partitioning for a specified field.
+LambdaDB supports hash-based partitioning for a specified field.
 
 <CodeGroup>
 
@@ -180,7 +180,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
         "sourceProjectName": "source-project-name",
         "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
         "sourceCollectionName": "source-collection-name",
-        "sourceDatetime": "2024-01-15T10:30:00Z",
+        "sourceDatetime": "2024-01-15T10:30:00Z"
       }'
 ```
 

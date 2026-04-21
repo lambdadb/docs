@@ -3,10 +3,10 @@ title: Index types
 description: Reference for LambdaDB's nine index types including text, keyword, vector, sparse vector, boolean, and datetime. Covers analyzer and config options.
 ---
 
-LambdaDB currently supports nine types of indexes. Note that the whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean they are searchable.
+LambdaDB currently supports nine types of indexes. Note that the whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean it is searchable.
 
 <Warning>
-The dot (.) character cannot be used as a field name and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
+The dot (.) character cannot be used as a field name, and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
 </Warning>
 
 ## text
@@ -15,7 +15,7 @@ This type is for full-text values, such as the body of an email or the descripti
 
 `text` indexes are best suited for unstructured but human-readable content. If you need to index structured content such as email addresses, hostnames, status codes, or tags, you should rather use a `keyword` index.
 
-LambdaDB supports four analyzers for tokenization: `standard` (default), `korean`, `japanese`, `english`. You can specify multiple analyzers to a single text field to improve search performance.
+LambdaDB supports four analyzers for tokenization: `standard` (default), `korean`, `japanese`, `english`. You can specify multiple analyzers for a single text field to improve search performance.
 
 <CodeGroup>
 
@@ -218,7 +218,7 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 
 ## sparseVector
 
-The `sparseVector` type is designed for storing and indexing sparse vectors, where most elements are zero or missing. Unlike dense vectors, sparse vectors only store non-zero values along with their corresponding indexes. `sparseVector` type only supports `dot_product` distance metrics.
+The `sparseVector` type is designed for storing and indexing sparse vectors, where most elements are zero or missing. Unlike dense vectors, sparse vectors only store non-zero values along with their corresponding indexes. `sparseVector` type only supports the `dot_product` distance metric.
 
 <CodeGroup>
 
