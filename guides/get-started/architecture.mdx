@@ -1,5 +1,6 @@
 ---
 title: Architecture
+description: Understand LambdaDB's serverless architecture on AWS, including the gateway layer, control and data functions, write buffering, and read caching.
 ---
 
 LambdaDB operates as a collection of serverless functions and resources within AWS, completely separating database logic from infrastructure. User requests flow through a regional Gateway, which routes them to either Control or Data functions. Builder function periodically persists all buffered data to S3 storage.
