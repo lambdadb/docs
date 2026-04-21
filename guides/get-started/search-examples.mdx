@@ -271,7 +271,8 @@ Text Preview: This is a list of supermarket chains in Canada. For supermarkets o
         "filter": {
             "queryString": {
                 "query": "List*",
-                "defaultField": "title"            }
+                "defaultField": "title"
+            }
         },
         "field": "vector",
         "k": 5,
@@ -449,7 +450,8 @@ class WikipediaSearchExamples:
                         {
                             "queryString": {
                                 "query": "List*",
-                                "defaultField": "title"                            },
+                                "defaultField": "title"
+                            },
                             "occur": "must"
                         }
                     ]
