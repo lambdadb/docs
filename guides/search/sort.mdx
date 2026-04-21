@@ -102,11 +102,15 @@ func main() {
 
 ### Single field sort
 
+Sort by timestamp in descending order (newest first):
+
 ```json
 [{"timestamp": "desc"}]
 ```
 
 ### Multiple field sort
+
+Sort by priority (descending) first, then by created_at (ascending):
 
 ```json
 [{"priority": "desc"}, {"created_at": "asc"}]
