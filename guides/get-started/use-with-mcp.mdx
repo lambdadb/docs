@@ -1,0 +1,142 @@
+---
+title: Use with MCP
+description: Connect LambdaDB to MCP clients such as Claude Desktop using the LambdaDB MCP server.
+---
+
+LambdaDB can be used from any **Model Context Protocol (MCP)** client through the **LambdaDB MCP server**. This is useful when you want an AI assistant to inspect collections, list documents, fetch records, or run search queries against a LambdaDB project.
+
+This guide shows a local setup flow using a **project API key**, **base URL**, and **project name** from LambdaDB Cloud.
+
+## Before you start
+
+You will need:
+
+- A LambdaDB **project API key**
+- Your project's **base URL**
+- Your **project name**
+- A local copy of the **LambdaDB MCP server**
+- An MCP client such as **Claude Desktop**
+
+<Note>
+  The LambdaDB MCP server is designed to connect to a single LambdaDB project per process. It uses a **project-scoped API key** and is **read-only by default** unless write tools are explicitly enabled.
+</Note>
+
+## Step 1: Get your LambdaDB connection details
+
+From **[LambdaDB Cloud](https://app.lambdadb.ai)**, collect the following values for the project you want to expose to your MCP client:
+
+- **Base URL**
+- **Project name**
+- **Project API key**
+
+<Warning>
+  Store your project API key securely. Do not commit it to source control or share it in screenshots, prompts, or logs.
+</Warning>
+
+## Step 2: Build the LambdaDB MCP server
+
+Clone the LambdaDB MCP server locally, then build it:
+
+```bash
+git clone https://github.com/lambdadb/lambdadb-mcp
+cd lambdadb-mcp
+npm install
+npm run build
+```
+
+If you are using the repository's local environment workflow, you can also create a local `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Then set:
+
+```bash
+LAMBDADB_BASE_URL=YOUR_BASE_URL
+LAMBDADB_PROJECT_NAME=YOUR_PROJECT_NAME
+LAMBDADB_PROJECT_API_KEY=YOUR_PROJECT_API_KEY
+LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false
+```
+
+<Tip>
+  Keep `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false` until you have validated the read-only tools in your client.
+</Tip>
+
+## Step 3: Add the server to your MCP client
+
+For **Claude Desktop**, add an MCP server entry that points to the built `dist/index.js` file.
+
+```json
+{
+  "mcpServers": {
+    "lambdadb": {
+      "command": "node",
+      "args": ["/absolute/path/to/lambdadb-mcp/dist/index.js"],
+      "env": {
+        "LAMBDADB_BASE_URL": "YOUR_BASE_URL",
+        "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
+        "LAMBDADB_PROJECT_API_KEY": "YOUR_PROJECT_API_KEY",
+        "LAMBDADB_MCP_ENABLE_WRITE_TOOLS": "false"
+      }
+    }
+  }
+}
+```
+
+After saving the configuration, restart your MCP client if needed.
+
+## Step 4: Verify the connection
+
+Once the MCP server is connected, start with the read-only tools:
+
+- `lambdadb_list_collections`
+- `lambdadb_get_collection`
+- `lambdadb_query_collection`
+- `lambdadb_list_docs`
+- `lambdadb_fetch_docs`
+
+Recommended first checks:
+
+1. Call `lambdadb_list_collections` to confirm the project connection.
+2. Call `lambdadb_get_collection` for a known collection.
+3. Run `lambdadb_query_collection` with a small query against that collection.
+
+## Optional: Enable write tools
+
+The LambdaDB MCP server can also expose write operations such as:
+
+- `lambdadb_create_collection`
+- `lambdadb_upsert_docs`
+- `lambdadb_delete_docs`
+
+To enable them, change:
+
+```bash
+LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true
+```
+
+<Warning>
+  Enable write tools only in environments where document creation, updates, and deletion are intended. Start with a non-production project when testing write access from an MCP client.
+</Warning>
+
+## Troubleshooting
+
+If the server starts but tools fail:
+
+- Verify that **base URL**, **project name**, and **project API key** all belong to the same LambdaDB project.
+- Confirm that the project API key is still valid.
+- Check the MCP client logs for startup or tool-call errors.
+- Run the server locally first to make sure the process starts with the expected environment variables.
+
+If tools are missing:
+
+- Confirm that the MCP client loaded the correct `dist/index.js` path.
+- Restart the MCP client after editing its configuration.
+- If you expect write tools, make sure `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true` is set.
+
+## Next steps
+
+- Learn how to create collections in [Create a collection](/guides/collections/create-a-collection)
+- Learn how to list documents in [List data](/guides/documents/list-data)
+- Learn how to search collections in [Search overview](/guides/search/search-overview)
