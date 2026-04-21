@@ -276,8 +276,8 @@ message: Upsert request is accepted
 - **Upsert behavior**: Documents with the same ID will be replaced; new IDs create new documents.
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
 - **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
-- **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
-If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when you query or fetch data from a collection. 
+- **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries.
+  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when you query or fetch data from a collection.
 
 **Check indexing status:** You can view collection stats to verify that your documents have been indexed:
 
