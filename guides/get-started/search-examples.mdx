@@ -2,7 +2,7 @@
 title: Search examples
 ---
 
-This guide demonstrates three powerful search techniques using the `cohere-wikipedia-en-100k` collection in the playground project. Each example showcases different approaches to finding the most relevant information from your data.
+This guide demonstrates three powerful search techniques using the `cohere-wikipedia-en-100k` collection in your LambdaDB project. Each example showcases different approaches to finding the most relevant information from your data.
 
 ## 🚀 Prerequisites
 
@@ -11,11 +11,11 @@ Before running these examples, ensure you have:
 **Required credentials:**
 
 - **Cohere API key** from [cohere.com](https://www.cohere.com/)
-- **LambdaDB playground project API key**
+- **LambdaDB project API key** for a project that contains the `cohere-wikipedia-en-100k` collection
 
 <Tip>
 
-Get your **playground project API key** from [LambdaDB Cloud](https://app.lambdadb.ai): sign in at [app.lambdadb.ai](https://app.lambdadb.ai), open the **Playground** project, and copy the **API key**, **base URL**, and **project name** from the console. For signup, billing, and creating your own projects, see the [Quickstart](/guides/get-started/quickstart).
+Get your **project API key** from [LambdaDB Cloud](https://app.lambdadb.ai): sign in at [app.lambdadb.ai](https://app.lambdadb.ai), open your project, and copy the **API key**, **base URL**, and **project name** from the console. This guide assumes the `cohere-wikipedia-en-100k` collection already exists in that project with `title`, `url`, `text`, and `vector` fields. For signup and project setup, see the [Quickstart](/guides/get-started/quickstart).
 
 </Tip>
 
@@ -515,7 +515,7 @@ class WikipediaSearchExamples:
 
     def run_all_examples(self):
         """Run all three search examples"""
-        print("🚀 Running LambdaDB Playground Search Examples")
+        print("🚀 Running LambdaDB Search Examples")
         print("=" * 60)
 
         # Example 1: Hybrid Search
