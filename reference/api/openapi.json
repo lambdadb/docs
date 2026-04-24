@@ -19,8 +19,8 @@
       "description": "LambdaDB API endpoints",
       "variables": {
         "projectHost": {
-          "description": "The project URL of the API",
-          "default": "api.lambdadb.ai/projects/playground"
+          "description": "The project-scoped URL of the API",
+          "default": "api.lambdadb.ai/projects/example-project"
         }
       }
     }

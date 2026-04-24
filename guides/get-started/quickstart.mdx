@@ -15,21 +15,15 @@ You'll use a **project API key** from **[LambdaDB Cloud](https://app.lambdadb.ai
     **LambdaDB Cloud** is in **public preview**.
 </Note>
 
-1. **Create a Cloud account** — Open [app.lambdadb.ai](https://app.lambdadb.ai), sign up if you need an account, and sign in.
+1. **Sign in to LambdaDB Cloud** — Open [app.lambdadb.ai](https://app.lambdadb.ai), sign up if needed, and sign in.
 
-2. **Playground project (default)** — New accounts include a **Playground** project so you can try the product immediately. It is a **shared environment**: the same project is visible to other users, and data you index there can be read by others. Use it **only** for feature testing—not for private, sensitive, or production workloads.
+2. **Create a project** — Accounts without a payment method are on the **Free** plan. Choose an AWS region that fits your latency or data-residency needs.
 
-3. **Add a payment method** — When you add a **payment method**, the Playground project is removed from your account and you can **create your own projects**. Project creation, billing, and the rest of the console capabilities are enabled once a payment method is on file. LambdaDB uses a **serverless-native architecture**: it is built from **serverless** components only (for example **AWS Lambda** and **Amazon S3**), so **there is no monthly minimum fee**—you pay for **measured usage** only. For why we built it this way, see the blog post ["Serverless" Database Is Dead — It's Time to Evolve](https://lambdadb.ai/blog/serverless-database-is-dead). For how usage is metered and current rates, see [Understanding costs](/guides/costs/understanding-costs).
-
-4. **Create a project and save your key** — When you **create a project**, choose an **AWS region** that fits latency and data-residency needs. After the project is created, your **API key is shown only once**—copy it immediately and store it somewhere safe (for example a password manager or a local environment variable). Use it with the **base URL** and **project name** from the console starting in Step 3.
+3. **Copy your project API key** — The API key is shown only once after the project is created. Store it somewhere safe, then use it with the **base URL** and **project name** from the console starting in Step 3.
 
 <Info>
-
-  **Regional coverage:** LambdaDB Cloud is available in **all standard AWS commercial Regions**—the same broad regional footprint AWS exposes for most services (30+ Regions in the public preview), rather than a short list that grows over time. Pick any supported Region shown in the console when you create a project.
-
+  The Free plan includes monthly read, write, and storage usage at no cost. Add a payment method when you need Standard plan usage beyond the Free plan limits. See [Understanding costs](/guides/costs/understanding-costs).
 </Info>
-
-If you are still on **Playground only** (before adding a payment method), use the **API key** and **connection details** shown in the console for the Playground project—the same Step 3 code paths apply once you substitute those values.
 
 <Tip>
     The Cloud console also supports loading data and running queries in the GUI, alongside the SDK examples in this guide.
@@ -38,10 +32,6 @@ If you are still on **Playground only** (before adding a payment method), use th
 <Note>
     Keep your API key out of source control and prefer environment variables instead of hardcoding it in scripts.
 </Note>
-
-<Warning>
-    The Playground project is shared with other users and is subject to rate limits. Do not put sensitive or production data in Playground.
-</Warning>
 
 ## 🚀 Step 2: Install the SDK
 
@@ -169,7 +159,7 @@ Response:
 ```python Python
 CreateCollectionResponse(
     collection=CollectionResponse(
-        project_name='playground',
+        project_name='your-project',
         collection_name='quickstart',
         index_configs={
             'text': IndexConfigsText(
@@ -195,7 +185,7 @@ CreateCollectionResponse(
 ```typescript TypeScript
 {
   collection: {
-    projectName: 'playground',
+    projectName: 'your-project',
     collectionName: 'quickstart',
     indexConfigs: { text: [Object], keyword: [Object], vector: [Object], id: [Object] },
     numDocs: 0,
@@ -204,7 +194,7 @@ CreateCollectionResponse(
 }
 ```
 ```go Go
-Collection: project=playground collection=quickstart numDocs=0 status=CREATING
+Collection: project=your-project collection=quickstart numDocs=0 status=CREATING
 ```
 </CodeGroup>
 
