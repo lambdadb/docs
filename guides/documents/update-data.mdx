@@ -7,6 +7,12 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to update documents in a collection.
 
+<Note>
+
+  If the collection contains managed embedding vector fields, update the configured source text fields instead of sending direct vector values for managed embedding fields.
+
+</Note>
+
 <CodeGroup>
     
   ```python Python
@@ -110,4 +116,4 @@ This page shows you how to update documents in a collection.
 | Max payload size             | 6MB             |
 | Max length for a document ID | 512 characters  |
 | Max vector dimensions        | 4,096           |
-| Max document size            | 50KB            |
+| Max document size            | 5MB            |

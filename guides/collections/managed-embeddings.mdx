@@ -1,0 +1,113 @@
+---
+title: Managed embeddings
+description: Configure managed embedding vector fields in LambdaDB, including supported providers, supported models, dimension rules, and query behavior.
+---
+
+Managed embeddings let LambdaDB generate vector values from a source text field and store them in a managed `vector` field.
+
+Use managed embeddings when you want LambdaDB to own:
+
+- embedding model selection
+- vector generation during document writes
+- query embedding generation for vector search
+
+## Supported providers
+
+LambdaDB currently supports the following embedding provider:
+
+| Provider | Status |
+|:---------|:-------|
+| `openai` | Supported |
+
+## Supported models
+
+The following OpenAI embedding models are currently supported for managed embedding vector fields.
+
+| Model | Default dimensions | Dimensions parameter | Similarity |
+|:------|:-------------------|:---------------------|:-----------|
+| `text-embedding-3-small` | `1536` | Optional, from `1` to `1536` | `cosine` |
+| `text-embedding-3-large` | `3072` | Optional, from `1` to `3072` | `cosine` |
+| `text-embedding-ada-002` | `1536` | Fixed at `1536` | `cosine` |
+
+## Collection schema
+
+Define a managed embedding vector field with `managedEmbedding: true` and an `embedding` block.
+
+```json
+{
+  "indexConfigs": {
+    "body": {
+      "type": "text",
+      "analyzers": ["english"]
+    },
+    "bodyEmbedding": {
+      "type": "vector",
+      "managedEmbedding": true,
+      "embedding": {
+        "provider": "openai",
+        "model": "text-embedding-3-small",
+        "sourceField": "body"
+      }
+    }
+  }
+}
+```
+
+## Schema rules
+
+- `embedding.provider` is required
+- `embedding.model` is required
+- `embedding.sourceField` is required
+- `embedding.sourceField` must reference a `text` field in the same collection
+- managed embedding vector fields must not use top-level `dimensions`
+- managed embedding vector fields must not use top-level `similarity`
+- LambdaDB resolves and stores the effective `embedding.dimensions` and `embedding.similarity`
+
+## Write behavior
+
+For managed embedding vector fields, send the source text field and let LambdaDB generate the vector value.
+
+Do not send direct vector values for managed embedding fields in:
+
+- [upsert](/guides/documents/upsert-data)
+- [update](/guides/documents/update-data)
+
+Example upsert payload:
+
+```json
+{
+  "docs": [
+    {
+      "id": "doc-1",
+      "body": "Refunds are available within 7 days of purchase."
+    }
+  ]
+}
+```
+
+## Query behavior
+
+For managed embedding vector fields, use `knn.queryText` instead of `knn.queryVector`.
+
+```json
+{
+  "query": {
+    "knn": {
+      "field": "bodyEmbedding",
+      "queryText": "refund policy",
+      "k": 10
+    }
+  }
+}
+```
+
+For full query examples, see [Vector query](/guides/search/vector).
+
+## Bulk upsert
+
+`bulk upsert` is not supported for collections that contain managed embedding vector fields.
+
+Use the regular document write flow instead:
+
+- [Upsert data](/guides/documents/upsert-data)
+- [Update data](/guides/documents/update-data)

@@ -7,6 +7,12 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to upsert documents into a collection.
 
+<Note>
+
+  If the collection contains managed embedding vector fields, send only the configured source text fields. Do not send direct vector values for managed embedding fields in an upsert request.
+
+</Note>
+
 
 <CodeGroup>
   ```python Python

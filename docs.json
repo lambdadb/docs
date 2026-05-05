@@ -29,6 +29,7 @@
               "guides/collections/collection-overview",
               "guides/collections/index-types",
               "guides/collections/create-a-collection",
+              "guides/collections/managed-embeddings",
               "guides/collections/manage-collections"
             ]
           },

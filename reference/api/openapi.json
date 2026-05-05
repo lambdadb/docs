@@ -68,6 +68,48 @@
           "DELETING"
         ]
       },
+      "EmbeddingConfig": {
+        "title": "EmbeddingConfig",
+        "type": "object",
+        "description": "Managed embedding configuration for vector fields.",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Embedding provider.",
+            "enum": [
+              "openai"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "description": "Embedding model name. See /guides/collections/managed-embeddings for the current supported providers and models."
+          },
+          "sourceField": {
+            "type": "string",
+            "description": "Source text field name used to generate embeddings."
+          },
+          "dimensions": {
+            "type": "integer",
+            "description": "Resolved embedding dimensions. Optional in requests and resolved in stored collection metadata."
+          },
+          "similarity": {
+            "type": "string",
+            "description": "Resolved vector similarity metric. Optional in requests and resolved in stored collection metadata.",
+            "enum": [
+              "cosine",
+              "euclidean",
+              "dot_product",
+              "max_inner_product"
+            ],
+            "default": "cosine"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "sourceField"
+        ]
+      },
       "IndexConfigs": {
         "title": "IndexConfigs",
         "type": "object",
@@ -110,13 +152,20 @@
                     "vector"
                   ]
                 },
+                "managedEmbedding": {
+                  "type": "boolean",
+                  "description": "Set to false or omit for unmanaged vector fields.",
+                  "enum": [
+                    false
+                  ]
+                },
                 "dimensions": {
                   "type": "integer",
-                  "description": "Vector dimensions."
+                  "description": "Vector dimensions for unmanaged vector fields."
                 },
                 "similarity": {
                   "type": "string",
-                  "description": "Vector similarity metric.",
+                  "description": "Vector similarity metric for unmanaged vector fields.",
                   "enum": [
                     "cosine",
                     "euclidean",
@@ -130,6 +179,32 @@
               "required": [
                 "type",
                 "dimensions"
+              ]
+            },
+            {
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "vector"
+                  ]
+                },
+                "managedEmbedding": {
+                  "type": "boolean",
+                  "description": "Managed embedding vector field.",
+                  "enum": [
+                    true
+                  ]
+                },
+                "embedding": {
+                  "$ref": "#/components/schemas/EmbeddingConfig"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "managedEmbedding",
+                "embedding"
               ]
             },
             {
@@ -634,6 +709,29 @@
                         "type": "vector",
                         "dimensions": 128,
                         "similarity": "cosine"
+                      }
+                    }
+                  }
+                },
+                "managedEmbeddingCollection": {
+                  "summary": "Example request body for managed embedding collection creation",
+                  "value": {
+                    "collectionName": "example-semantic-collection",
+                    "indexConfigs": {
+                      "body": {
+                        "type": "text",
+                        "analyzers": [
+                          "english"
+                        ]
+                      },
+                      "bodyEmbedding": {
+                        "type": "vector",
+                        "managedEmbedding": true,
+                        "embedding": {
+                          "provider": "openai",
+                          "model": "text-embedding-3-small",
+                          "sourceField": "body"
+                        }
                       }
                     }
                   }
@@ -1456,7 +1554,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to upsert."
+                    "description": "A list of documents to upsert. For managed embedding vector fields, omit the managed vector field and provide only the configured source text field."
                   }
                 },
                 "required": [
@@ -1607,7 +1705,7 @@
       "get": {
         "tags": ["collections.docs"],
         "operationId": "getBulkUpsertDocs",
-        "description": "Request required info to upload documents.",
+        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1673,6 +1771,30 @@
                       "httpMethod": "PUT",
                       "objectKey": "example-object-key",
                       "sizeLimitBytes": 209715200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "managedEmbeddingUnsupported": {
+                    "summary": "Example response for unsupported managed embedding bulk upsert",
+                    "value": {
+                      "message": "Bulk upsert is not supported for collections with managed embedding fields"
+                    }
+                  },
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
                     }
                   }
                 }
@@ -1756,7 +1878,7 @@
       "post": {
         "tags": ["collections.docs"],
         "operationId": "bulkUpsertDocs",
-        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB.",
+        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with managed embedding vector fields.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1820,6 +1942,12 @@
                   "$ref": "#/components/schemas/BadRequest"
                 },
                 "examples": {
+                  "managedEmbeddingUnsupported": {
+                    "summary": "Example response for unsupported managed embedding bulk upsert",
+                    "value": {
+                      "message": "Bulk upsert is not supported for collections with managed embedding fields"
+                    }
+                  },
                   "example": {
                     "summary": "Example response for bad request",
                     "value": {
@@ -1933,7 +2061,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to update. Each document must contain 'id' field to be updated."
+                    "description": "A list of documents to update. Each document must contain 'id' field to be updated. For managed embedding vector fields, omit the managed vector field and update only the configured source text field."
                   }
                 },
                 "required": [
@@ -2517,7 +2645,7 @@
                   "query": {
                     "type": "object",
                     "additionalProperties": true,
-                    "description": "Query object."
+                    "description": "Query object. For managed embedding vector fields, use knn.queryText. For unmanaged vector fields, use knn.queryVector."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -2552,6 +2680,19 @@
                     "query": {
                       "queryString": {
                         "query": "example-field1:example-value"
+                      }
+                    }
+                  }
+                },
+                "managedEmbeddingKnnQuery": {
+                  "summary": "Example request body for managed embedding KNN query",
+                  "value": {
+                    "size": 10,
+                    "query": {
+                      "knn": {
+                        "field": "bodyEmbedding",
+                        "queryText": "refund policy",
+                        "k": 10
                       }
                     }
                   }

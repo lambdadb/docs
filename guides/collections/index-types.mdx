@@ -180,6 +180,11 @@ The `vector` type indexes dense vectors of numeric values. `vector` indexes are 
 
 A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. LambdaDB supports four similarity metrics: `euclidean`, `dot_product`, `cosine`, `max_inner_product`. You can define the vector similarity to use in kNN search.
 
+LambdaDB supports two vector field modes:
+
+- unmanaged vector fields, where you send vector values directly
+- managed embedding vector fields, where LambdaDB generates vector values from a source text field
+
 LambdaDB also supports `multi-field vector search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
 
 <CodeGroup>
@@ -215,6 +220,64 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 ```
 
 </CodeGroup>
+
+### Managed embedding vector fields
+
+Use `managedEmbedding: true` to let LambdaDB generate embeddings for a vector field from a source text field.
+
+For the current provider and model matrix, see [Managed embeddings](/guides/collections/managed-embeddings).
+
+<CodeGroup>
+
+```python Python
+{
+    "body": {
+        "type": "text",
+        "analyzers": ["english"]
+    },
+    "body_embedding": {
+        "type": "vector",
+        "managedEmbedding": True,
+        "embedding": {
+            "provider": "openai",
+            "model": "text-embedding-3-small",
+            "sourceField": "body"
+        }
+    }
+}
+```
+
+```json JSON
+{
+    "body": {
+        "type": "text",
+        "analyzers": ["english"]
+    },
+    "body_embedding": {
+        "type": "vector",
+        "managedEmbedding": true,
+        "embedding": {
+            "provider": "openai",
+            "model": "text-embedding-3-small",
+            "sourceField": "body"
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+<Note>
+
+For managed embedding vector fields:
+
+- `embedding.provider`, `embedding.model`, and `embedding.sourceField` are required
+- `embedding.sourceField` must point to a `text` field in the same collection
+- do not send direct vector values for the managed field in upsert or update requests
+- use `knn.queryText` for search instead of `knn.queryVector`
+- `bulk upsert` is not supported for collections that contain managed embedding fields
+
+</Note>
 
 ## sparseVector
 

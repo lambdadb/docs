@@ -99,6 +99,95 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 </CodeGroup>
 
+## Create a collection with managed embeddings
+
+Managed embeddings let LambdaDB derive vector values from a source text field. Define the vector field with `managedEmbedding: true` and an `embedding` block. The source field must be a `text` field in the same collection.
+
+For the current provider and model matrix, see [Managed embeddings](/guides/collections/managed-embeddings).
+
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    client.collections.create(
+        collection_name="semantic-docs",
+        index_configs={
+            "body": {
+                "type": "text",
+                "analyzers": ["english"],
+            },
+            "bodyEmbedding": {
+                "type": "vector",
+                "managedEmbedding": True,
+                "embedding": {
+                    "provider": "openai",
+                    "model": "text-embedding-3-small",
+                    "sourceField": "body",
+                },
+            },
+        },
+    )
+```
+
+```typescript TypeScript
+await client.createCollection({
+  collectionName: "semantic-docs",
+  indexConfigs: {
+    body: {
+      type: "text",
+      analyzers: ["english"],
+    },
+    bodyEmbedding: {
+      type: "vector",
+      managedEmbedding: true,
+      embedding: {
+        provider: "openai",
+        model: "text-embedding-3-small",
+        sourceField: "body",
+      },
+    },
+  },
+});
+```
+
+```bash cURL
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+        "collectionName": "semantic-docs",
+        "indexConfigs": {
+          "body": {
+            "type": "text",
+            "analyzers": ["english"]
+          },
+          "bodyEmbedding": {
+            "type": "vector",
+            "managedEmbedding": true,
+            "embedding": {
+              "provider": "openai",
+              "model": "text-embedding-3-small",
+              "sourceField": "body"
+            }
+          }
+        }
+      }'
+```
+
+</CodeGroup>
+
+<Note>
+
+  For managed embedding vector fields, do not send top-level `dimensions` or `similarity` in the field config. LambdaDB resolves and stores those values under `embedding`.
+
+</Note>
+
 ## Create a partitioned collection
 
 LambdaDB supports hash-based partitioning for a specified field.
