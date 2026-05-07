@@ -1,0 +1,500 @@
+---
+title: Migrate from Qdrant
+description: Qdrant collections, points, vectors, payloads, filters, and hybrid queries can be migrated to LambdaDB collections, documents, indexes, and queries.
+---
+
+import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+
+This guide helps Qdrant users move existing vector search workloads to LambdaDB.
+
+Qdrant models searchable records as **points** made of an `id`, one or more vectors, and an optional `payload`. LambdaDB models records as **documents**: each document is stored as JSON, while searchable fields are declared in the collection's `indexConfigs`.
+
+## Migration checklist
+
+1. Inventory each Qdrant collection: vector names, dimensions, distance metrics, sparse vectors, multi-vectors, payload fields, and payload indexes.
+2. Design the LambdaDB collection: map each Qdrant vector to a LambdaDB `vector` or `sparseVector` field, and map payload fields you search or sort on to LambdaDB index types.
+3. Export Qdrant points with payloads and vectors.
+4. Transform Qdrant points into LambdaDB documents.
+5. Upsert documents into LambdaDB.
+6. Rewrite search, filter, and hybrid query calls.
+7. Validate result quality and latency with representative queries before switching production traffic.
+
+## Concept mapping
+
+| Qdrant | LambdaDB | Migration note |
+|:-------|:---------|:---------------|
+| Collection | Collection | Keep one LambdaDB collection per Qdrant collection unless you are also changing tenancy or isolation boundaries. |
+| Point | Document | Put the Qdrant point ID in the LambdaDB document `id` field. |
+| Vector | `vector` field | Use one LambdaDB vector field per unnamed or named dense vector. |
+| Sparse vector | `sparseVector` field | Convert Qdrant `indices` and `values` arrays to a key-value object. |
+| MultiVector | Model-specific fields or preprocessing | Qdrant multi-vectors, such as late-interaction/ColBERT matrices, require a workload-specific migration plan. They are not covered by the basic dense/sparse examples below. |
+| Payload | Document fields | Store payload fields directly on the document or under a nested object. Index only fields you need to query or sort. |
+| Payload index | `indexConfigs` field | Choose `keyword`, `text`, `long`, `double`, `boolean`, `datetime`, or `object`. |
+| `query_points(..., using="...")` | `knn.field` | Search the LambdaDB vector field that corresponds to the Qdrant named vector. |
+| `limit` | `size` and `knn.k` | Set both LambdaDB response size and nearest-neighbor count deliberately. |
+| `with_payload` | `fields` | LambdaDB returns document fields by default; use `fields` to include or exclude fields. |
+| `with_vectors` | `includeVectors` | Set `includeVectors` to `true` only when you need vector values in the response. |
+| Qdrant filter clauses | `bool` or `queryString` | Map `must`, `must_not`, and `should` logic to LambdaDB boolean queries. |
+| Qdrant RRF fusion | `rrf` hybrid query | Use LambdaDB `rrf`, `mm`, or `l2` to combine dense, sparse, and lexical search. |
+
+## Step 1: Create a LambdaDB collection
+
+Start from the Qdrant collection's vector configuration and payload indexes.
+
+For example, after inventorying the Qdrant vector configuration and payload indexes, you might record this migration shape:
+
+```json Migration inventory
+{
+  "vectors": {
+    "dense": { "size": 1536, "distance": "Cosine" }
+  },
+  "sparse_vectors": {
+    "sparse": {}
+  },
+  "payload_indexes_to_migrate": {
+    "tenant_id": "keyword",
+    "title": "text",
+    "created_at": "datetime"
+  }
+}
+```
+
+becomes this LambdaDB collection:
+
+<CodeGroup>
+
+```python Python
+from lambdadb import LambdaDB
+
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    client.collections.create(
+        collection_name="articles",
+        index_configs={
+            "tenant_id": {"type": "keyword"},
+            "title": {"type": "text", "analyzers": ["english"]},
+            "body": {"type": "text", "analyzers": ["english"]},
+            "created_at": {"type": "datetime"},
+            "dense": {
+                "type": "vector",
+                "dimensions": 1536,
+                "similarity": "cosine",
+            },
+            "sparse": {"type": "sparseVector"},
+        },
+    )
+```
+
+<PythonClientLifecycleNote />
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+
+await client.createCollection({
+  collectionName: "articles",
+  indexConfigs: {
+    tenant_id: { type: "keyword" },
+    title: { type: "text", analyzers: ["english"] },
+    body: { type: "text", analyzers: ["english"] },
+    created_at: { type: "datetime" },
+    dense: { type: "vector", dimensions: 1536, similarity: "cosine" },
+    sparse: { type: "sparseVector" },
+  },
+});
+```
+
+</CodeGroup>
+
+Use this distance mapping when creating vector fields:
+
+| Qdrant distance | LambdaDB similarity |
+|:----------------|:--------------------|
+| `Cosine` | `cosine` |
+| `Dot` | `dot_product` |
+| `Euclid` | `euclidean` |
+| `Manhattan` | No direct equivalent. Re-evaluate the embedding/search setup before migrating. |
+
+<Note>
+
+LambdaDB stores the whole document even if a field is not listed in `indexConfigs`. Only indexed fields are searchable or sortable.
+
+</Note>
+
+<Warning>
+
+LambdaDB field names cannot contain the dot (`.`) character. Rename Qdrant payload keys such as `metadata.url` to `metadata_url`, or store nested data under an `object` field and query it with the object-field rules used by your application.
+
+</Warning>
+
+## Step 2: Transform points into documents
+
+For a Qdrant point with a single dense vector:
+
+```json Qdrant point
+{
+  "id": 1,
+  "vector": [0.12, 0.34, 0.56],
+  "payload": {
+    "tenant_id": "acme",
+    "title": "Refund policy",
+    "body": "Refunds are available within 7 days.",
+    "created_at": "2026-05-01T10:00:00Z"
+  }
+}
+```
+
+write a LambdaDB document like this:
+
+```json LambdaDB document
+{
+  "id": "1",
+  "tenant_id": "acme",
+  "title": "Refund policy",
+  "body": "Refunds are available within 7 days.",
+  "created_at": "2026-05-01T10:00:00Z",
+  "dense": [0.12, 0.34, 0.56]
+}
+```
+
+For Qdrant named vectors:
+
+```json Qdrant point with named vectors
+{
+  "id": 1,
+  "vector": {
+    "title_dense": [0.1, 0.2, 0.3],
+    "body_dense": [0.4, 0.5, 0.6]
+  },
+  "payload": {
+    "title": "Refund policy",
+    "body": "Refunds are available within 7 days."
+  }
+}
+```
+
+use separate LambdaDB vector fields:
+
+```json LambdaDB document
+{
+  "id": "1",
+  "title": "Refund policy",
+  "body": "Refunds are available within 7 days.",
+  "title_dense": [0.1, 0.2, 0.3],
+  "body_dense": [0.4, 0.5, 0.6]
+}
+```
+
+For Qdrant sparse vectors, convert `indices` and `values` to an object whose keys are index strings. Qdrant sparse vectors must be named, so in a point they appear under a vector name such as `"sparse"`.
+
+```json Qdrant sparse vector
+{
+  "indices": [1, 42],
+  "values": [0.22, 0.8]
+}
+```
+
+```json LambdaDB sparse vector
+{
+  "sparse": {
+    "1": 0.22,
+    "42": 0.8
+  }
+}
+```
+
+## Step 3: Export and load data
+
+Use Qdrant's scroll API to page through points with both payload and vectors, then upsert transformed documents into LambdaDB.
+
+```python Python
+from qdrant_client import QdrantClient
+from lambdadb import LambdaDB
+
+QDRANT_COLLECTION = "articles"
+LAMBDADB_COLLECTION = "articles"
+BATCH_SIZE = 500
+
+qdrant = QdrantClient(url="http://localhost:6333", api_key="QDRANT_API_KEY")
+
+def sparse_to_object(sparse):
+    if sparse is None:
+        return None
+    return {str(index): value for index, value in zip(sparse.indices, sparse.values)}
+
+def point_to_doc(point):
+    payload = dict(point.payload or {})
+    vectors = point.vector or {}
+
+    doc = {
+        "id": str(point.id),
+        **payload,
+    }
+
+    if isinstance(vectors, list):
+        doc["dense"] = vectors
+    else:
+        for name, value in vectors.items():
+            if hasattr(value, "indices") and hasattr(value, "values"):
+                doc[name] = sparse_to_object(value)
+            else:
+                doc[name] = value
+
+    return doc
+
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as lambdadb:
+    coll = lambdadb.collection(LAMBDADB_COLLECTION)
+    offset = None
+
+    while True:
+        points, offset = qdrant.scroll(
+            collection_name=QDRANT_COLLECTION,
+            limit=BATCH_SIZE,
+            offset=offset,
+            with_payload=True,
+            with_vectors=True,
+        )
+
+        if points:
+            docs = [point_to_doc(point) for point in points]
+            coll.docs.upsert(docs=docs)
+
+        if offset is None:
+            break
+```
+
+For larger unmanaged-vector migrations, use [bulk upsert](/guides/documents/bulk-upsert-data) to load up to 200 MB per request. For collections with [managed embedding](/guides/collections/managed-embeddings) fields, use regular upsert so LambdaDB can generate embeddings from source text fields.
+
+## Step 4: Rewrite vector search
+
+A Qdrant query against a named vector:
+
+```python Python
+from qdrant_client import models
+
+qdrant.query_points(
+    collection_name="articles",
+    query=query_vector,
+    using="dense",
+    limit=10,
+    query_filter=models.Filter(
+        must=[
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value="acme"),
+            )
+        ]
+    ),
+    with_payload=True,
+)
+```
+
+becomes a LambdaDB `knn` query:
+
+```python Python
+results = coll.query(
+    query={
+        "knn": {
+            "field": "dense",
+            "queryVector": query_vector,
+            "k": 10,
+            "filter": {
+                "queryString": {
+                    "query": '"acme"',
+                    "defaultField": "tenant_id",
+                }
+            },
+        }
+    },
+    size=10,
+)
+```
+
+When using LambdaDB managed embeddings, send query text instead of a vector:
+
+```python Python
+results = coll.query(
+    query={
+        "knn": {
+            "field": "bodyEmbedding",
+            "queryText": "refund policy",
+            "k": 10,
+        }
+    },
+    size=10,
+)
+```
+
+## Step 5: Rewrite filters
+
+Qdrant filters commonly use `must`, `must_not`, and `should` clauses. In LambdaDB, use a `bool` query when the filter logic is larger than a single query string.
+
+```json Qdrant filter
+{
+  "must": [
+    { "key": "tenant_id", "match": { "value": "acme" } },
+    { "key": "created_at", "range": { "gte": "2026-01-01T00:00:00Z" } }
+  ],
+  "must_not": [
+    { "key": "status", "match": { "value": "deleted" } }
+  ]
+}
+```
+
+```json LambdaDB bool query
+{
+  "bool": [
+    {
+      "queryString": {
+        "query": "tenant_id:acme"
+      },
+      "occur": "filter"
+    },
+    {
+      "queryString": {
+        "query": "created_at:[2026-01-01T00:00:00Z TO *]"
+      },
+      "occur": "filter"
+    },
+    {
+      "queryString": {
+        "query": "status:deleted"
+      },
+      "occur": "must_not"
+    }
+  ]
+}
+```
+
+Use field types intentionally:
+
+| Qdrant payload use | LambdaDB index type |
+|:-------------------|:--------------------|
+| Exact string match, tags, IDs, tenant IDs | `keyword` |
+| Natural-language matching | `text` |
+| Integer range or sorting | `long` |
+| Floating-point range or sorting | `double` |
+| Date/time range or sorting | `datetime` |
+| Boolean flags | `boolean` |
+| Nested JSON kept as a searchable object | `object` |
+
+## Step 6: Rewrite hybrid search
+
+Qdrant hybrid queries often use `prefetch` plus RRF fusion across dense and sparse vectors.
+
+```json Qdrant hybrid query
+{
+  "prefetch": [
+    {
+      "query": { "indices": [1, 42], "values": [0.22, 0.8] },
+      "using": "sparse",
+      "limit": 20
+    },
+    {
+      "query": [0.01, 0.45, 0.67],
+      "using": "dense",
+      "limit": 20
+    }
+  ],
+  "query": { "fusion": "rrf" },
+  "limit": 10
+}
+```
+
+In LambdaDB, express the same dense/sparse fusion with `rrf`:
+
+```json LambdaDB hybrid query
+{
+  "rrf": [
+    {
+      "sparseVector": {
+        "field": "sparse",
+        "queryVector": {
+          "1": 0.22,
+          "42": 0.8
+        }
+      }
+    },
+    {
+      "knn": {
+        "field": "dense",
+        "queryVector": [0.01, 0.45, 0.67],
+        "k": 20
+      }
+    }
+  ]
+}
+```
+
+You can also combine lexical and vector relevance:
+
+```json LambdaDB lexical + vector hybrid query
+{
+  "l2": [
+    {
+      "queryString": {
+        "query": "refund policy",
+        "defaultField": "body"
+      },
+      "boost": 0.4
+    },
+    {
+      "knn": {
+        "field": "dense",
+        "queryVector": [0.01, 0.45, 0.67],
+        "k": 20
+      },
+      "boost": 0.6
+    }
+  ]
+}
+```
+
+## Step 7: Validate before cutover
+
+Run a side-by-side comparison before routing production traffic to LambdaDB:
+
+- Compare top-k overlap for representative dense-vector, sparse-vector, filter-heavy, and hybrid queries.
+- Check fields returned by LambdaDB and remove large vectors from responses unless your application needs them.
+- Verify document counts after asynchronous indexing completes.
+- Test high-cardinality tenant or user filters if you used Qdrant for multitenancy.
+- Re-tune hybrid boosts if you move from Qdrant RRF or DBSF to LambdaDB `rrf`, `mm`, or `l2`.
+
+## Common gotchas
+
+- **IDs**: LambdaDB document IDs are strings. Convert numeric Qdrant IDs with `str(point.id)` if your application expects stable IDs.
+- **Field names**: Rename payload keys containing dots before upsert.
+- **Schema**: Qdrant can store payload without deciding every searchable field up front. In LambdaDB, decide which fields need indexes before migration.
+- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with managed embeddings.
+- **Sparse vectors**: Qdrant sparse vectors use separate `indices` and `values`; LambdaDB uses object key-value pairs.
+- **Multi-vectors**: Qdrant multi-vectors store matrices for late-interaction models. This guide covers dense and sparse vectors; plan and validate multi-vector workloads separately.
+- **Consistency**: LambdaDB is eventually consistent by default. Use `consistentRead` for read-after-write checks, but remember bulk upsert becomes visible only after indexing finishes.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create a collection" href="/guides/collections/create-a-collection" icon="database">
+    Define LambdaDB index configurations for your migrated data.
+  </Card>
+  <Card title="Bulk upsert data" href="/guides/documents/bulk-upsert-data" icon="upload">
+    Load larger migrated datasets through the bulk upsert workflow.
+  </Card>
+  <Card title="Vector query" href="/guides/search/vector" icon="magnifying-glass">
+    Rewrite Qdrant vector search calls as LambdaDB kNN queries.
+  </Card>
+  <Card title="Hybrid query" href="/guides/search/hybrid" icon="bolt">
+    Combine lexical, dense vector, and sparse vector search.
+  </Card>
+</CardGroup>

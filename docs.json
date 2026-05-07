@@ -24,6 +24,12 @@
             ]
           },
           {
+            "group": "Migrations",
+            "pages": [
+              "guides/migrations/migrate-from-qdrant"
+            ]
+          },
+          {
             "group": "Collections",
             "pages": [
               "guides/collections/collection-overview",
