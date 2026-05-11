@@ -4,6 +4,7 @@ description: Get started with LambdaDB in minutes. Create a project, install the
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
+import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
 This guide will walk you through getting a **project API key**, installing the SDK, creating your first collection, and running hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
 
@@ -20,6 +21,8 @@ You'll use a **project API key** from **[LambdaDB Cloud](https://app.lambdadb.ai
 2. **Create a project** — Accounts without a payment method are on the **Free** plan. Choose an AWS region that fits your latency or data-residency needs.
 
 3. **Copy your project API key** — The API key is shown only once after the project is created. Store it somewhere safe, then use it with the **base URL** and **project name** from the console starting in Step 3.
+
+<CloudConnectionDetails />
 
 <Info>
   The Free plan includes monthly read, write, and storage usage at no cost. Add a payment method when you need Standard plan usage beyond the Free plan limits. See [Understanding costs](/guides/costs/understanding-costs).
@@ -68,7 +71,7 @@ Let's create a collection that combines text search with vector similarity:
 ```python Python
 from lambdadb import LambdaDB, models
 
-# Initialize the LambdaDB client (replace with your base URL and project name, or omit to use defaults)
+# Initialize the LambdaDB client with the base URL and project name from your LambdaDB Cloud project
 with LambdaDB(
     project_api_key="your_api_key_here",
     base_url="YOUR_BASE_URL",
@@ -98,7 +101,7 @@ with LambdaDB(
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
 
-// Initialize the LambdaDB client (replace with your base URL and project name, or omit to use defaults)
+// Initialize the LambdaDB client with the base URL and project name from your LambdaDB Cloud project
 const client = new LambdaDBClient({
   projectApiKey: "your_api_key_here",
   baseUrl: "YOUR_BASE_URL",

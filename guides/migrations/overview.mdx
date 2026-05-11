@@ -1,0 +1,100 @@
+---
+title: Migration CLI
+description: Use the LambdaDB Migration CLI to move vector search workloads from existing systems into LambdaDB.
+---
+
+import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
+
+The recommended path for moving existing vector search workloads to LambdaDB is the LambdaDB Migration CLI.
+
+The CLI inventories the source system, generates an editable LambdaDB mapping, creates the target collection when needed, streams records into LambdaDB, saves local checkpoints, and can validate migrated documents before cutover.
+
+## Supported sources
+
+| Source | Status | Notes |
+|:-------|:-------|:------|
+| Qdrant | Supported in CLI `v0.1.1` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense-vector query overlap checks. |
+| Pinecone | Planned | Use the same CLI workflow once Pinecone support is available. |
+| Elasticsearch | Planned | Use the same CLI workflow once Elasticsearch support is available. |
+| OpenSearch | Planned | Use the same CLI workflow once OpenSearch support is available. |
+| Chroma | Planned | Use the same CLI workflow once Chroma support is available. |
+| Weaviate | Planned | Use the same CLI workflow once Weaviate support is available. |
+
+## Migration workflow
+
+1. Install the CLI.
+2. Generate an inventory and editable mapping from the source.
+3. Review the generated LambdaDB collection and field mapping.
+4. Run a dry run.
+5. Run the migration with validation enabled.
+6. Review the validation report and representative search results.
+7. Switch production traffic after result quality, latency, and application query rewrites are verified.
+
+## Install the CLI
+
+Install the latest release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh | sh
+```
+
+Install a specific version:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
+sh install.sh --version v0.1.1 --install-dir "$HOME/.local/bin"
+```
+
+Make sure the install directory is on your `PATH`, then check the CLI:
+
+```bash
+lambdadb-migration --help
+```
+
+## Common CLI behavior
+
+<CloudConnectionDetails />
+
+Set these values before running migration commands:
+
+```bash
+export LAMBDADB_BASE_URL="YOUR_REGION_BASE_URL"
+export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
+export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
+```
+
+Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it does not already exist, then waits until the collection is ready before writing documents.
+
+Use `--migration.create-collection=false` when the LambdaDB collection already exists and the migration should fail instead of creating it.
+
+The CLI stores local checkpoints under `.lambdadb-migration/checkpoints` by default. If a migration is interrupted, rerun the same command to resume from the last saved checkpoint. Use `--migration.restart` to start from the beginning.
+
+## Validation
+
+Use `--migration.validate` for post-migration checks. Validation compares the accepted record count against the source inventory, fetches a sample of migrated documents from LambdaDB with strongly consistent reads, and compares sampled fields.
+
+Use `--migration.validation-report` to write a JSON report:
+
+```bash
+--migration.validate \
+--migration.validation-report validation-report.json
+```
+
+For dense-vector migrations, `--migration.query-overlap` compares Qdrant and LambdaDB nearest-neighbor results for validation samples. By default, it reports overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Migrate from Qdrant" href="/guides/migrations/migrate-from-qdrant" icon="arrows-rotate">
+    Move Qdrant collections, points, vectors, sparse vectors, and payload indexes to LambdaDB.
+  </Card>
+  <Card title="Create a collection" href="/guides/collections/create-a-collection" icon="database">
+    Learn how LambdaDB collection index configurations map to migrated data.
+  </Card>
+  <Card title="Bulk upsert data" href="/guides/documents/bulk-upsert-data" icon="upload">
+    Understand LambdaDB bulk loading behavior for unmanaged-vector collections.
+  </Card>
+  <Card title="Hybrid query" href="/guides/search/hybrid" icon="bolt">
+    Rewrite dense, sparse, and lexical hybrid search after migration.
+  </Card>
+</CardGroup>
