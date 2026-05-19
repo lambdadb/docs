@@ -27,7 +27,8 @@
             "group": "Migrations",
             "pages": [
               "guides/migrations/overview",
-              "guides/migrations/migrate-from-qdrant"
+              "guides/migrations/migrate-from-qdrant",
+              "guides/migrations/migrate-from-pinecone"
             ]
           },
           {

@@ -39,7 +39,7 @@ Install a specific version:
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-sh install.sh --version v0.1.1 --install-dir "$HOME/.local/bin"
+sh install.sh --version v0.1.4 --install-dir "$HOME/.local/bin"
 ```
 
 Check the Qdrant command:
@@ -459,7 +459,7 @@ You can also combine lexical and vector relevance:
 - **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with managed embeddings.
 - **Sparse vectors**: Qdrant sparse vectors use separate `indices` and `values`; LambdaDB uses object key-value pairs.
 - **Multi-vectors**: Qdrant multi-vectors store matrices for late-interaction models. Plan and validate these workloads separately.
-- **Consistency**: LambdaDB is eventually consistent by default. Use validation sample fetches for read-after-write checks, and allow time for bulk-upserted documents to become visible after indexing.
+- **Consistency**: LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches. For bulk upsert, allow time for documents to become visible after indexing completes.
 
 ## Next steps
 

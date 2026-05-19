@@ -1,0 +1,501 @@
+---
+title: Migrate from Pinecone
+description: Use the LambdaDB Migration CLI to move Pinecone Serverless indexes, namespaces, dense vectors, sparse vectors, and metadata to LambdaDB.
+---
+
+import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
+
+Use the LambdaDB Migration CLI to migrate Pinecone Serverless indexes into LambdaDB. The CLI inventories your Pinecone index, generates an editable LambdaDB mapping, creates the target LambdaDB collection when needed, lists and fetches Pinecone records, writes LambdaDB documents, saves local checkpoints, and validates migrated records before cutover.
+
+Pinecone vector-API records contain an `id`, dense `values` and/or `sparse_values`, and optional `metadata`. Records live inside namespaces. LambdaDB stores each migrated record as a **document**: the Pinecone ID becomes the LambdaDB document `id`, metadata becomes document fields, and vector values become LambdaDB `vector` or `sparseVector` fields.
+
+## What the CLI supports
+
+| Pinecone data | LambdaDB target | Migration behavior |
+|:--------------|:----------------|:-------------------|
+| Serverless index | Collection | Migrate one Pinecone index or namespace into one LambdaDB collection. |
+| Namespace | Migration scope | Pass `--pinecone.namespace` to migrate a single namespace. The namespace name is not added to documents automatically. |
+| Record ID | Document `id` | Pinecone record IDs are copied as LambdaDB string document IDs. |
+| Dense vector values | `vector` field | The generated mapping uses `dense` as the target field for standard dense indexes. |
+| Sparse vector values | `sparseVector` field | Pinecone `indices` and `values` arrays are converted to a LambdaDB sparse object. |
+| Metadata | Document fields | Metadata fields are flattened by default. Dotted field names are normalized, for example `metadata.url` to `metadata_url`. |
+| Metadata indexing | `payload.indexConfigs` | Pinecone metadata index settings are not currently introspected. Add LambdaDB index configs for fields you need to query or sort. |
+| Integrated embedding indexes | Stored vectors and metadata | The CLI migrates stored vector values and metadata, not Pinecone hosted model configuration. |
+
+<Warning>
+
+The Pinecone connector uses Pinecone's vector listing API, which is available for Serverless indexes. Pod-based indexes and workloads that cannot list vector IDs should be moved to Pinecone Serverless first or migrated with a custom export path.
+
+</Warning>
+
+<Note>
+
+Pinecone's newer document-schema indexes can mix `dense_vector`, `sparse_vector`, full-text `string`, and metadata fields. The current LambdaDB Migration CLI path is designed around Pinecone Serverless vector records that can be listed and fetched. Review document-schema and full-text workloads before using the default migration path.
+
+</Note>
+
+<Note>
+
+Pinecone's current API reference is versioned as `2026-04`. If you call Pinecone REST APIs directly during a custom migration, set the `X-Pinecone-Api-Version` header explicitly. The LambdaDB Migration CLI uses Pinecone's official SDK and does not require you to pass this header.
+
+</Note>
+
+## Step 1: Install the CLI
+
+Install the latest release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh | sh
+```
+
+Install a specific version:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
+sh install.sh --version v0.1.4 --install-dir "$HOME/.local/bin"
+```
+
+Check the Pinecone command:
+
+```bash
+lambdadb-migration pinecone --help
+```
+
+## Step 2: Set credentials
+
+<CloudConnectionDetails />
+
+Set your Pinecone API key and LambdaDB connection values:
+
+```bash
+export PINECONE_API_KEY="YOUR_PINECONE_API_KEY"
+export LAMBDADB_BASE_URL="YOUR_REGION_BASE_URL"
+export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
+export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
+```
+
+If you use a non-default Pinecone control-plane host, pass it with `--pinecone.host`.
+
+## Step 3: Generate inventory and mapping
+
+Run the inventory command against a Pinecone Serverless index:
+
+```bash
+lambdadb-migration inventory pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --output pinecone-inventory.yaml
+```
+
+Use `--pinecone.list-prefix` when you only want to migrate records whose IDs start with a specific prefix:
+
+```bash
+lambdadb-migration inventory pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --pinecone.list-prefix "tenant-a#" \
+  --output pinecone-inventory.yaml
+```
+
+A dense-vector inventory produces an editable mapping like this:
+
+```yaml
+mapping:
+  target:
+    collection: articles
+    createCollection: true
+  vectors:
+    "":
+      targetField: dense
+      dimensions: 1536
+      similarity: cosine
+  sparseVectors: {}
+  payload:
+    mode: flatten
+    rename: {}
+    indexConfigs: {}
+  ids:
+    targetField: id
+```
+
+Review the generated mapping before running the migration. In particular:
+
+- Add `payload.indexConfigs` for metadata fields that must be searchable or sortable in LambdaDB.
+- Check dense vector dimensions and similarity.
+- Check normalized dotted metadata fields.
+- Decide whether one Pinecone namespace should become one LambdaDB collection, or whether you should run multiple scoped migrations.
+
+For example, add indexes for metadata fields used by filters:
+
+```yaml
+mapping:
+  target:
+    collection: articles
+    createCollection: true
+  vectors:
+    "":
+      targetField: dense
+      dimensions: 1536
+      similarity: cosine
+  sparseVectors: {}
+  payload:
+    mode: flatten
+    rename: {}
+    indexConfigs:
+      tenant_id:
+        type: keyword
+      title:
+        type: text
+        analyzers: ["english"]
+      created_at:
+        type: datetime
+      metadata_url:
+        type: keyword
+  ids:
+    targetField: id
+```
+
+For a Pinecone sparse index, the generated mapping includes a sparse vector field:
+
+```yaml
+mapping:
+  target:
+    collection: article-keywords
+    createCollection: true
+  vectors: {}
+  sparseVectors:
+    sparse:
+      targetField: sparse
+  payload:
+    mode: flatten
+    rename: {}
+    indexConfigs: {}
+  ids:
+    targetField: id
+```
+
+<Note>
+
+Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it is missing and waits until it is ready before writing documents.
+
+</Note>
+
+## Step 4: Run a dry run
+
+Use a dry run to validate the mapping and inspect the planned migration without writing documents:
+
+```bash
+lambdadb-migration pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --lambdadb.base-url "$LAMBDADB_BASE_URL" \
+  --lambdadb.project-name "$LAMBDADB_PROJECT_NAME" \
+  --lambdadb.api-key "$LAMBDADB_PROJECT_API_KEY" \
+  --lambdadb.collection articles \
+  --mapping-file pinecone-inventory.yaml \
+  --migration.dry-run
+```
+
+## Step 5: Run the migration
+
+Run the migration with validation enabled:
+
+```bash
+lambdadb-migration pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --lambdadb.base-url "$LAMBDADB_BASE_URL" \
+  --lambdadb.project-name "$LAMBDADB_PROJECT_NAME" \
+  --lambdadb.api-key "$LAMBDADB_PROJECT_API_KEY" \
+  --lambdadb.collection articles \
+  --mapping-file pinecone-inventory.yaml \
+  --migration.write-mode bulk \
+  --migration.validate \
+  --migration.validation-report validation-report.json
+```
+
+Migration progress is written to stderr with accepted count, percent, batch size, rate, and elapsed time.
+
+The CLI stores checkpoints under `.lambdadb-migration/checkpoints` by default. If the command is interrupted, rerun the same command to resume. Use `--migration.restart` to ignore an existing checkpoint and start from the beginning.
+
+Use `--migration.create-collection=false` when the target LambdaDB collection already exists and the migration should not create it.
+
+## Step 6: Review validation
+
+`--migration.validate` checks the accepted record count, fetches a sample of migrated documents from LambdaDB using strongly consistent reads, and compares sampled fields.
+
+`--migration.validation-report` writes the validation result as JSON. The report includes source count, accepted records, LambdaDB `numDocs`, sampled IDs, compared sample count, query overlap results, and validation errors.
+
+For dense or sparse-vector migrations, add query overlap checks:
+
+```bash
+lambdadb-migration pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --lambdadb.base-url "$LAMBDADB_BASE_URL" \
+  --lambdadb.project-name "$LAMBDADB_PROJECT_NAME" \
+  --lambdadb.api-key "$LAMBDADB_PROJECT_API_KEY" \
+  --lambdadb.collection articles \
+  --mapping-file pinecone-inventory.yaml \
+  --migration.validate \
+  --migration.validation-report validation-report.json \
+  --migration.query-overlap
+```
+
+By default, `--migration.query-overlap` reports vector overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+
+## Mapping details
+
+Use this metric mapping when creating LambdaDB vector fields:
+
+| Pinecone metric | LambdaDB similarity |
+|:----------------|:--------------------|
+| `cosine` | `cosine` |
+| `euclidean` | `euclidean` |
+| `dotproduct` | `dot_product` |
+
+For a Pinecone dense record:
+
+```json Pinecone record
+{
+  "id": "doc-1",
+  "values": [0.12, 0.34, 0.56],
+  "metadata": {
+    "tenant_id": "acme",
+    "title": "Refund policy",
+    "body": "Refunds are available within 7 days.",
+    "created_at": "2026-05-01T10:00:00Z"
+  }
+}
+```
+
+the CLI writes a LambdaDB document like this:
+
+```json LambdaDB document
+{
+  "id": "doc-1",
+  "tenant_id": "acme",
+  "title": "Refund policy",
+  "body": "Refunds are available within 7 days.",
+  "created_at": "2026-05-01T10:00:00Z",
+  "dense": [0.12, 0.34, 0.56]
+}
+```
+
+For a Pinecone sparse record:
+
+```json Pinecone sparse values
+{
+  "id": "doc-1",
+  "sparse_values": {
+    "indices": [3, 9],
+    "values": [0.7, 0.2]
+  },
+  "metadata": {
+    "title": "Refund policy"
+  }
+}
+```
+
+the CLI converts sparse values to an object whose keys are index strings:
+
+```json LambdaDB document
+{
+  "id": "doc-1",
+  "title": "Refund policy",
+  "sparse": {
+    "3": 0.7,
+    "9": 0.2
+  }
+}
+```
+
+## Rewrite vector search
+
+A Pinecone dense-vector query:
+
+```python Python
+index.query(
+    namespace="production",
+    vector=query_vector,
+    top_k=10,
+    filter={"tenant_id": {"$eq": "acme"}},
+    include_metadata=True,
+    include_values=False,
+)
+```
+
+becomes a LambdaDB `knn` query:
+
+```python Python
+results = coll.query(
+    query={
+        "knn": {
+            "field": "dense",
+            "queryVector": query_vector,
+            "k": 10,
+            "filter": {
+                "queryString": {
+                    "query": '"acme"',
+                    "defaultField": "tenant_id",
+                }
+            },
+        }
+    },
+    size=10,
+)
+```
+
+If you use LambdaDB managed embeddings instead of migrated vector values, send query text:
+
+```python Python
+results = coll.query(
+    query={
+        "knn": {
+            "field": "bodyEmbedding",
+            "queryText": "refund policy",
+            "k": 10,
+        }
+    },
+    size=10,
+)
+```
+
+## Rewrite sparse and hybrid search
+
+A Pinecone sparse-vector query:
+
+```python Python
+index.query(
+    namespace="production",
+    sparse_vector={"indices": [3, 9], "values": [0.7, 0.2]},
+    top_k=10,
+    include_metadata=True,
+    include_values=False,
+)
+```
+
+becomes a LambdaDB sparse vector query:
+
+```python Python
+results = coll.query(
+    query={
+        "sparseVector": {
+            "field": "sparse",
+            "queryVector": {
+                "3": 0.7,
+                "9": 0.2,
+            },
+        }
+    },
+    size=10,
+)
+```
+
+Pinecone vector-API hybrid search can use one index with both dense and sparse values, or separate dense and sparse indexes whose results are merged client-side. In LambdaDB, use a collection with both dense and sparse fields, then query those fields together:
+
+```json LambdaDB dense + sparse hybrid query
+{
+  "mm": [
+    {
+      "knn": {
+        "field": "dense",
+        "queryVector": [0.01, 0.45, 0.67],
+        "k": 20
+      },
+      "boost": 0.7
+    },
+    {
+      "sparseVector": {
+        "field": "sparse",
+        "queryVector": {
+          "3": 0.7,
+          "9": 0.2
+        }
+      },
+      "boost": 0.3
+    }
+  ]
+}
+```
+
+Use `rrf` when you want rank fusion without explicit boosts, or `mm`/`l2` when you want weighted score fusion.
+
+## Rewrite filters
+
+Pinecone metadata filters use operators such as `$eq`, `$gte`, `$in`, `$and`, and `$or`. In LambdaDB, map simple exact and range filters to `queryString`, and use `bool` when you need multiple clauses.
+
+```json Pinecone metadata filter
+{
+  "$and": [
+    { "tenant_id": { "$eq": "acme" } },
+    { "year": { "$gte": 2024 } },
+    { "status": { "$ne": "deleted" } }
+  ]
+}
+```
+
+```json LambdaDB bool query
+{
+  "bool": [
+    {
+      "queryString": {
+        "query": "tenant_id:acme"
+      },
+      "occur": "filter"
+    },
+    {
+      "queryString": {
+        "query": "year:[2024 TO *]"
+      },
+      "occur": "filter"
+    },
+    {
+      "queryString": {
+        "query": "status:deleted"
+      },
+      "occur": "must_not"
+    }
+  ]
+}
+```
+
+Use field types intentionally:
+
+| Pinecone metadata use | LambdaDB index type |
+|:----------------------|:--------------------|
+| Exact string match, tags, IDs, tenant IDs | `keyword` |
+| Natural-language matching | `text` |
+| Integer range or sorting | `long` |
+| Floating-point range or sorting | `double` |
+| Date/time range or sorting | `datetime` |
+| Boolean flags | `boolean` |
+| Nested JSON kept as a searchable object | `object` |
+
+## Common gotchas
+
+- **Serverless only**: Pinecone's `list` endpoint is supported only for Serverless indexes. The CLI depends on vector listing, then fetches listed records by ID.
+- **Namespaces**: Run one migration per namespace. If the namespace itself matters in LambdaDB, use separate target collections or add namespace metadata in Pinecone before migration.
+- **Metadata indexes**: Pinecone metadata index settings are not introspected. Add LambdaDB `payload.indexConfigs` manually for fields used in filters or sorting.
+- **Field names**: LambdaDB field names cannot contain dots. Dotted Pinecone metadata keys are normalized during migration, such as `metadata.url` to `metadata_url`.
+- **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use LambdaDB managed embeddings when you want LambdaDB to generate embeddings from source text after migration.
+- **Hybrid shape**: Pinecone supports multiple hybrid patterns. Validate whether your workload uses a single dense index with `sparse_values`, separate dense and sparse indexes, or a document-schema index before choosing the target LambdaDB schema.
+- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with managed embeddings.
+- **Consistency**: Pinecone is eventually consistent for freshly written data. LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches; use query overlap checks before cutover.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Migration CLI" href="/guides/migrations/overview" icon="arrows-rotate">
+    Review the shared LambdaDB Migration CLI workflow.
+  </Card>
+  <Card title="Create a collection" href="/guides/collections/create-a-collection" icon="database">
+    Define LambdaDB index configurations for your migrated data.
+  </Card>
+  <Card title="Sparse vector query" href="/guides/search/sparse-vector" icon="network-wired">
+    Rewrite Pinecone sparse-vector searches as LambdaDB sparse vector queries.
+  </Card>
+  <Card title="Hybrid query" href="/guides/search/hybrid" icon="bolt">
+    Combine lexical, dense vector, and sparse vector search.
+  </Card>
+</CardGroup>
