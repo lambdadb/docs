@@ -80,7 +80,8 @@ curl -i -X PATCH "https://{baseUrl}/projects/{projectName}" \
       "period": "monthly",
       "read": { "limit": 1000000 },
       "write": { "limit": 500000 },
-      "storage": { "limit": 10737418240 }
+      "storage": { "limit": 10737418240 },
+      "inference": { "limit": 500000 }
     }
   }'
 ```
@@ -101,7 +102,8 @@ The response will look like this:
       "period": "monthly",
       "read": { "limit": 1000000 },
       "write": { "limit": 500000 },
-      "storage": { "limit": 10737418240 }
+      "storage": { "limit": 10737418240 },
+      "inference": { "limit": 500000 }
     }
   }
 }
@@ -111,7 +113,7 @@ The response will look like this:
 `PATCH /projects/{projectName}` requires at least one of `rateLimit` or `quotaEnabled`.
 If `quotaEnabled` is `true`, `quota` is required. If `quotaEnabled` is `false` or omitted, `quota` must be `null`/omitted.
 When `quotaEnabled` is `true`, `quota.period` must be one of `daily`, `weekly`, `monthly`.
-Also, all of `quota.read.limit`, `quota.write.limit`, and `quota.storage.limit` are required.
+Also, all of `quota.read.limit`, `quota.write.limit`, `quota.storage.limit`, and `quota.inference.limit` are required.
 </Note>
 
 ## Delete a project

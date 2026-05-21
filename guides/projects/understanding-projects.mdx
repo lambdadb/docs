@@ -40,3 +40,8 @@ When quota is enabled, provide a `quota` configuration with:
 - `read.limit`
 - `write.limit`
 - `storage.limit`
+- `inference.limit`
+
+Read, write, and inference quotas are measured over the configured `period`.
+Storage quota is measured against current physical storage.
+Inference quota is measured in LIU (LambdaDB Inference Unit), which is used for managed model usage such as managed embeddings.

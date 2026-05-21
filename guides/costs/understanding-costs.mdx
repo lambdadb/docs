@@ -1,13 +1,13 @@
 ---
 title: Understanding costs
-description: Learn how LambdaDB serverless pricing works across read usage, write usage, and storage. Covers per-request minimums and consistency surcharges.
+description: Learn how LambdaDB serverless pricing works across read usage, write usage, storage, and inference usage. Covers per-request minimums, consistency surcharges, and managed embedding usage.
 ---
 
 LambdaDB offers a **Free** plan and a **Standard** plan.
 
 There is **no minimum cost** or base fee. If you have no usage, your cost is **$0**.
 
-On the **Standard** plan, usage is metered in three dimensions: **read usage**, **write usage**, and **storage usage**. Charges are based on actual measured usage at the rates below.
+On the **Standard** plan, usage is metered in four dimensions: **read usage**, **write usage**, **storage usage**, and **inference usage**. Charges are based on actual measured usage at the rates below.
 
 For the latest pricing details, see [Pricing](https://lambdadb.ai/pricing).
 
@@ -15,8 +15,8 @@ For the latest pricing details, see [Pricing](https://lambdadb.ai/pricing).
 
 LambdaDB offers two plans:
 
-- **Free**: includes up to **1 PB read usage**, **2 GB write usage**, and **2 GB storage usage** per month at **no cost**. After a Free plan limit is reached, additional usage is **restricted**.
-- **Standard**: usage is billed based on actual measured **read usage**, **write usage**, and **storage usage** as described below.
+- **Free**: includes up to **1 PB read usage**, **2 GB write usage**, **2 GB storage usage**, and **500K LIU inference usage** per month at **no cost**. After a Free plan limit is reached, additional usage is **restricted**.
+- **Standard**: usage is billed based on actual measured **read usage**, **write usage**, **storage usage**, and **inference usage** as described below.
 
 ## Read usage
 
@@ -54,6 +54,26 @@ If you use **branching**, logical storage and physical storage can differ; billi
 
 Usage is computed from **hourly averages** of stored data. Those averages are summed into **GB-hours** over the billing period (not a single end-of-month snapshot).
 
+## Inference usage
+
+Inference usage applies when LambdaDB calls a managed model provider on your behalf, such as managed embedding generation during document writes or `knn.queryText` searches on managed embedding fields.
+
+Inference usage is measured in **LIU** (LambdaDB Inference Unit) and billed at **$1.05 per 1M LIU**.
+
+LambdaDB converts provider/model token usage into LIU using LambdaDB's internal rate card. For example, different embedding models can have different LIU-per-token conversion rates. Usage is aggregated over the billing period before it is converted to the integer LIU quantity used for billing.
+
+Current managed embedding rates:
+
+| Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
+|:---------|:------|--------------------:|---------------------:|---------------------------------:|
+| `openai` | `text-embedding-3-small` | 0.02 | 0 | $0.021 |
+| `openai` | `text-embedding-3-large` | 0.13 | 0 | $0.1365 |
+| `openai` | `text-embedding-ada-002` | 0.1 | 0 | $0.105 |
+
+If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero managed model usage is not dropped.
+
+See also [Managed embeddings](/guides/collections/managed-embeddings).
+
 ## Billing cycle
 
-On the **first day of each calendar month**, usage for the **previous month**—read, write, and storage—is aggregated and invoiced for the **Standard** plan.
+On the **first day of each calendar month**, usage for the **previous month**—read, write, storage, and inference—is aggregated and invoiced for the **Standard** plan.

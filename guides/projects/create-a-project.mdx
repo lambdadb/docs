@@ -52,7 +52,8 @@ curl -i -X POST "https://{baseUrl}/projects" \
           "period": "monthly",
           "read": { "limit": 1000000 },
           "write": { "limit": 500000 },
-          "storage": { "limit": 10737418240 }
+          "storage": { "limit": 10737418240 },
+          "inference": { "limit": 500000 }
         }
       }'
 ```
@@ -60,5 +61,5 @@ curl -i -X POST "https://{baseUrl}/projects" \
 <Note>
 When `quotaEnabled` is `true`, `quota` is required.
 `quota.period` must be one of `daily`, `weekly`, `monthly`.
-Also, all of `quota.read.limit`, `quota.write.limit`, and `quota.storage.limit` are required.
+Also, all of `quota.read.limit`, `quota.write.limit`, `quota.storage.limit`, and `quota.inference.limit` are required.
 </Note>
