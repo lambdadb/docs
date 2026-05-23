@@ -1,16 +1,33 @@
 ---
 title: Query string search
-description: Search LambdaDB documents with query string syntax based on Apache Lucene. Supports terms, phrases, wildcards, boolean operators, and range queries.
+description: Search LambdaDB documents with Apache Lucene query string syntax, including proximity search, regular expressions, fuzzy matching, term boosting, minimum-should-match, and interval functions.
 ---
 
-LambdaDB supports a simple string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_2_2/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
-Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operators`, and `special character escaping` are supported.
+LambdaDB supports a simple string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_4_0/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
+This gives `queryString` access to expressive lexical search features such as terms, phrases, wildcards, boolean operators, range operators, proximity search, regular expressions, fuzzy term matching, term boosting, minimum-should-match constraints, interval functions, and special character escaping.
+
+## Supported syntax highlights
+
+| Feature | Example | Use it to |
+|:--------|:--------|:----------|
+| Term search | `hello` | Match documents containing a term. |
+| Phrase search | `"hello world"` | Match an exact phrase. |
+| Field search | `title:LambdaDB` | Target a specific field. |
+| Boolean logic and grouping | `title:database AND (serverless OR managed)` | Combine required, optional, and excluded clauses. |
+| Wildcards | `vector*` | Match terms by prefix or pattern. |
+| Proximity search | `"serverless database"~4` | Match words that occur near each other. |
+| Regular expression | `/vec(tor\|tors)/` | Match terms using a regular expression. |
+| Fuzzy term matching | `lambdadb~2` | Match terms within an edit distance. |
+| Range query | `created_at:[2024-01-01T00:00:00Z TO *]` | Match numeric, datetime, or keyword ranges. |
+| Term boosting | `database^2 OR storage^0.5` | Increase or decrease the relevance weight of clauses. |
+| Minimum should match | `(semantic vector keyword)@2` | Require at least N optional clauses to match. |
+| Interval function | `fn:ordered(serverless vector database)` | Express ordered or positional relationships between terms. |
 
 ## Parameters
 
 | Parameter    | Description                              | Type     | Required | Default |
 |:-------------|:-----------------------------------------|:---------|:---------|:--------|
-| query        | Query string                             | object   | ✓        |         |
+| query        | Query string                             | string   | ✓        |         |
 | defaultField | Default field name to apply query        | string   |          |         |
 | skipSyntax   | Skip syntax check for special characters | boolean  |          | false   |
 
@@ -33,17 +50,19 @@ Specifically, `term`, `phrase`, `wildcard`, `boolean operators`, `range operator
 }
 ```
 
+When multiple terms are separated by spaces, each term is treated as an optional clause on the `defaultField`.
 The above example is equivalent to:
 
 ```json
 {
   "queryString": {
-    "query": "text:hello OR text:world",
+    "query": "text:hello OR text:world"
   }
 }
 ```
 
 You can also query multiple fields by specifying field names in the query string. Terms are separated by spaces, and specific fields are targeted using the `field:value` syntax:
+
 ```json
 {
   "queryString": {
@@ -53,30 +72,31 @@ You can also query multiple fields by specifying field names in the query string
 }
 ```
 
-For handling special characters, use the `skipSyntax` option:
+### Exact keyword match
+
+Use a `keyword` field when you want to match a literal value instead of analyzed text.
 
 ```json
 {
   "queryString": {
-    "query": "hello! world?",
-    "defaultField": "text",
-    "skipSyntax": true
-  }
-}
-```
-
-### Exact match query
-
-```json
-{
-  "queryString": {
-    "query": "keyword",
+    "query": "python",
     "defaultField": "keyword"
   }
 }
 ```
 
-If the keyword includes special characters, you can use the `skipSyntax` option:
+If the keyword contains spaces or query syntax characters, wrap the value in double quotes (`"`):
+
+```json
+{
+  "queryString": {
+    "query": "\"hello world\"",
+    "defaultField": "keyword"
+  }
+}
+```
+
+For raw literal values that include special characters, you can also use the `skipSyntax` option:
 
 ```json
 {
@@ -88,29 +108,129 @@ If the keyword includes special characters, you can use the `skipSyntax` option:
 }
 ```
 
-Alternatively, wrap them in double quotes ("):
+Alternatively, quote the literal value:
 
 ```json
 {
   "queryString": {
-    "query": '"https://sample_url.com"',
+    "query": "\"https://sample_url.com\"",
     "defaultField": "keyword"
   }
 }
 ```
 
-To search for keywords that contain spaces, you need to wrap them in double quotes (").
-For example, to search for the phrase hello world as a single keyword, use:
+### Phrase search
+
+On analyzed text fields, wrap terms in double quotes (`"`) to search for an exact phrase.
 
 ```json
 {
   "queryString": {
-    "query": '"hello world"',
-    "defaultField": "keyword"
+    "query": "\"serverless database\"",
+    "defaultField": "content"
   }
 }
 ```
 
+### Proximity search
+
+Use proximity search to match phrase terms that appear near each other, even when they are not adjacent.
+The number after `~` controls the maximum distance between phrase terms.
+
+```json
+{
+  "queryString": {
+    "query": "\"serverless database\"~4",
+    "defaultField": "content"
+  }
+}
+```
+
+### Regular expression query
+
+Wrap a regular expression in forward slashes (`/`) to match terms by pattern.
+
+```json
+{
+  "queryString": {
+    "query": "/vec(tor|tors)/",
+    "defaultField": "content"
+  }
+}
+```
+
+### Fuzzy term matching
+
+Use `~` after a term to match terms within an edit distance.
+This is useful for typos, spelling variants, and noisy text.
+
+```json
+{
+  "queryString": {
+    "query": "lambdadb~2",
+    "defaultField": "content"
+  }
+}
+```
+
+### Term boosting
+
+Use `^` to increase or decrease the relevance weight of a term, phrase, range expression, or grouped clause.
+
+```json
+{
+  "queryString": {
+    "query": "database^2 OR storage^0.5",
+    "defaultField": "content"
+  }
+}
+```
+
+You can also boost a grouped sub-query:
+
+```json
+{
+  "queryString": {
+    "query": "title:(serverless OR managed)^2.5 OR content:database"
+  }
+}
+```
+
+### Minimum should match
+
+Use the minimum-should-match operator (`@`) on a disjunction group to require at least the specified number of optional clauses to match.
+
+```json
+{
+  "queryString": {
+    "query": "(semantic vector keyword)@2",
+    "defaultField": "content"
+  }
+}
+```
+
+### Interval function
+
+Use interval functions with the `fn:` prefix to express ordered or positional relationships between terms.
+
+```json
+{
+  "queryString": {
+    "query": "fn:ordered(serverless vector database)",
+    "defaultField": "content"
+  }
+}
+```
+
+You can target a field and combine interval functions:
+
+```json
+{
+  "queryString": {
+    "query": "title:fn:maxwidth(5 fn:atLeast(2 serverless vector database))"
+  }
+}
+```
 
 ### Range query
 
