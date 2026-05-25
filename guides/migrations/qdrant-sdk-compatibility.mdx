@@ -1,0 +1,287 @@
+---
+title: Qdrant SDK compatibility
+description: Use LambdaDB's Python and TypeScript Qdrant compatibility clients to reduce application code changes during Qdrant migrations.
+---
+
+import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
+
+LambdaDB provides explicit Qdrant-style compatibility clients for Python and TypeScript applications. Use them when you have already moved or plan to move Qdrant data into LambdaDB, but want to keep common Qdrant client calls while you migrate application code.
+
+The compatibility clients are not full Qdrant client replacements. They cover the common dense-vector search and RAG subset, map Qdrant points to LambdaDB documents, and raise an explicit unsupported-feature error for behavior that LambdaDB cannot safely emulate.
+
+## When to use this path
+
+Use the Qdrant compatibility clients when:
+
+- Your application already uses Qdrant's Python or JavaScript/TypeScript SDK.
+- You want a smaller application change than rewriting all query code to LambdaDB native APIs at once.
+- Your workload uses dense vectors, named dense vectors, payload filters, document retrieval, deletes, unfiltered scroll, or collection metadata checks.
+
+Use LambdaDB native APIs directly when:
+
+- You are building new application code.
+- You need LambdaDB-specific query features such as lexical plus vector hybrid search.
+- You want the clearest long-term API surface after migration.
+
+## Install
+
+Python support is available in `lambdadb >= 0.8.1`:
+
+```bash
+pip install "lambdadb>=0.8.1"
+```
+
+TypeScript support is available in `@functional-systems/lambdadb >= 0.4.2`:
+
+```bash
+npm install @functional-systems/lambdadb
+```
+
+## Connection settings
+
+<CloudConnectionDetails />
+
+Pass those values to the compatibility client instead of a Qdrant URL.
+
+## Python
+
+Change the import and client construction explicitly:
+
+```diff
+- from qdrant_client import QdrantClient, models
++ from lambdadb.compat.qdrant import QdrantCompatClient as QdrantClient, models
+
+- client = QdrantClient(url="http://localhost:6333")
++ client = QdrantClient(
++     project_api_key="<YOUR_PROJECT_API_KEY>",
++     base_url="<YOUR_REGION_BASE_URL>",
++     project_name="<YOUR_PROJECT_NAME>",
++ )
+```
+
+Create a collection, write points, and query with Qdrant-style calls:
+
+```python Python
+from lambdadb.compat.qdrant import QdrantCompatClient, models
+
+client = QdrantCompatClient(
+    project_api_key="<YOUR_PROJECT_API_KEY>",
+    base_url="<YOUR_REGION_BASE_URL>",
+    project_name="<YOUR_PROJECT_NAME>",
+)
+
+client.create_collection(
+    collection_name="articles",
+    vectors_config=models.VectorParams(
+        size=3,
+        distance=models.Distance.COSINE,
+    ),
+    payload_schema={
+        "tenant_id": models.PayloadSchemaType.KEYWORD,
+    },
+)
+
+client.upsert(
+    collection_name="articles",
+    points=[
+        models.PointStruct(
+            id=1,
+            vector=[1.0, 0.0, 0.0],
+            payload={"tenant_id": "acme", "title": "Refund policy"},
+        )
+    ],
+)
+
+results = client.query_points(
+    collection_name="articles",
+    query=[1.0, 0.0, 0.0],
+    query_filter=models.Filter(
+        must=[
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value="acme"),
+            )
+        ]
+    ),
+    limit=10,
+    with_payload=True,
+    with_vectors=False,
+)
+```
+
+## TypeScript
+
+Change the import and client construction explicitly:
+
+```diff
+- import { QdrantClient, models } from "@qdrant/js-client-rest";
++ import { QdrantCompatClient as QdrantClient, models } from "@functional-systems/lambdadb/compat/qdrant";
+
+- const client = new QdrantClient({ url: "http://localhost:6333" });
++ const client = new QdrantClient({
++   projectApiKey: "<YOUR_PROJECT_API_KEY>",
++   baseUrl: "<YOUR_REGION_BASE_URL>",
++   projectName: "<YOUR_PROJECT_NAME>",
++ });
+```
+
+Create a collection, write points, and query with Qdrant-style calls:
+
+```ts TypeScript
+import { QdrantCompatClient, models } from "@functional-systems/lambdadb/compat/qdrant";
+
+const client = new QdrantCompatClient({
+  projectApiKey: "<YOUR_PROJECT_API_KEY>",
+  baseUrl: "<YOUR_REGION_BASE_URL>",
+  projectName: "<YOUR_PROJECT_NAME>",
+});
+
+await client.createCollection("articles", {
+  vectorsConfig: new models.VectorParams({
+    size: 3,
+    distance: models.Distance.COSINE,
+  }),
+  payloadSchema: {
+    tenant_id: models.PayloadSchemaType.KEYWORD,
+  },
+});
+
+await client.upsert("articles", {
+  points: [
+    new models.PointStruct({
+      id: 1,
+      vector: [1.0, 0.0, 0.0],
+      payload: { tenant_id: "acme", title: "Refund policy" },
+    }),
+  ],
+});
+
+const results = await client.queryPoints("articles", {
+  query: [1.0, 0.0, 0.0],
+  queryFilter: new models.Filter({
+    must: [
+      new models.FieldCondition({
+        key: "tenant_id",
+        match: new models.MatchValue({ value: "acme" }),
+      }),
+    ],
+  }),
+  limit: 10,
+  withPayload: true,
+  withVectors: false,
+});
+```
+
+## Supported Qdrant-style APIs
+
+| Area | Python | TypeScript | Notes |
+|:-----|:-------|:-----------|:------|
+| Client | `QdrantCompatClient` | `QdrantCompatClient` | Accepts LambdaDB connection settings or an existing LambdaDB client. |
+| Collection exists | `collection_exists()` | `collectionExists()` / `collection_exists()` | Maps to LambdaDB collection metadata lookup. |
+| Collection metadata | `get_collection()` | `getCollection()` / `get_collection()` | Returns minimal Qdrant-style vector config used by integrations. |
+| Create collection | `create_collection()` | `createCollection()` / `create_collection()` | Supports dense vectors and named dense vectors. Use payload schema for filter fields. |
+| Recreate collection | `recreate_collection()` | `recreateCollection()` / `recreate_collection()` | Deletes the collection if it exists, then creates it. |
+| Delete collection | `delete_collection()` | `deleteCollection()` / `delete_collection()` | Maps to LambdaDB collection delete. |
+| Payload index | `create_payload_index()` | `createPayloadIndex()` / `create_payload_index()` | Limited to empty collections unless the same index already exists. Prefer declaring payload schema at creation time. |
+| Upsert points | `upsert()` | `upsert()` | Dense vectors only. Qdrant point IDs become LambdaDB document IDs. |
+| Upload points | `upload_points()` | `uploadPoints()` / `upload_points()` | Batches points through upsert. |
+| Upload collection | `upload_collection()` | `uploadCollection()` / `upload_collection()` | Converts vectors, IDs, and payload arrays into points. |
+| Query | `query_points()` | `queryPoints()` / `query_points()` | Dense vector query plus supported payload filters. |
+| Query alias | `search()` | `query()` / `search()` | TypeScript `query()` supports Qdrant JS-style `filter`, `with_payload`, and `with_vector`. |
+| Retrieve | `retrieve()` | `retrieve()` | Uses strongly consistent LambdaDB fetches. |
+| Delete points | `delete()` | `delete()` | Supports point IDs and supported Qdrant filters. |
+| Scroll | `scroll()` | `scroll()` | Unfiltered scroll. Payload and vector response selectors are applied when shaping the response. |
+| Count | `count()` | `count()` | Unfiltered collection count only. |
+
+## Data mapping
+
+| Qdrant concept | LambdaDB mapping |
+|:---------------|:-----------------|
+| Point ID | Document `id`, stringified |
+| Original numeric ID | Reserved `_qdrant_id` field |
+| Unnamed dense vector | Reserved `_qdrant_vector` field |
+| Named dense vector `title` | Reserved `_qdrant_vector_title` field |
+| Payload fields | Top-level document fields |
+
+Payload fields cannot use `id` or the reserved `_qdrant_` prefix.
+
+## Payload and vector selectors
+
+Boolean selectors and field-list selectors are supported on query and retrieve paths. Field-list payload selectors are mapped to LambdaDB `fields.include` where possible and are also applied to the Qdrant-style response payload.
+
+Vector-name selectors request vector values from LambdaDB and filter the returned Qdrant-style vector object by Qdrant vector name:
+
+```python Python
+client.query_points(
+    collection_name="articles",
+    query=[1.0, 0.0, 0.0],
+    with_vectors=["title"],
+)
+```
+
+```ts TypeScript
+await client.query("articles", {
+  query: [1.0, 0.0, 0.0],
+  with_vector: ["title"],
+});
+```
+
+`scroll()` maps to LambdaDB list documents. LambdaDB list responses include stored vector values, so the compatibility layer applies Qdrant-style vector selectors while shaping the response:
+
+```python Python
+records, next_offset = client.scroll(
+    collection_name="articles",
+    with_payload=["tenant_id"],
+    with_vectors=["title"],
+)
+```
+
+```ts TypeScript
+const [records, nextOffset] = await client.scroll("articles", {
+  withPayload: ["tenant_id"],
+  withVectors: ["title"],
+});
+```
+
+## Filter support
+
+| Qdrant filter | Status |
+|:--------------|:-------|
+| `Filter.must` | Supported |
+| `Filter.should` | Supported through LambdaDB bool clauses |
+| `Filter.must_not` / `mustNot` | Supported |
+| `FieldCondition.match=MatchValue` | Supported |
+| `FieldCondition.match=MatchAny` | Supported |
+| `FieldCondition.match=MatchExcept` | Supported |
+| `FieldCondition.range` | Supported |
+| `HasIdCondition` | Supported |
+| `MatchText` | Unsupported |
+| Geo filters | Unsupported |
+| Nested object filters | Unsupported |
+
+## Unsupported behavior
+
+- Local Qdrant mode, including `path` and `location=":memory:"`
+- Sparse vector upsert through the compatibility client
+- Multi-vector comparators
+- Geo payload indexes and geo filters
+- Filtered scroll
+- Filtered count
+- Query offset
+- `score_threshold`
+- HNSW and search tuning semantics beyond warnings
+
+## How this fits with the Migration CLI
+
+The LambdaDB Migration CLI moves data from Qdrant to LambdaDB. The Qdrant compatibility clients help reduce application code changes after data is in LambdaDB.
+
+For a full Qdrant migration workflow, start with the migration guide:
+
+<CardGroup cols={2}>
+  <Card title="Migrate from Qdrant" href="/guides/migrations/migrate-from-qdrant" icon="arrows-rotate">
+    Move Qdrant collections, points, vectors, sparse vectors, and payload indexes to LambdaDB.
+  </Card>
+  <Card title="SDK reference" href="/reference/sdk/introduction" icon="code">
+    Install and use the official LambdaDB SDKs.
+  </Card>
+</CardGroup>
