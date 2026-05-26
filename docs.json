@@ -27,9 +27,19 @@
             "group": "Migrations",
             "pages": [
               "guides/migrations/overview",
-              "guides/migrations/migrate-from-qdrant",
-              "guides/migrations/qdrant-sdk-compatibility",
-              "guides/migrations/migrate-from-pinecone"
+              {
+                "group": "Qdrant",
+                "pages": [
+                  "guides/migrations/migrate-from-qdrant",
+                  "guides/migrations/qdrant-sdk-compatibility"
+                ]
+              },
+              {
+                "group": "Pinecone",
+                "pages": [
+                  "guides/migrations/migrate-from-pinecone"
+                ]
+              }
             ]
           },
           {
