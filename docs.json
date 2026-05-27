@@ -115,6 +115,7 @@
                   "reference/api/endpoint/document-update",
                   "reference/api/endpoint/document-fetch",
                   "reference/api/endpoint/document-list",
+                  "reference/api/endpoint/document-list-extended",
                   "reference/api/endpoint/document-delete"
                 ]
               },

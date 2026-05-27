@@ -1329,7 +1329,7 @@
       "get": {
         "tags": ["collections.docs"],
         "operationId": "listDocs",
-        "description": "List documents in a collection.",
+        "description": "List documents in a collection. Vector values are excluded unless includeVectors is true.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1355,6 +1355,15 @@
             "description": "Next page token.",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeVectors",
+            "description": "Set to true to include vector values in the response. Defaults to false.",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1413,15 +1422,289 @@
                         {
                           "collection": "example-collection-name",
                           "doc": {
-                            "example-field1": "example-value1",
-                            "example-field2": [0.1, 0.2, 0.3]
+                            "id": "doc-1",
+                            "title": "Example document 1",
+                            "category": "docs"
                           }
                         },
                         {
                           "collection": "example-collection-name",
                           "doc": {
-                            "example-field1": "example-value2",
-                            "example-field2": [0.4, 0.5, 0.6]
+                            "id": "doc-2",
+                            "title": "Example document 2",
+                            "category": "docs"
+                          }
+                        }
+                      ],
+                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "isDocsInline": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceNotFound"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource not found",
+                    "value": {
+                      "message": "Resource not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{collectionName}/docs/list": {
+      "post": {
+        "tags": ["collections.docs"],
+        "operationId": "listDocsExtended",
+        "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "size": {
+                    "type": "integer",
+                    "description": "Max number of documents to return at once.",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 100
+                  },
+                  "pageToken": {
+                    "type": "string",
+                    "description": "Next page token."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Filter applied before pagination. Supports queryString and nested bool filters. Vector and ranking query objects are not supported."
+                  },
+                  "partitionFilter": {
+                    "$ref":"#/components/schemas/PartitionFilter"
+                  },
+                  "fields": {
+                    "$ref":"#/components/schemas/FieldsSelector"
+                  },
+                  "includeVectors": {
+                    "$ref": "#/components/schemas/IncludeVectors"
+                  }
+                }
+              },
+              "examples": {
+                "example": {
+                  "summary": "Example request body for extended documents list",
+                  "value": {
+                    "size": 10,
+                    "filter": {
+                      "queryString": {
+                        "query": "category:docs"
+                      }
+                    },
+                    "partitionFilter": {
+                      "field": "tenant",
+                      "in": [
+                        "acme"
+                      ]
+                    },
+                    "fields": {
+                      "include": [
+                        "id",
+                        "title",
+                        "category"
+                      ]
+                    },
+                    "includeVectors": false
+                  }
+                },
+                "booleanFilter": {
+                  "summary": "Example request body using a boolean filter",
+                  "value": {
+                    "size": 10,
+                    "filter": {
+                      "bool": [
+                        {
+                          "queryString": {
+                            "query": "category:docs"
+                          },
+                          "occur": "filter"
+                        },
+                        {
+                          "queryString": {
+                            "query": "title:LambdaDB"
+                          },
+                          "occur": "must"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Documents list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "docs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "collection": {
+                            "type": "string"
+                          },
+                          "doc": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "collection",
+                          "doc"
+                        ]
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string"
+                    },
+                    "isDocsInline": {
+                      "type": "boolean"
+                    },
+                    "docsUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "docs",
+                    "isDocsInline"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for documents list",
+                    "value": {
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "id": "doc-1",
+                            "title": "Example document 1",
+                            "category": "docs"
+                          }
+                        },
+                        {
+                          "collection": "example-collection-name",
+                          "doc": {
+                            "id": "doc-2",
+                            "title": "Example document 2",
+                            "category": "docs"
                           }
                         }
                       ],

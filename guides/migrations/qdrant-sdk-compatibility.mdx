@@ -15,7 +15,7 @@ Use the Qdrant compatibility clients when:
 
 - Your application already uses Qdrant's Python or JavaScript/TypeScript SDK.
 - You want a smaller application change than rewriting all query code to LambdaDB native APIs at once.
-- Your workload uses dense vectors, named dense vectors, payload filters, document retrieval, deletes, unfiltered scroll, or collection metadata checks.
+- Your workload uses dense vectors, named dense vectors, payload filters, document retrieval, deletes, scroll, or collection metadata checks.
 
 Use LambdaDB native APIs directly when:
 
@@ -25,13 +25,13 @@ Use LambdaDB native APIs directly when:
 
 ## Install
 
-Python support is available in `lambdadb >= 0.8.1`:
+Python support is available in `lambdadb >= 0.8.2`:
 
 ```bash
-pip install "lambdadb>=0.8.1"
+pip install "lambdadb>=0.8.2"
 ```
 
-TypeScript support is available in `@functional-systems/lambdadb >= 0.4.2`:
+TypeScript support is available in `@functional-systems/lambdadb >= 0.4.3`:
 
 ```bash
 npm install @functional-systems/lambdadb
@@ -190,7 +190,7 @@ const results = await client.queryPoints("articles", {
 | Query alias | `search()` | `query()` / `search()` | TypeScript `query()` supports Qdrant JS-style `filter`, `with_payload`, and `with_vector`. |
 | Retrieve | `retrieve()` | `retrieve()` | Uses strongly consistent LambdaDB fetches. |
 | Delete points | `delete()` | `delete()` | Supports point IDs and supported Qdrant filters. |
-| Scroll | `scroll()` | `scroll()` | Unfiltered scroll. Payload and vector response selectors are applied when shaping the response. |
+| Scroll | `scroll()` | `scroll()` | Supports filtered scroll with payload and vector response selectors. Returned offsets are LambdaDB page tokens, not Qdrant point-id offsets. |
 | Count | `count()` | `count()` | Unfiltered collection count only. |
 
 ## Data mapping
@@ -226,11 +226,21 @@ await client.query("articles", {
 });
 ```
 
-`scroll()` maps to LambdaDB list documents. LambdaDB list responses include stored vector values, so the compatibility layer applies Qdrant-style vector selectors while shaping the response:
+`scroll()` maps to LambdaDB list documents. Filters are translated to LambdaDB list filters before pagination. When Qdrant-style vector selectors are requested, the compatibility layer requests vector values from LambdaDB and filters the returned vector object while shaping the response.
+
+Returned `next_offset` / `nextOffset` values are LambdaDB page tokens. Pass the returned token back as the next `offset`; numeric Qdrant point-ID offsets are not supported.
 
 ```python Python
 records, next_offset = client.scroll(
     collection_name="articles",
+    scroll_filter=models.Filter(
+        must=[
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value="acme"),
+            )
+        ]
+    ),
     with_payload=["tenant_id"],
     with_vectors=["title"],
 )
@@ -238,6 +248,14 @@ records, next_offset = client.scroll(
 
 ```ts TypeScript
 const [records, nextOffset] = await client.scroll("articles", {
+  scrollFilter: new models.Filter({
+    must: [
+      new models.FieldCondition({
+        key: "tenant_id",
+        match: new models.MatchValue({ value: "acme" }),
+      }),
+    ],
+  }),
   withPayload: ["tenant_id"],
   withVectors: ["title"],
 });
@@ -255,7 +273,7 @@ const [records, nextOffset] = await client.scroll("articles", {
 | `FieldCondition.match=MatchExcept` | Supported |
 | `FieldCondition.range` | Supported |
 | `HasIdCondition` | Supported |
-| `MatchText` | Unsupported |
+| `MatchText` | Supported for whitespace-separated text terms through LambdaDB text query strings. |
 | Geo filters | Unsupported |
 | Nested object filters | Unsupported |
 
@@ -265,7 +283,6 @@ const [records, nextOffset] = await client.scroll("articles", {
 - Sparse vector upsert through the compatibility client
 - Multi-vector comparators
 - Geo payload indexes and geo filters
-- Filtered scroll
 - Filtered count
 - Query offset
 - `score_threshold`

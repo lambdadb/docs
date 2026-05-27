@@ -1,16 +1,17 @@
 ---
 title: List data
-description: Paginate through all documents in a LambdaDB collection using the list endpoint. Useful for scanning, exporting, or iterating over stored records.
+description: Paginate through documents in a LambdaDB collection using the list endpoint. Useful for scanning, exporting, filtering, or iterating over stored records.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 
-This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over all documents (for example, to export or scan) without filtering by query.
+This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over documents (for example, to export or scan) without running a ranked search.
 
 | Parameter   | Description                                      | Type    | Required | Default |
 | :---------- | :----------------------------------------------- | :------ | :------- | :------ |
-| size        | Max number of documents to return per page (1–100). | integer |          |         |
+| size        | Max number of documents to return per page (1–100). | integer |          | 100     |
 | pageToken   | Token for the next page of results.              | string  |          |         |
+| includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
 
 <CodeGroup>
 
@@ -72,8 +73,8 @@ This page shows you how to use the list endpoint to list documents in a collecti
   func main() {
     ctx := context.Background()
     client := lambdadb.New(
-    lambdadb.WithBaseURL("YOUR_BASE_URL"),
-    lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
       lambdadb.WithAPIKey("YOUR_API_KEY"),
     )
     coll := client.Collection("my_collection")
@@ -103,6 +104,10 @@ This page shows you how to use the list endpoint to list documents in a collecti
   curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10" \
     -H "x-api-key: ${YOUR_API_KEY}"
 
+  # Include vector values when needed
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&includeVectors=true" \
+    -H "x-api-key: ${YOUR_API_KEY}"
+
   # List next page (use nextPageToken from previous response)
   curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
     -H "x-api-key: ${YOUR_API_KEY}"
@@ -120,16 +125,16 @@ The response includes the total count, the current page of documents, and an opt
       "collection": "example-collection-name",
       "doc": {
         "id": "doc-1",
-        "example-field1": "example-value1",
-        "example-field2": [0.1, 0.2, 0.3]
+        "title": "Example document 1",
+        "category": "docs"
       }
     },
     {
       "collection": "example-collection-name",
       "doc": {
         "id": "doc-2",
-        "example-field1": "example-value2",
-        "example-field2": [0.4, 0.5, 0.6]
+        "title": "Example document 2",
+        "category": "docs"
       }
     }
   ],
@@ -138,8 +143,162 @@ The response includes the total count, the current page of documents, and an opt
 }
 ```
 
+## Extended list request
+
+For filtering, partition filtering, field selection, or a JSON request body, use the extended list endpoint:
+
+<CodeGroup>
+
+  ```python Python
+  from lambdadb import LambdaDB
+
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+
+      res = coll.docs.list(
+          size=10,
+          filter_={"queryString": {"query": "category:docs"}},
+          partition_filter={"field": "tenant", "in": ["acme"]},
+          fields={"include": ["id", "title", "category"]},
+          include_vectors=False,
+      )
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+
+  const res = await client.collection("my_collection").docs.list({
+    size: 10,
+    filter: { queryString: { query: "category:docs" } },
+    partitionFilter: { field: "tenant", in: ["acme"] },
+    fields: { include: ["id", "title", "category"] },
+    includeVectors: false,
+  });
+  ```
+
+  ```go Go
+  package main
+
+  import (
+    "context"
+    "log"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+    "github.com/lambdadb/go-lambdadb/models/components"
+  )
+
+  func main() {
+    ctx := context.Background()
+    client := lambdadb.New(
+      lambdadb.WithBaseURL("YOUR_BASE_URL"),
+      lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+      lambdadb.WithAPIKey("YOUR_API_KEY"),
+    )
+
+    fields := components.CreateFieldsSelectorUnionFieldsSelector1(components.FieldsSelector1{
+      Include: []string{"id", "title", "category"},
+    })
+
+    res, err := client.Collection("my_collection").Docs().List(ctx, &lambdadb.ListDocsOpts{
+      Size: lambdadb.Int64(10),
+      Filter: map[string]any{
+        "queryString": map[string]any{"query": "category:docs"},
+      },
+      PartitionFilter: &components.PartitionFilter{
+        Field: "tenant",
+        In:    []string{"acme"},
+      },
+      Fields:         &fields,
+      IncludeVectors: lambdadb.Bool(false),
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+    _ = res
+  }
+  ```
+
+  ```bash cURL
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs/list" \
+    -H "Content-Type: application/json" \
+    -H "x-api-key: ${YOUR_API_KEY}" \
+    --data '{
+      "size": 10,
+      "filter": {
+        "queryString": {
+          "query": "category:docs"
+        }
+      },
+      "partitionFilter": {
+        "field": "tenant",
+        "in": ["acme"]
+      },
+      "fields": {
+        "include": ["id", "title", "category"]
+      },
+      "includeVectors": false
+    }'
+  ```
+
+</CodeGroup>
+
+The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options.
+In Go, pass these as `Filter`, `PartitionFilter`, `Fields`, and `IncludeVectors` on `lambdadb.ListDocsOpts`.
+
+The extended list request body supports:
+
+| Parameter      | Description                                                  | Type    | Required | Default |
+| :------------- | :----------------------------------------------------------- | :------ | :------- | :------ |
+| size           | Max number of documents to return per page (1–100).          | integer |          | 100     |
+| pageToken      | Token for the next page of results.                          | string  |          |         |
+| filter         | Filter applied before pagination. Supports `queryString` and nested `bool` filters. | object  |          |         |
+| partitionFilter | Restricts the request to matching partition values.         | object  |          |         |
+| fields         | Field selector with `include` and/or `exclude`. Use dot notation for nested fields. | object  |          |         |
+| includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
+
+`filter` uses the same `queryString` and `bool` shapes as the query API. List filters do not run vector or ranking queries.
+Use `partitionFilter` only for collections configured with a partition field.
+Inside a `bool` filter, `occur` can be `filter`, `must`, `must_not`, or `should`; when omitted, it defaults to `should`.
+
+```json
+{
+  "filter": {
+    "bool": [
+      {
+        "queryString": {
+          "query": "category:docs"
+        },
+        "occur": "filter"
+      },
+      {
+        "queryString": {
+          "query": "title:LambdaDB"
+        },
+        "occur": "must"
+      }
+    ]
+  }
+}
+```
+
 <Note>
 
-  To fetch specific documents by ID, use the [fetch](/guides/documents/fetch-data) endpoint. To search or filter documents, use the [query](/guides/search/search-overview) API.
+  When you use `nextPageToken` with the extended endpoint, keep the same `filter`, `partitionFilter`, `fields`, and `includeVectors` options across pages.
+
+</Note>
+
+<Note>
+
+  To fetch specific documents by ID, use the [fetch](/guides/documents/fetch-data) endpoint. To run ranked text, vector, sparse-vector, or hybrid search, use the [query](/guides/search/search-overview) API.
 
 </Note>

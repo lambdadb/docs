@@ -270,7 +270,7 @@ For Qdrant sparse vectors, the CLI converts `indices` and `values` to an object 
 
 After data is in LambdaDB, Python and TypeScript applications can use LambdaDB's Qdrant compatibility clients as a bridge before rewriting every query to native LambdaDB APIs.
 
-The compatibility clients support common Qdrant-style calls such as collection creation, dense-vector upsert, dense-vector query, retrieve, delete, unfiltered scroll, and unfiltered count. They are not full Qdrant client replacements, and unsupported behavior raises an explicit error where possible.
+The compatibility clients support common Qdrant-style calls such as collection creation, dense-vector upsert, dense-vector query, retrieve, delete, filtered scroll, and unfiltered count. They are not full Qdrant client replacements, and unsupported behavior raises an explicit error where possible.
 
 <CardGroup cols={1}>
   <Card title="Qdrant SDK compatibility" href="/guides/migrations/qdrant-sdk-compatibility" icon="code">
