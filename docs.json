@@ -39,6 +39,12 @@
                 "pages": [
                   "guides/migrations/pinecone/migrate-from-pinecone"
                 ]
+              },
+              {
+                "group": "Elasticsearch",
+                "pages": [
+                  "guides/migrations/elasticsearch/migrate-from-elasticsearch"
+                ]
               }
             ]
           },

@@ -13,9 +13,9 @@ The CLI inventories the source system, generates an editable LambdaDB mapping, c
 
 | Source | Status | Notes |
 |:-------|:-------|:------|
-| Qdrant | Supported in CLI `v0.1.4` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Pinecone Serverless | Supported in CLI `v0.1.4` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Elasticsearch | Planned | Use the same CLI workflow once Elasticsearch support is available. |
+| Qdrant | Supported in CLI `v0.1.5` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Pinecone Serverless | Supported in CLI `v0.1.5` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Elasticsearch | Supported in CLI `v0.1.5` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
 | OpenSearch | Planned | Use the same CLI workflow once OpenSearch support is available. |
 | Chroma | Planned | Use the same CLI workflow once Chroma support is available. |
 | Weaviate | Planned | Use the same CLI workflow once Weaviate support is available. |
@@ -42,7 +42,7 @@ Install a specific version:
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-sh install.sh --version v0.1.4 --install-dir "$HOME/.local/bin"
+sh install.sh --version v0.1.5 --install-dir "$HOME/.local/bin"
 ```
 
 Make sure the install directory is on your `PATH`, then check the CLI:
@@ -80,7 +80,7 @@ Use `--migration.validation-report` to write a JSON report:
 --migration.validation-report validation-report.json
 ```
 
-For vector migrations, `--migration.query-overlap` compares source and LambdaDB nearest-neighbor results for validation samples. By default, it reports overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+For Qdrant and Pinecone vector migrations, `--migration.query-overlap` compares source and LambdaDB nearest-neighbor results for validation samples. By default, it reports overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap. Query-overlap validation is not implemented for Elasticsearch yet.
 
 ## Next steps
 
@@ -90,6 +90,9 @@ For vector migrations, `--migration.query-overlap` compares source and LambdaDB 
   </Card>
   <Card title="Migrate from Pinecone" href="/guides/migrations/pinecone/migrate-from-pinecone" icon="arrows-rotate">
     Move Pinecone Serverless indexes, namespaces, vectors, and metadata to LambdaDB.
+  </Card>
+  <Card title="Migrate from Elasticsearch" href="/guides/migrations/elasticsearch/migrate-from-elasticsearch" icon="arrows-rotate">
+    Move Elasticsearch index mappings, documents, and dense vectors to LambdaDB.
   </Card>
   <Card title="Create a collection" href="/guides/collections/create-a-collection" icon="database">
     Learn how LambdaDB collection index configurations map to migrated data.
