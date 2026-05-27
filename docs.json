@@ -30,14 +30,14 @@
               {
                 "group": "Qdrant",
                 "pages": [
-                  "guides/migrations/migrate-from-qdrant",
-                  "guides/migrations/qdrant-sdk-compatibility"
+                  "guides/migrations/qdrant/migrate-from-qdrant",
+                  "guides/migrations/qdrant/qdrant-sdk-compatibility"
                 ]
               },
               {
                 "group": "Pinecone",
                 "pages": [
-                  "guides/migrations/migrate-from-pinecone"
+                  "guides/migrations/pinecone/migrate-from-pinecone"
                 ]
               }
             ]
