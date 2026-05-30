@@ -13,6 +13,8 @@ Elasticsearch support is available in LambdaDB Migration CLI `v0.1.5` and later.
 
 </Note>
 
+This guide assumes you are migrating a concrete Elasticsearch index whose source documents can be returned from `_source`. If you use aliases, data streams, or wildcard patterns that resolve to multiple backing indexes, run one migration per concrete index or prepare a custom consolidation plan.
+
 Elasticsearch stores records as JSON documents inside indexes. Search behavior is controlled by mappings, analyzers, dense vector fields, query DSL, ingest pipelines, aliases, and cluster-level settings. LambdaDB stores each migrated record as a document and indexes only the fields declared in the collection's `indexConfigs`.
 
 ## What the CLI supports
@@ -21,8 +23,8 @@ Elasticsearch stores records as JSON documents inside indexes. Search behavior i
 |:---------------------|:----------------|:-------------------|
 | Index | Collection | Migrate one Elasticsearch index into one LambdaDB collection. |
 | `_id` | Document `id` | Copy Elasticsearch `_id` as a LambdaDB string document ID. |
-| `_source` fields | Document fields | Copy stored fields. Nested objects are flattened into dot-path payload fields, then normalized for LambdaDB field names through the generated mapping. |
-| `text` field | `text` index | Generate a LambdaDB text index for searchable full-text fields. |
+| `_source` fields | Document fields | Copy fields returned in `_source`. Fields removed from `_source`, or indexes with `_source` disabled, cannot be reconstructed by the default migration path. Nested objects are flattened into dot-path payload fields, then normalized for LambdaDB field names through the generated mapping. |
+| `text` field | `text` index | Generate a LambdaDB text index for searchable full-text fields. Review analyzer choices before cutover because Elasticsearch analyzers are not copied automatically. |
 | `keyword`, `constant_keyword`, `wildcard` | `keyword` index | Generate LambdaDB keyword indexes for exact filters, IDs, categories, tags, and sort keys. |
 | Numeric fields | `long` or `double` index | Map integer-like fields to `long` and floating-point fields to `double`. |
 | `date`, `date_nanos` | `datetime` index | Generate a LambdaDB datetime index. Review source values before writing because the CLI does not rewrite date formats. |
@@ -39,6 +41,7 @@ Review these features before cutover because the CLI migrates data and generated
 - nested query semantics, parent-child relationships, join fields, and field collapsing
 - index templates, aliases, data streams, ILM policies, and ingest pipelines
 - `semantic_text`, ELSER, model inference pipelines, and other Elasticsearch-managed semantic features
+- `_source` exclusions, disabled `_source`, synthetic `_source` differences, and stored-field-only designs
 - application code that expects Elasticsearch response shapes, shard metadata, highlights, or aggregations
 
 For search applications, first decide which production queries must move to LambdaDB `queryString`, `knn`, `sparseVector`, `bool`, or hybrid queries. Then review the generated LambdaDB mapping around those queries instead of copying every Elasticsearch mapping field mechanically.
@@ -112,6 +115,12 @@ mapping:
 
 Review warnings in the inventory output. Common warnings include unsupported mapping types, Elasticsearch multi-fields that are not copied as separate source fields, `nested` fields that need query rewrite review, and PIT checkpoint expiry.
 
+<Warning>
+
+Use a concrete index name for inventory and migration. If an alias or wildcard resolves to multiple indexes, the CLI can only generate one LambdaDB mapping from the mapping response, while the source count and PIT read may cover more data than that single generated mapping represents.
+
+</Warning>
+
 ## Step 3: Review the mapping
 
 Review the generated mapping before migration:
@@ -120,6 +129,7 @@ Review the generated mapping before migration:
 - remove payload index configs for fields you only need to store
 - check generated renames for dotted fields such as `metadata.source`
 - confirm `dense_vector` dimensions and similarity
+- add LambdaDB `text` analyzers such as `english`, `korean`, or `japanese` when your Elasticsearch workload depends on language-specific analysis
 - confirm `date` and `date_nanos` values in `_source` are compatible with LambdaDB `datetime` fields, or edit the mapping before creating the collection
 - add explicit field decisions for Elasticsearch multi-fields such as `title.keyword` if your application depends on exact-match behavior
 
@@ -170,6 +180,12 @@ lambdadb-migration elasticsearch \
 ```
 
 The Elasticsearch connector reads documents with a point in time (PIT), pages with `search_after`, and sorts by `_shard_doc`. It stores the latest PIT ID and `search_after` values in the local checkpoint.
+
+For large indexes or slow write targets, increase the PIT keep-alive window:
+
+```bash
+--elasticsearch.pit-keep-alive 15m
+```
 
 <Warning>
 
