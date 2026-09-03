@@ -643,31 +643,58 @@
       },
       "RefSource": {
         "title": "RefSource",
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "branch",
-              "tag"
+        "oneOf": [
+          {
+            "title": "Branch source",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "branch"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 52,
+                "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+              },
+              "asOf": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Latest committed snapshot cutoff as Unix epoch milliseconds."
+              }
+            },
+            "required": [
+              "kind",
+              "name"
             ]
           },
-          "name": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 52,
-            "pattern": "^[a-zA-Z0-9_-]{3,52}$"
-          },
-          "asOf": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Latest committed snapshot cutoff; valid only for a branch source as Unix epoch milliseconds."
+          {
+            "title": "Tag source",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "tag"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 52,
+                "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ]
           }
-        },
-        "required": [
-          "kind",
-          "name"
         ]
       },
       "RefDetails": {
@@ -1399,6 +1426,7 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
+                "minProperties": 1,
                 "description": "Provide at least one field.",
                 "properties": {
                   "indexConfigs": {
@@ -2335,7 +2363,7 @@
                     },
                     "headers": {
                       "type": "object",
-                      "description": "Signed headers to forward unchanged on the presigned PUT.",
+                      "description": "Signed headers to forward unchanged on the presigned PUT, in addition to Content-Type from type.",
                       "additionalProperties": {
                         "type": "string"
                       }
