@@ -171,7 +171,7 @@ POST .../docs/bulk-upsert
 }
 ```
 
-Send every header returned by the upload-URL response unchanged with the presigned `PUT`.
+Set `Content-Type` to the response's `type` value and send every entry in its `headers` map unchanged with the presigned `PUT`.
 
 ## Delete a ref
 

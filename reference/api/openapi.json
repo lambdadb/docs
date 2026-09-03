@@ -125,6 +125,26 @@
         }
       }
     },
+    "responses": {
+      "ResourceNotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ResourceNotFound"
+            },
+            "examples": {
+              "example": {
+                "summary": "Example response for resource not found",
+                "value": {
+                  "message": "Resource not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "securitySchemes": {
       "ProjectApiKey": {
         "type": "apiKey",
@@ -3650,6 +3670,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3794,6 +3817,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3907,6 +3933,9 @@
                 }
               }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
           },
           "400": {
             "description": "Bad request",
@@ -4067,6 +4096,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4211,6 +4243,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4324,6 +4359,9 @@
                 }
               }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
           },
           "400": {
             "description": "Bad request",
@@ -4510,6 +4548,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4658,6 +4699,9 @@
                 }
               }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
           },
           "400": {
             "description": "Bad request",
@@ -4839,6 +4883,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4950,6 +4997,9 @@
                 }
               }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
           },
           "400": {
             "description": "Bad request",
