@@ -1,9 +1,9 @@
 ---
 title: Architecture
-description: Understand LambdaDB's serverless architecture on AWS, including the gateway layer, control and data functions, write buffering, and read caching.
+description: Understand LambdaDB's serverless vector lake architecture on AWS, including the gateway layer, control and data functions, durable write buffering, and object storage.
 ---
 
-LambdaDB operates as a collection of serverless functions and resources within AWS, completely separating database logic from infrastructure. User requests flow through a regional Gateway, which routes them to either Control or Data functions. The Builder function periodically persists all buffered data to S3 storage.
+LambdaDB implements the vector lake as a collection of serverless functions and resources within AWS. It persists collection documents, vectors, and indexes to S3-backed object storage. User requests flow through a regional Gateway, which routes them to either Control or Data functions, and the Builder function periodically commits buffered data to object storage.
 
 ![LambdaDB serverless architecture diagram](/images/architecture.svg)
 

@@ -1,9 +1,9 @@
 ---
 title: Collections and data model
-description: Understand the LambdaDB data model where projects contain collections of flexible documents, similar to tables and rows in a relational database.
+description: Understand how LambdaDB collections organize documents, embeddings, and metadata for AI knowledge and memory.
 ---
 
-A LambdaDB collection is a logical namespace that holds a set of documents, where each document is a set of fields — which, in turn, are key-value pairs that contain your data.
+A LambdaDB collection is the unit for organizing an AI knowledge or memory dataset. It is a logical namespace that holds documents, where each document can contain source data, embeddings, and metadata as key-value fields.
 
 ## Database structure comparison
 
@@ -15,7 +15,7 @@ LambdaDB's structure differs from traditional relational databases. Here's how t
 | Table      | Collection                    |
 | Column/row | Document with key-value pairs |
 
-Think of a LambdaDB project as a database that can contain many collections (similar to tables), and within each collection, you have many documents containing your actual data as flexible key-value pairs.
+Think of a LambdaDB project as a database that can contain many collections (similar to tables). Each collection can represent a memory or knowledge dataset, with its documents stored as flexible key-value pairs.
 
 <Note>
 

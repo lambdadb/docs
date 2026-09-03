@@ -1,12 +1,12 @@
 ---
 title: Quickstart
-description: Get started with LambdaDB in minutes. Create a project, install the Python, TypeScript, or Go SDK, set up your first collection, and run a hybrid search query.
+description: Get started with LambdaDB in minutes. Create a searchable knowledge collection and retrieve its documents with full-text and vector search.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
-This guide will walk you through getting a **project API key**, installing the SDK, creating your first collection, and running hybrid search queries. You'll learn to set up collections with text, keyword, and dense vector components, then execute both full-text and hybrid searches that combine traditional search with modern vector similarity.
+This guide walks you through getting a **project API key**, installing an SDK, creating your first searchable knowledge collection, and running hybrid search queries. You'll store source documents with text, keyword, and dense vector fields, then combine lexical matching with vector similarity to retrieve relevant knowledge.
 
 ## 🔑 Step 1: Get your API key
 
@@ -65,7 +65,7 @@ go get github.com/lambdadb/go-lambdadb
 
 ## 📚 Step 3: Create a collection
 
-A collection is where you'll store your documents and define how they should be indexed for search. LambdaDB supports 9 different index types: text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
+A collection is where you store the documents, embeddings, and metadata that make up an AI knowledge or memory dataset, and define how each field is indexed for retrieval. LambdaDB supports 9 different index types: text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
 
 Let's create a collection that combines text search with vector similarity:
 
