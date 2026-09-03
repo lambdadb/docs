@@ -90,7 +90,9 @@ After a successful request you'll receive a message such as `"Upsert request is 
 
 ## Two-step: Get presigned URL, then upload and complete
 
-If you need to control the upload yourself (e.g. from a different process or storage), use this flow: (1) get bulk upsert info (presigned URL and `objectKey`), (2) upload the payload to the presigned URL, then (3) call the bulk-upsert API with the `objectKey`.
+If you need to control the upload yourself (e.g. from a different process or storage), use this flow: (1) get bulk upsert info, (2) upload the payload with every returned signed header, then (3) call the bulk-upsert API with the `objectKey`.
+
+Both REST control calls accept a branch. Use the same branch for the upload-URL request and the completion request; omitting it in both places writes to `main`.
 
 ### Step 1: Get bulk upsert information
 
@@ -106,7 +108,8 @@ with LambdaDB(
 ) as client:
     coll = client.collection("my_collection")
     get_bulk_upsert = coll.docs.get_bulk_upsert()
-    # get_bulk_upsert.url, get_bulk_upsert.object_key, get_bulk_upsert.size_limit_bytes
+    # get_bulk_upsert.url, get_bulk_upsert.headers,
+    # get_bulk_upsert.object_key, get_bulk_upsert.size_limit_bytes
 ```
 
 ```typescript TypeScript
@@ -118,7 +121,7 @@ const client = new LambdaDBClient({
   projectName: "YOUR_PROJECT_NAME",
 });
 const info = await client.collection("my_collection").docs.getBulkUpsert();
-// info.url, info.objectKey, info.sizeLimitBytes
+// info.url, info.headers, info.objectKey, info.sizeLimitBytes
 ```
 
 ```go Go
@@ -126,13 +129,13 @@ info, err := client.Collection("my_collection").Docs().GetBulkUpsertInfo(ctx)
 if err != nil {
   log.Fatal(err)
 }
-// info.URL, info.ObjectKey, info.SizeLimitBytes
+// info.URL, info.Headers, info.ObjectKey, info.SizeLimitBytes
 ```
 
 ```bash cURL
 curl -i -X GET \
-  "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert" \
-  -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY'
+  "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert?branch=candidate" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
 </CodeGroup>
@@ -145,13 +148,16 @@ Response:
   "type": "application/json",
   "httpMethod": "PUT",
   "objectKey": "<string>",
-  "sizeLimitBytes": 209715200
+  "sizeLimitBytes": 209715200,
+  "headers": {
+    "If-None-Match": "*"
+  }
 }
 ```
 
 ### Step 2: Upload to presigned URL and call bulk-upsert
 
-Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert API with the `objectKey` from step 1.
+Upload the document list as JSON to the `url` with the returned `headers` map, then call the bulk-upsert API with the `objectKey` from step 1. Do not drop, rename, or recompute signed headers.
 
 <CodeGroup>
 
@@ -166,7 +172,7 @@ Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert A
   resp = requests.put(
       get_bulk_upsert.url,
       data=json.dumps({"docs": docs}),
-      headers={"Content-Type": "application/json"},
+      headers=get_bulk_upsert.headers,
   )
   resp.raise_for_status()
   # Complete bulk upsert
@@ -180,7 +186,7 @@ Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert A
   // Upload to presigned URL
   const uploadRes = await fetch(info.url, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: info.headers,
     body: JSON.stringify({ docs }),
   });
   if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
@@ -195,7 +201,9 @@ Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert A
   }
   payload, _ := json.Marshal(map[string]interface{}{"docs": docs})
   req, _ := http.NewRequestWithContext(ctx, "PUT", info.URL, bytes.NewReader(payload))
-  req.Header.Set("Content-Type", "application/json")
+  for name, value := range info.Headers {
+    req.Header.Set(name, value)
+  }
   uploadRes, err := http.DefaultClient.Do(req)
   if err != nil {
     log.Fatal(err)
@@ -214,18 +222,24 @@ Upload the document list as JSON to the `url` (PUT), then call the bulk-upsert A
   ```bash cURL
   # 1. Upload to the presigned URL from step 1
   curl -X PUT "<provided_url>" \
-    -H 'Content-Type: application/json' \
+    -H 'If-None-Match: *' \
     -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is an AI-native database ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}]}'
 
   # 2. Complete bulk upsert with the objectKey from step 1
   curl -i -X POST \
     "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert" \
     -H 'content-type: application/json' \
-    -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
-    -d '{"objectKey": "<objectKey from step 1>"}'
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+    -d '{
+      "objectKey": "<objectKey from step 1>",
+      "type": "application/json",
+      "branch": "candidate"
+    }'
   ```
 
 </CodeGroup>
+
+The cURL header is an example of the current response. Always use the exact header names and values returned for that upload URL.
 
 ## Response
 

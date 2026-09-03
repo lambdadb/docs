@@ -26,6 +26,7 @@ Common parameters for the request body of a query are as follows:
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)) | object[] | | |
 | partitionFilter | Partition filter | object |  |  |
+| ref | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }` | object | | `main` branch |
 
 <Tip>
 
@@ -36,7 +37,7 @@ Common parameters for the request body of a query are as follows:
 
 <Tip>
 
-  Setting `includeVectors` (or `include_vectors` in Python) to `true` will increase response size significantly, especially for high-dimensional vectors. 
+  Setting `includeVectors` (or `include_vectors` in Python) to `true` will increase response size significantly, especially for high-dimensional vectors.
   Use this option only when vector data is specifically needed for your application.
 
 </Tip>
@@ -49,8 +50,8 @@ Common parameters for the request body of a query are as follows:
 
 <Note>
 
-  LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries. 
-  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying data from a collection, at the expense of potential higher latency and cost.
+  LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries.
+  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying a branch directly, at the expense of potential higher latency and cost. Tag and alias reads reject `consistentRead: true`, including an alias that targets a branch.
 
 </Note>
 
@@ -122,6 +123,8 @@ func main() {
 ```
 
 </CodeGroup>
+
+To query a specific ref over REST, add `"ref": { "kind": "branch", "name": "candidate" }` alongside `query` and `size`. Omitting `ref` selects `main`. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#read-from-a-ref).
 
 The response will look like this:
 

@@ -32,7 +32,7 @@ For these operations, the size of the collection is reflected in read usage.
 
 **Per-request minimum:** each request is counted as at least **1 GB** of read usage.
 
-**Strong consistency:** for **query** and **fetch** requests, if you set `consistentRead` to `true`, an **additional 1 GB** is added to read usage for that request (on top of the per-request minimum and the collection-size basis). See also [Search overview](/guides/search/search-overview) and [Fetch data](/guides/documents/fetch-data).
+**Strong consistency:** for **query** and **fetch** requests that directly select a branch, if you set `consistentRead` to `true`, an **additional 1 GB** is added to read usage for that request (on top of the per-request minimum and the collection-size basis). Tag and alias reads do not support strong consistency. See also [Search overview](/guides/search/search-overview) and [Fetch data](/guides/documents/fetch-data).
 
 ## Write usage
 

@@ -1,6 +1,25 @@
 ---
 title: API reference
-description: Explore the LambdaDB REST API for managing projects, collections, and documents. Authenticate with your project API key to get started.
+description: Explore the LambdaDB REST API for collections, data versioning, and documents.
 ---
 
+The data API uses the region-specific base URL and project name shown in
+LambdaDB Cloud and authenticates requests with the `x-api-key` header.
 
+Create and manage projects in [LambdaDB Cloud](https://app.lambdadb.ai). The
+public REST API documented here starts with an existing project and covers its
+collections, data versioning, and documents.
+
+Every collection has a default branch named `main`. Read requests can select a
+branch, tag, or alias, while mutation requests can select a branch. See
+[Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) for
+the ref contract and consistency rules.
+
+Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch
+milliseconds. Pagination tokens are opaque strings: return them unchanged to
+the same endpoint.
+
+The Gateway returns `404` for unknown routes, `405` for unsupported methods,
+and `415` when a JSON-consuming route receives an unsupported media type.
+Mapped errors and accepted mutations use a JSON `{ "message": "..." }` body.
+Do not send request bodies on management `GET` or `DELETE` routes.

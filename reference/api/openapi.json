@@ -7,10 +7,16 @@
   },
   "tags": [
     {
-      "name": "collections"
+      "name": "collections",
+      "description": "Create, describe, configure, list, and delete collections."
     },
     {
-      "name": "collections.docs"
+      "name": "versioning",
+      "description": "Manage branches, tags, and aliases within a collection."
+    },
+    {
+      "name": "collections.docs",
+      "description": "Write, fetch, list, and bulk upload documents."
     }
   ],
   "servers": [
@@ -33,7 +39,10 @@
       "maxElapsedTime": 3600000,
       "exponent": 1.5
     },
-    "statusCodes": ["429","5XX"],
+    "statusCodes": [
+      "429",
+      "5XX"
+    ],
     "retryConnectionErrors": true
   },
   "components": {
@@ -45,6 +54,74 @@
         "required": true,
         "schema": {
           "type": "string"
+        }
+      },
+      "BranchName": {
+        "in": "path",
+        "name": "branchName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "TagName": {
+        "in": "path",
+        "name": "tagName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "AliasName": {
+        "in": "path",
+        "name": "aliasName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "BranchQuery": {
+        "in": "query",
+        "name": "branch",
+        "description": "Write target branch. Defaults to main.",
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "RefKindQuery": {
+        "in": "query",
+        "name": "refKind",
+        "description": "Read ref kind. Must be supplied together with refName.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "branch",
+            "tag",
+            "alias"
+          ]
+        }
+      },
+      "RefNameQuery": {
+        "in": "query",
+        "name": "refName",
+        "description": "Read ref name. Must be supplied together with refKind.",
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
         }
       }
     },
@@ -58,16 +135,6 @@
       }
     },
     "schemas": {
-      "Status": {
-        "title": "Status",
-        "type": "string",
-        "description": "Status",
-        "enum": [
-          "CREATING",
-          "ACTIVE",
-          "DELETING"
-        ]
-      },
       "EmbeddingConfig": {
         "title": "EmbeddingConfig",
         "type": "object",
@@ -253,24 +320,24 @@
         "title": "PartitionConfig",
         "type": "object",
         "properties": {
-            "fieldName": {
-              "type": "string",
-              "description": "Partition field name."
-            },
-            "dataType": {
-              "type": "string",
-              "description": "Partition field data type.",
-              "enum": [
-                    "keyword"
-                  ]
-            },
-            "numPartitions": {
-              "type": "integer",
-              "description": "The number of partitions.",
-              "minimum": 2,
-              "maximum": 1024
-            }
+          "fieldName": {
+            "type": "string",
+            "description": "Partition field name."
+          },
+          "dataType": {
+            "type": "string",
+            "description": "Partition field data type.",
+            "enum": [
+              "keyword"
+            ]
+          },
+          "numPartitions": {
+            "type": "integer",
+            "description": "The number of partitions.",
+            "minimum": 2,
+            "maximum": 1024
           }
+        }
       },
       "FieldsSelector": {
         "type": "object",
@@ -292,25 +359,33 @@
           }
         },
         "anyOf": [
-          { "required": ["include"] },
-          { "required": ["exclude"] }
+          {
+            "required": [
+              "include"
+            ]
+          },
+          {
+            "required": [
+              "exclude"
+            ]
+          }
         ]
       },
       "PartitionFilter": {
         "title": "PartitionFilter",
         "type": "object",
         "properties": {
-            "field": {
-              "type": "string",
-              "description": "Partition field name."
-            },
-            "in": {
-              "type": "array",
-              "description": "Partition values to filter.",
-              "items": {
-                    "type": "string"
-                }
+          "field": {
+            "type": "string",
+            "description": "Partition field name."
+          },
+          "in": {
+            "type": "array",
+            "description": "Partition values to filter.",
+            "items": {
+              "type": "string"
             }
+          }
         },
         "required": [
           "field",
@@ -332,6 +407,24 @@
           "indexConfigs": {
             "$ref": "#/components/schemas/IndexConfigs"
           },
+          "description": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "tags": {
+            "type": "object",
+            "description": "Collection metadata tags. Up to five entries.",
+            "maxProperties": 5,
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 127,
+              "pattern": "^[^:#,]+$"
+            },
+            "propertyNames": {
+              "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+            }
+          },
           "partitionConfig": {
             "$ref": "#/components/schemas/PartitionConfig"
           },
@@ -343,44 +436,47 @@
             "type": "integer",
             "description": "Total number of documents."
           },
-          "sourceProjectName": {
+          "defaultBranchName": {
             "type": "string",
-            "description": "Source project name."
+            "enum": [
+              "main"
+            ]
           },
-          "sourceCollectionName": {
-            "type": "string",
-            "description": "Source collection name."
-          },
-          "sourceCollectionVersionId": {
-            "type": "string",
-            "description": "Source collection version."
-          },
-          "collectionStatus": {
-            "$ref": "#/components/schemas/Status"
+          "snapshotRetentionInDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31,
+            "default": 30,
+            "description": "Number of days to retain committed snapshots."
           },
           "createdAt": {
             "type": "integer",
-            "description": "Collection creation time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Collection creation time as Unix epoch milliseconds."
           },
           "updatedAt": {
             "type": "integer",
-            "description": "Collection last update time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Collection last update time as Unix epoch milliseconds."
           },
           "dataUpdatedAt": {
             "type": "integer",
-            "description": "Collection data last update time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Collection data last update time as Unix epoch milliseconds."
           }
         },
         "required": [
           "projectName",
           "collectionName",
           "indexConfigs",
-          "numDocs",
-          "collectionStatus",
+          "description",
+          "tags",
           "numPartitions",
+          "numDocs",
+          "defaultBranchName",
+          "snapshotRetentionInDays",
           "createdAt",
-          "updatedAt",
-          "dataUpdatedAt"
+          "updatedAt"
         ]
       },
       "MessageResponse": {
@@ -398,7 +494,7 @@
         "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
-        "description": "If your application requires a strongly consistent read, set consistentRead to true. Although a strongly consistent read might take more time than an eventually consistent read, it always returns the last updated value."
+        "description": "Strongly consistent read. Supported only when the request directly selects a branch."
       },
       "IncludeVectors": {
         "title": "IncludeVectors",
@@ -459,13 +555,203 @@
             "type": "string"
           }
         }
+      },
+      "CollectionCreateResponse": {
+        "title": "CollectionCreateResponse",
+        "type": "object",
+        "properties": {
+          "collection": {
+            "type": "object",
+            "properties": {
+              "collectionName": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "object",
+                "description": "Collection metadata tags. Up to five entries.",
+                "maxProperties": 5,
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 127,
+                  "pattern": "^[^:#,]+$"
+                },
+                "propertyNames": {
+                  "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                }
+              },
+              "defaultBranchName": {
+                "type": "string",
+                "enum": [
+                  "main"
+                ]
+              },
+              "snapshotRetentionInDays": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31,
+                "default": 30,
+                "description": "Number of days to retain committed snapshots."
+              },
+              "createdAt": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Collection creation time as Unix epoch milliseconds."
+              }
+            },
+            "required": [
+              "collectionName",
+              "description",
+              "tags",
+              "defaultBranchName",
+              "snapshotRetentionInDays",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "collection"
+        ]
+      },
+      "RefContext": {
+        "title": "RefContext",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "branch",
+              "tag",
+              "alias"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 52,
+            "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
+      "RefSource": {
+        "title": "RefSource",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "branch",
+              "tag"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 52,
+            "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+          },
+          "asOf": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Latest committed snapshot cutoff; valid only for a branch source as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
+      "RefDetails": {
+        "title": "RefDetails",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "snapshotId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null for an empty branch head."
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ref creation time as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "name",
+          "snapshotId",
+          "createdAt"
+        ]
+      },
+      "AliasDetails": {
+        "title": "AliasDetails",
+        "type": "object",
+        "properties": {
+          "aliasId": {
+            "type": "string"
+          },
+          "aliasName": {
+            "type": "string"
+          },
+          "targetKind": {
+            "type": "string",
+            "enum": [
+              "BRANCH",
+              "TAG"
+            ]
+          },
+          "targetName": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "aliasRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dangling": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Alias creation time as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "aliasId",
+          "aliasName",
+          "targetKind",
+          "targetName",
+          "targetId",
+          "aliasRevision",
+          "dangling",
+          "createdAt"
+        ]
       }
     }
   },
   "paths": {
     "/collections": {
       "get": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "listCollections",
         "description": "List all collections in an existing project.",
         "security": [
@@ -487,7 +773,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Next page token.",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it.",
             "schema": {
               "type": "string"
             }
@@ -509,7 +795,7 @@
                     },
                     "nextPageToken": {
                       "type": "string",
-                      "description": "Next page token."
+                      "description": "Opaque token for the next page."
                     }
                   },
                   "required": [
@@ -517,57 +803,34 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for a list of normal collections",
+                  "example": {
                     "value": {
                       "collections": [
                         {
                           "projectName": "example-project-name",
                           "collectionName": "example-collection-name",
                           "indexConfigs": {
-                            "example-field1": {
+                            "title": {
                               "type": "text",
                               "analyzers": [
-                                "standard"
+                                "english"
                               ]
                             },
-                            "example-field2": {
-                              "type": "vector",
-                              "dimensions": 128,
-                              "similarity": "cosine"
+                            "category": {
+                              "type": "keyword"
                             }
                           },
-                          "numDocs": 10000,
-                          "collectionStatus": "ACTIVE"
-                        }
-                      ]
-                    }
-                  },
-                  "forkedCollection": {
-                    "summary": "Example response for a list of forked collections",
-                    "value": {
-                      "collections": [
-                        {
-                          "projectName": "example-project-name",
-                          "collectionName": "example-collection-name",
-                          "indexConfigs": {
-                            "example-field1": {
-                              "type": "text",
-                              "analyzers": [
-                                "standard"
-                              ]
-                            },
-                            "example-field2": {
-                              "type": "vector",
-                              "dimensions": 128,
-                              "similarity": "cosine"
-                            }
+                          "description": "Product catalog",
+                          "tags": {
+                            "environment": "production"
                           },
-                          "numDocs": 10000,
-                          "sourceProjectName": "example-source-project-name",
-                          "sourceCollectionName": "example-source-collection-name",
-                          "sourceCollectionVersionId": "example-source-collection-version-id",
-                          "collectionStatus": "ACTIVE"
+                          "numPartitions": 1,
+                          "numDocs": 1000,
+                          "defaultBranchName": "main",
+                          "snapshotRetentionInDays": 30,
+                          "createdAt": 1788336000000,
+                          "updatedAt": 1788336000000,
+                          "dataUpdatedAt": 1788336060000
                         }
                       ]
                     }
@@ -648,10 +911,13 @@
               }
             }
           }
-        }
+        },
+        "summary": "List Collections"
       },
       "post": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "createCollection",
         "description": "Create a collection.",
         "security": [
@@ -665,85 +931,71 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "additionalProperties": false,
                 "properties": {
                   "collectionName": {
                     "type": "string",
-                    "description": "Collection name must be unique within a project and the supported maximum length is 52."
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Collection name unique within the project."
                   },
                   "indexConfigs": {
                     "$ref": "#/components/schemas/IndexConfigs"
                   },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "tags": {
+                    "type": "object",
+                    "description": "Collection metadata tags. Up to five entries.",
+                    "maxProperties": 5,
+                    "additionalProperties": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 127,
+                      "pattern": "^[^:#,]+$"
+                    },
+                    "propertyNames": {
+                      "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                    }
+                  },
                   "partitionConfig": {
                     "$ref": "#/components/schemas/PartitionConfig"
                   },
-                  "sourceProjectName": {
-                    "type": "string"
-                  },
-                  "sourceCollectionName": {
-                    "type": "string"
-                  },
-                  "sourceDatetime": {
-                    "type": "string"
-                  },
-                  "sourceProjectApiKey": {
-                    "type": "string"
+                  "snapshotRetentionInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31,
+                    "default": 30,
+                    "description": "Number of days to retain committed snapshots."
                   }
                 },
                 "required": [
-                  "collectionName"
+                  "collectionName",
+                  "indexConfigs"
                 ]
               },
               "examples": {
-                "normalCollection": {
-                  "summary": "Example request body for normal collection creation",
+                "example": {
+                  "summary": "Create a Collection with metadata and retention",
                   "value": {
                     "collectionName": "example-collection-name",
+                    "description": "Product catalog",
+                    "tags": {
+                      "environment": "production"
+                    },
+                    "snapshotRetentionInDays": 30,
                     "indexConfigs": {
-                      "example-field1": {
+                      "title": {
                         "type": "text",
                         "analyzers": [
                           "english"
                         ]
                       },
-                      "example-field2": {
-                        "type": "vector",
-                        "dimensions": 128,
-                        "similarity": "cosine"
+                      "category": {
+                        "type": "keyword"
                       }
                     }
-                  }
-                },
-                "managedEmbeddingCollection": {
-                  "summary": "Example request body for managed embedding collection creation",
-                  "value": {
-                    "collectionName": "example-semantic-collection",
-                    "indexConfigs": {
-                      "body": {
-                        "type": "text",
-                        "analyzers": [
-                          "english"
-                        ]
-                      },
-                      "bodyEmbedding": {
-                        "type": "vector",
-                        "managedEmbedding": true,
-                        "embedding": {
-                          "provider": "openai",
-                          "model": "text-embedding-3-small",
-                          "sourceField": "body"
-                        }
-                      }
-                    }
-                  }
-                },
-                "forkedCollection": {
-                  "summary": "Example request body for collection fork",
-                  "value": {
-                    "collectionName": "example-collection-name",
-                    "sourceProjectName": "example-source-project-name",
-                    "sourceCollectionName": "example-source-collection-name",
-                    "sourceProjectApiKey": "example-source-project-api-key",
-                    "sourceDatetime": "2023-10-01T12:00:00Z"
                   }
                 }
               }
@@ -751,43 +1003,25 @@
           }
         },
         "responses": {
-          "202": {
-            "description": "Created collection",
+          "201": {
+            "description": "Collection created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "collection": {
-                      "$ref": "#/components/schemas/CollectionResponse"
-                    }
-                  },
-                  "required": [
-                    "collection"
-                  ]
+                  "$ref": "#/components/schemas/CollectionCreateResponse"
                 },
                 "examples": {
                   "example": {
-                    "summary": "Example response for a created collection",
                     "value": {
                       "collection": {
-                        "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
-                        "indexConfigs": {
-                          "example-field1": {
-                            "type": "text",
-                            "analyzers": [
-                              "english"
-                            ]
-                          },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
-                          }
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
                         },
-                        "numDocs": 0,
-                        "collectionStatus": "CREATING"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000
                       }
                     }
                   }
@@ -885,12 +1119,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Create a Collection"
       }
     },
     "/collections/{collectionName}": {
       "delete": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "deleteCollection",
         "description": "Delete an existing collection.",
         "security": [
@@ -904,8 +1141,8 @@
           }
         ],
         "responses": {
-          "202": {
-            "description": "Collection delete request accepted.",
+          "200": {
+            "description": "Collection logically deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -915,7 +1152,7 @@
                   "example": {
                     "summary": "Example response for a deleted collection",
                     "value": {
-                      "message": "Collection example-collection-name is queued for deletion"
+                      "message": "Collection deletion requested"
                     }
                   }
                 }
@@ -994,10 +1231,13 @@
               }
             }
           }
-        }
+        },
+        "summary": "Delete a Collection"
       },
       "get": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "getCollection",
         "description": "Get metadata of an existing collection.",
         "security": [
@@ -1027,27 +1267,33 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for an existing collection",
+                  "example": {
                     "value": {
                       "collection": {
                         "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
                         "indexConfigs": {
-                          "example-field1": {
+                          "title": {
                             "type": "text",
                             "analyzers": [
                               "english"
                             ]
                           },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
+                          "category": {
+                            "type": "keyword"
                           }
                         },
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
+                        },
+                        "numPartitions": 1,
                         "numDocs": 1000,
-                        "collectionStatus": "ACTIVE"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000,
+                        "updatedAt": 1788336000000,
+                        "dataUpdatedAt": 1788336060000
                       }
                     }
                   }
@@ -1127,10 +1373,13 @@
               }
             }
           }
-        }
+        },
+        "summary": "Describe a Collection"
       },
       "patch": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "updateCollection",
         "description": "Configure a collection.",
         "security": [
@@ -1149,35 +1398,51 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "additionalProperties": false,
+                "description": "Provide at least one field.",
                 "properties": {
                   "indexConfigs": {
                     "$ref": "#/components/schemas/IndexConfigs"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "tags": {
+                    "type": "object",
+                    "description": "Collection metadata tags. Up to five entries.",
+                    "maxProperties": 5,
+                    "additionalProperties": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 127,
+                      "pattern": "^[^:#,]+$"
+                    },
+                    "propertyNames": {
+                      "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                    }
+                  },
+                  "snapshotRetentionInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31,
+                    "description": "Number of days to retain committed snapshots."
                   }
-                },
-                "required": [
-                  "indexConfigs"
-                ]
+                }
               },
               "examples": {
-                "example": {
-                  "summary": "Example request body for collection configuration",
+                "metadataAndRetention": {
                   "value": {
-                    "indexConfigs": {
-                      "example-field1": {
-                        "type": "text",
-                        "analyzers": [
-                          "english"
-                        ]
-                      },
-                      "example-field2": {
-                        "type": "vector",
-                        "dimensions": 128,
-                        "similarity": "cosine"
-                      },
-                      "example-field3": {
-                        "type": "keyword"
-                      }
-                    }
+                    "description": "Updated product catalog",
+                    "tags": {
+                      "environment": "staging"
+                    },
+                    "snapshotRetentionInDays": 14
+                  }
+                },
+                "clearTags": {
+                  "value": {
+                    "tags": {}
                   }
                 }
               }
@@ -1201,30 +1466,33 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for an updated collection",
+                  "example": {
                     "value": {
                       "collection": {
                         "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
                         "indexConfigs": {
-                          "example-field1": {
+                          "title": {
                             "type": "text",
                             "analyzers": [
                               "english"
                             ]
                           },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
-                          },
-                          "example-field3": {
+                          "category": {
                             "type": "keyword"
                           }
                         },
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
+                        },
+                        "numPartitions": 1,
                         "numDocs": 1000,
-                        "collectionStatus": "ACTIVE"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000,
+                        "updatedAt": 1788336000000,
+                        "dataUpdatedAt": 1788336060000
                       }
                     }
                   }
@@ -1322,12 +1590,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Configure a Collection"
       }
     },
     "/collections/{collectionName}/docs": {
       "get": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "listDocs",
         "description": "List documents in a collection. Vector values are excluded unless includeVectors is true.",
         "security": [
@@ -1352,7 +1623,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Next page token.",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it.",
             "schema": {
               "type": "string"
             }
@@ -1365,6 +1636,12 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "$ref": "#/components/parameters/RefKindQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RefNameQuery"
           }
         ],
         "responses": {
@@ -1436,7 +1713,7 @@
                           }
                         }
                       ],
-                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "nextPageToken": "ZXlKcFpDSTZJQ0poWW1NaQ",
                       "isDocsInline": true
                     }
                   }
@@ -1534,12 +1811,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "List Documents"
       }
     },
     "/collections/{collectionName}/docs/list": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "listDocsExtended",
         "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion.",
         "security": [
@@ -1569,7 +1849,7 @@
                   },
                   "pageToken": {
                     "type": "string",
-                    "description": "Next page token."
+                    "description": "Opaque token returned by the previous page. Do not decode or modify it."
                   },
                   "filter": {
                     "type": "object",
@@ -1577,13 +1857,16 @@
                     "description": "Filter applied before pagination. Supports queryString and nested bool filters. Vector and ranking query objects are not supported."
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "includeVectors": {
                     "$ref": "#/components/schemas/IncludeVectors"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 }
               },
@@ -1708,7 +1991,7 @@
                           }
                         }
                       ],
-                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "nextPageToken": "ZXlKcFpDSTZJQ0poWW1NaQ",
                       "isDocsInline": true
                     }
                   }
@@ -1806,12 +2089,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "List Documents with a Request Body"
       }
     },
     "/collections/{collectionName}/docs/upsert": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "upsertDocs",
         "description": "Upsert documents into a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -1838,6 +2124,11 @@
                       "additionalProperties": true
                     },
                     "description": "A list of documents to upsert. For managed embedding vector fields, omit the managed vector field and provide only the configured source text field."
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
@@ -1981,12 +2272,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Upsert Documents"
       }
     },
     "/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "getBulkUpsertDocs",
         "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields.",
         "security": [
@@ -1997,6 +2291,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchQuery"
           }
         ],
         "responses": {
@@ -2035,6 +2332,13 @@
                       "type": "integer",
                       "description": "Object size limit in bytes.",
                       "default": 209715200
+                    },
+                    "headers": {
+                      "type": "object",
+                      "description": "Signed headers to forward unchanged on the presigned PUT.",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -2042,7 +2346,8 @@
                     "type",
                     "httpMethod",
                     "objectKey",
-                    "sizeLimitBytes"
+                    "sizeLimitBytes",
+                    "headers"
                   ]
                 },
                 "examples": {
@@ -2053,7 +2358,10 @@
                       "type": "application/json",
                       "httpMethod": "PUT",
                       "objectKey": "example-object-key",
-                      "sizeLimitBytes": 209715200
+                      "sizeLimitBytes": 209715200,
+                      "headers": {
+                        "If-None-Match": "*"
+                      }
                     }
                   }
                 }
@@ -2156,10 +2464,13 @@
               }
             }
           }
-        }
+        },
+        "summary": "Get a Bulk Upsert URL"
       },
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with managed embedding vector fields.",
         "security": [
@@ -2182,6 +2493,15 @@
                   "objectKey": {
                     "type": "string",
                     "description": "Object key uploaded based on bulk upsert info."
+                  },
+                  "type": {
+                    "type": "string",
+                    "default": "application/json"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
@@ -2192,7 +2512,8 @@
                 "example": {
                   "summary": "Example request body for bulk upsert",
                   "value": {
-                    "objectKey": "example-object-key"
+                    "objectKey": "example-object-key",
+                    "type": "application/json"
                   }
                 }
               }
@@ -2217,7 +2538,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2313,12 +2635,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Complete a Bulk Upsert"
       }
     },
     "/collections/{collectionName}/docs/update": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "updateDocs",
         "description": "Update documents in a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -2345,6 +2670,11 @@
                       "additionalProperties": true
                     },
                     "description": "A list of documents to update. Each document must contain 'id' field to be updated. For managed embedding vector fields, omit the managed vector field and update only the configured source text field."
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
@@ -2490,12 +2820,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Update Documents"
       }
     },
     "/collections/{collectionName}/docs/delete": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from a collection.",
         "security": [
@@ -2513,23 +2846,28 @@
           "content": {
             "application/json": {
               "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ids": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "A list of document IDs."
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
                     },
-                    "filter": {
-                      "type": "object",
-                      "additionalProperties": true,
-                      "description": "Query filter."
-                    },
-                    "partitionFilter": {
-                      "$ref":"#/components/schemas/PartitionFilter"
-                    }
+                    "description": "A list of document IDs."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Query filter."
+                  },
+                  "partitionFilter": {
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
+                  }
                 }
               },
               "examples": {
@@ -2574,7 +2912,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2664,12 +3003,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Delete Documents"
       }
     },
     "/collections/{collectionName}/docs/fetch": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from a collection.",
         "security": [
@@ -2703,10 +3045,13 @@
                     "$ref": "#/components/schemas/IncludeVectors"
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 },
                 "required": [
@@ -2789,14 +3134,22 @@
                           "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value1",
-                            "example-field2": [0.1, 0.2, 0.3]
+                            "example-field2": [
+                              0.1,
+                              0.2,
+                              0.3
+                            ]
                           }
                         },
                         {
                           "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value2",
-                            "example-field2": [0.4, 0.5, 0.6]
+                            "example-field2": [
+                              0.4,
+                              0.5,
+                              0.6
+                            ]
                           }
                         }
                       ],
@@ -2806,7 +3159,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2896,12 +3250,15 @@
               }
             }
           }
-        }
+        },
+        "summary": "Fetch Documents"
       }
     },
     "/collections/{collectionName}/query": {
       "post": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "queryCollection",
         "description": "Search a collection with a query and return the most similar documents.",
         "security": [
@@ -2945,10 +3302,13 @@
                     }
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 },
                 "required": [
@@ -3050,15 +3410,19 @@
                     "summary": "Example response for documents query",
                     "value": {
                       "took": 10,
-                      "maxScore": 1.0,
+                      "maxScore": 1,
                       "total": 2,
                       "docs": [
                         {
                           "collection": "example-collection-name",
-                          "score": 1.0,
+                          "score": 1,
                           "doc": {
                             "example-field1": "example-value1",
-                            "example-field2": [0.1, 0.2, 0.3]
+                            "example-field2": [
+                              0.1,
+                              0.2,
+                              0.3
+                            ]
                           }
                         },
                         {
@@ -3066,7 +3430,11 @@
                           "score": 0.9,
                           "doc": {
                             "example-field1": "example-value2",
-                            "example-field2": [0.4, 0.5, 0.6]
+                            "example-field2": [
+                              0.4,
+                              0.5,
+                              0.6
+                            ]
                           }
                         }
                       ],
@@ -3167,7 +3535,1468 @@
               }
             }
           }
-        }
+        },
+        "summary": "Query a Collection"
+      }
+    },
+    "/collections/{collectionName}/branches": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createBranch",
+        "description": "Create a writable branch. Omit source to use main.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "branchName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "source": {
+                    "$ref": "#/components/schemas/RefSource"
+                  }
+                },
+                "required": [
+                  "branchName"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "branchName": "candidate",
+                    "source": {
+                      "kind": "branch",
+                      "name": "main"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Branch created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branch": {
+                      "$ref": "#/components/schemas/RefDetails"
+                    }
+                  },
+                  "required": [
+                    "branch"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branch": {
+                        "name": "candidate",
+                        "snapshotId": "snapshot-id",
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a Branch"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listBranches",
+        "description": "List branches in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RefDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "branches"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branches": [
+                        {
+                          "name": "candidate",
+                          "snapshotId": "snapshot-id",
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Branches"
+      }
+    },
+    "/collections/{collectionName}/branches/{branchName}": {
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteBranch",
+        "description": "Delete a branch. The default main branch cannot be deleted.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a Branch"
+      }
+    },
+    "/collections/{collectionName}/tags": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createTag",
+        "description": "Create an immutable tag. Omit source to use main.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "tagName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "source": {
+                    "$ref": "#/components/schemas/RefSource"
+                  }
+                },
+                "required": [
+                  "tagName"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "tagName": "validated-2026-09",
+                    "source": {
+                      "kind": "branch",
+                      "name": "candidate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tag": {
+                      "$ref": "#/components/schemas/RefDetails"
+                    }
+                  },
+                  "required": [
+                    "tag"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "tag": {
+                        "name": "validated-2026-09",
+                        "snapshotId": "snapshot-id",
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a Tag"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listTags",
+        "description": "List tags in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RefDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "tags": [
+                        {
+                          "name": "validated-2026-09",
+                          "snapshotId": "snapshot-id",
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Tags"
+      }
+    },
+    "/collections/{collectionName}/tags/{tagName}": {
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteTag",
+        "description": "Delete a tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/TagName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a Tag"
+      }
+    },
+    "/collections/{collectionName}/aliases": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createAlias",
+        "description": "Create an alias that targets a branch or tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "aliasName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "target": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "branch",
+                          "tag"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 52,
+                        "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "aliasName",
+                  "target"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "aliasName": "production-read",
+                    "target": {
+                      "kind": "tag",
+                      "name": "validated-2026-09"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alias created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alias": {
+                      "$ref": "#/components/schemas/AliasDetails"
+                    }
+                  },
+                  "required": [
+                    "alias"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "alias": {
+                        "aliasId": "alias-id",
+                        "aliasName": "production-read",
+                        "targetKind": "TAG",
+                        "targetName": "validated-2026-09",
+                        "targetId": "tag-id",
+                        "aliasRevision": 0,
+                        "dangling": false,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an Alias"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listAliases",
+        "description": "List aliases in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alias list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "aliases": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AliasDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "aliases"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "aliases": [
+                        {
+                          "aliasId": "alias-id",
+                          "aliasName": "production-read",
+                          "targetKind": "TAG",
+                          "targetName": "validated-2026-09",
+                          "targetId": "tag-id",
+                          "aliasRevision": 0,
+                          "dangling": false,
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Aliases"
+      }
+    },
+    "/collections/{collectionName}/aliases/{aliasName}": {
+      "patch": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "retargetAlias",
+        "description": "Retarget an alias to a branch or tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/AliasName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "branch",
+                          "tag"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 52,
+                        "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "target"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "target": {
+                      "kind": "branch",
+                      "name": "main"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alias retargeted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alias": {
+                      "$ref": "#/components/schemas/AliasDetails"
+                    }
+                  },
+                  "required": [
+                    "alias"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "alias": {
+                        "aliasId": "alias-id",
+                        "aliasName": "production-read",
+                        "targetKind": "BRANCH",
+                        "targetName": "main",
+                        "targetId": "branch-id",
+                        "aliasRevision": 1,
+                        "dangling": false,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retarget an Alias"
+      },
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteAlias",
+        "description": "Delete an alias.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/AliasName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete an Alias"
       }
     }
   }

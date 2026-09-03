@@ -3,7 +3,7 @@ title: What is LambdaDB?
 description: Learn about LambdaDB, an AI-native serverless database with built-in vector search, full-text search, hybrid search, and flexible document storage.
 ---
 
-LambdaDB is an **AI-native database** designed for building accurate, secure, and scalable AI apps and agents. 
+LambdaDB is an **AI-native database** designed for building accurate, secure, and scalable AI apps and agents.
 Store and search unstructured data at scale without managing any infrastructure.
 
 ## 🗃️ Serverless storage & retrieval
@@ -32,11 +32,13 @@ Store and search unstructured data at scale without managing any infrastructure.
 ## 🏢 Enterprise features
 
 ### Backup & recovery
+
 - **Continuous backups**: Automatic collection-level backups with 30-day retention by default.
-- **Point-in-time recovery (PITR)**: Restore a collection to any specific moment within the retention period.
-- **Zero-copy branching**: Instant collection fork without data duplication.
+- **Point-in-time branches**: Create a branch from a committed snapshot at or before a chosen time within the retention period.
+- **Data versioning**: Use branches for isolated writes, immutable tags for pinned snapshots, and mutable aliases for stable read names.
 
 ### Operation & management
+
 - **Serverless-native architecture**: Zero infrastructure management required without paying for idle resources.
-- **Configurable rate limiting**: Project-level controls for API usage.
+- **Configurable rate limiting**: Project-level usage controls managed in LambdaDB Cloud.
 - **RESTful API**: Simple HTTP-based interface with comprehensive SDKs.

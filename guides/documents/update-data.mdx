@@ -7,6 +7,8 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to update documents in a collection.
 
+The REST request accepts an optional `branch` field. Omitting it writes to the default branch, `main`; a tag or alias is not a valid write target.
+
 <Note>
 
   If the collection contains managed embedding vector fields, update the configured source text fields instead of sending direct vector values for managed embedding fields.
@@ -14,7 +16,7 @@ This page shows you how to update documents in a collection.
 </Note>
 
 <CodeGroup>
-    
+
   ```python Python
   from lambdadb import LambdaDB
 
@@ -82,8 +84,9 @@ This page shows you how to update documents in a collection.
   curl -X POST \
     "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/update" \
     -H 'content-type: application/json' \
-    -H 'x-api-key: $LAMBDADB_PROJECT_API_KEY' \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     -d '{
+      "branch": "candidate",
       "docs": [
         {
           "id": "33201222",
@@ -101,6 +104,8 @@ This page shows you how to update documents in a collection.
   ```
 
 </CodeGroup>
+
+The cURL example writes to the `candidate` branch. Remove `branch` to write to `main`.
 
 <Info>
   

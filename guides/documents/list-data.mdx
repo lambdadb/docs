@@ -12,6 +12,10 @@ This page shows you how to use the list endpoint to list documents in a collecti
 | size        | Max number of documents to return per page (1–100). | integer |          | 100     |
 | pageToken   | Token for the next page of results.              | string  |          |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
+| refKind     | Ref type: `branch`, `tag`, or `alias`; use with `refName`. | string | | |
+| refName     | Ref name; use with `refKind`. | string | | |
+
+Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`.
 
 <CodeGroup>
 
@@ -111,6 +115,10 @@ This page shows you how to use the list endpoint to list documents in a collecti
   # List next page (use nextPageToken from previous response)
   curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
     -H "x-api-key: ${YOUR_API_KEY}"
+
+  # List documents through an alias
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?refKind=alias&refName=production-read" \
+    -H "x-api-key: ${YOUR_API_KEY}"
   ```
 
 </CodeGroup>
@@ -138,7 +146,7 @@ The response includes the total count, the current page of documents, and an opt
       }
     }
   ],
-  "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+  "nextPageToken": "ZXlKcFpDSTZJQ0poWW1NaQ",
   "isDocsInline": true
 }
 ```
@@ -246,7 +254,8 @@ For filtering, partition filtering, field selection, or a JSON request body, use
       "fields": {
         "include": ["id", "title", "category"]
       },
-      "includeVectors": false
+      "includeVectors": false,
+      "ref": { "kind": "alias", "name": "production-read" }
     }'
   ```
 
@@ -265,6 +274,7 @@ The extended list request body supports:
 | partitionFilter | Restricts the request to matching partition values.         | object  |          |         |
 | fields         | Field selector with `include` and/or `exclude`. Use dot notation for nested fields. | object  |          |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
+| ref            | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }`. | object | | `main` branch |
 
 `filter` uses the same `queryString` and `bool` shapes as the query API. List filters do not run vector or ranking queries.
 Use `partitionFilter` only for collections configured with a partition field.
@@ -293,7 +303,7 @@ Inside a `bool` filter, `occur` can be `filter`, `must`, `must_not`, or `should`
 
 <Note>
 
-  When you use `nextPageToken` with the extended endpoint, keep the same `filter`, `partitionFilter`, `fields`, and `includeVectors` options across pages.
+  When you use `nextPageToken` with the extended endpoint, keep the same `filter`, `partitionFilter`, `fields`, `includeVectors`, and `ref` options across pages.
 
 </Note>
 

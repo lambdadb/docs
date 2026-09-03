@@ -1,6 +1,6 @@
 ---
 title: Create a new collection
-description: Create LambdaDB collections with index configurations, partitioning, and point-in-time restore using Python, TypeScript, Go, or the REST API.
+description: Create LambdaDB collections with index configurations, metadata tags, partitioning, and per-collection snapshot retention.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
@@ -11,14 +11,12 @@ This page shows you how to create a collection with various configurations.
 
 | Parameter | Type | Required | Description |
 |:----------|:-----|:---------|:------------|
-| collectionName | string | ✓ | Collection name must be unique within a project and the supported maximum length is 52 characters |
-| indexConfigs | object |  | Field configuration for indexing. Required when creating from scratch |
-| sourceProjectName | string |  | Source project name for PITR or branching operations |
-| sourceCollectionName | string |  | Source collection name for PITR or branching operations |
-| sourceDatetime | string |  | ISO 8601 formatted datetime for PITR (e.g., "2024-01-15T10:30:00Z") |
-| sourceProjectApiKey | string |  | API key for the source project |
+| collectionName | string | ✓ | Unique name within the project; 3 to 52 letters, numbers, underscores, or hyphens |
+| indexConfigs | object | ✓ | Field configuration for indexing |
+| description | string |  | Collection description, up to 255 characters |
+| tags | object |  | Up to five metadata key-value pairs |
 | partitionConfig | object |  | Partition configuration |
-
+| snapshotRetentionInDays | integer |  | Snapshot retention from 1 through 31 days; defaults to 30 |
 
 ## Create a collection from scratch
 
@@ -89,6 +87,9 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
         "collectionName": "example-collection",
+        "description": "Articles searchable by URL, author, and content",
+        "tags": { "environment": "production" },
+        "snapshotRetentionInDays": 30,
         "indexConfigs": {
           "url": { "type": "keyword" },
           "author": { "type": "keyword" },
@@ -98,6 +99,23 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 ```
 
 </CodeGroup>
+
+A successful REST request returns `201 Created`. Collection creation also creates the default branch, `main`:
+
+```json
+{
+  "collection": {
+    "collectionName": "example-collection",
+    "description": "Articles searchable by URL, author, and content",
+    "tags": { "environment": "production" },
+    "defaultBranchName": "main",
+    "snapshotRetentionInDays": 30,
+    "createdAt": 1788336000000
+  }
+}
+```
+
+Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds.
 
 ## Create a collection with managed embeddings
 
@@ -237,100 +255,16 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
   
 </Note>
 
-## Point-in-time recovery (PITR)
+## Snapshot retention
 
-LambdaDB automatically maintains continuous backups at the collection level with a default retention period of 30 days. 
-You can create a collection from a specific point in time using PITR functionality.
+Every collection retains committed snapshots for 30 days by default. Set `snapshotRetentionInDays` to an integer from `1` through `31` when creating the collection, or change it later with the collection update API.
 
-<CodeGroup>
-
-```python Python
-from lambdadb import LambdaDB
-
-with LambdaDB(project_api_key="YOUR_TARGET_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
-    restored_collection = client.collections.create(
-        collection_name="restored-collection",
-        source_project_name="source-project-name",
-        source_project_api_key="YOUR_SOURCE_API_KEY",
-        source_collection_name="source-collection-name",
-        source_datetime="2024-01-15T10:30:00Z",
-    )
-```
-
-```bash cURL
-LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
-LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
-
-curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
-  -H "content-type: application/json" \
-  -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
-  -d '{
-        "collectionName": "restored-collection",
-        "sourceProjectName": "source-project-name",
-        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
-        "sourceCollectionName": "source-collection-name",
-        "sourceDatetime": "2024-01-15T10:30:00Z"
-      }'
-```
-
-
-</CodeGroup>
-
-<Note>
-PITR allows you to restore collections to any point within the configured retention period. 
-The `sourceDatetime` parameter must be in ISO 8601 format (UTC timezone). If `sourceDatetime` is not specified, the collection will be restored from the most recent data available.
-</Note>
-
-## Fork a collection with additional index configs
-
-You can fork a collection based on an existing collection and extend it with additional indexConfigs. The original collection's configuration will be preserved, and you can only add new fields.
-
-<CodeGroup>
-
-```python Python
-from lambdadb import LambdaDB, models
-
-with LambdaDB(project_api_key="YOUR_TARGET_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
-    forked = client.collections.create(
-        collection_name="forked-collection",
-        source_project_name="source-project-name",
-        source_project_api_key="YOUR_SOURCE_API_KEY",
-        source_collection_name="example-source-collection-name",
-        source_datetime="2025-08-08T10:00:00Z",
-        index_configs={
-            "newText": {"type": "text", "analyzers": ["japanese", "korean", "english"]},
-        },
-    )
-```
-
-```bash cURL
-LAMBDADB_TARGET_PROJECT_API_KEY="YOUR_TARGET_API_KEY"
-LAMBDADB_SOURCE_PROJECT_API_KEY="YOUR_SOURCE_API_KEY"
-
-curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
-  -H "content-type: application/json" \
-  -H "x-api-key: $LAMBDADB_TARGET_PROJECT_API_KEY" \
-  -d '{
-        "collectionName": "forked-collection",
-        "sourceProjectId": "example-source-project-id",
-        "sourceProjectApiKey": "'$LAMBDADB_SOURCE_PROJECT_API_KEY'",
-        "sourceCollectionName": "example-source-collection-name",
-        "sourceDatetime": "2025-08-08T10:00:00Z"
-      }'
-```
-</CodeGroup>
-
-<Note>
-
-  When forking a collection, specifying `indexConfigs` is optional. 
-  You can pass additional `indexConfigs` to extend the original collection's configuration, 
-  but deleting or modifying the original collection's indexConfigs is not allowed.
-
-</Note>
+Point-in-time history is available by creating a branch rather than cloning another collection. A `source.asOf` value is a Unix epoch timestamp in milliseconds and must refer to a branch in the same collection. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#point-in-time-branches).
 
 ## Collection limits
 
 | Metric              | Limit  |
 |:------------------- |:------ |
 | Max number of collections    | unlimited    |
-| Max forked children per collection     | 30    |
+| Snapshot retention | 1–31 days |
+| Metadata tags | 5 per collection |

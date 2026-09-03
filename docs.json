@@ -59,6 +59,12 @@
             ]
           },
           {
+            "group": "Data versioning",
+            "pages": [
+              "guides/data-versioning/branches-tags-aliases"
+            ]
+          },
+          {
             "group": "Documents",
             "pages": [
               "guides/documents/upsert-data",
@@ -110,6 +116,21 @@
                   "reference/api/endpoint/collection-describe",
                   "reference/api/endpoint/collection-delete",
                   "reference/api/endpoint/collection-configure"
+                ]
+              },
+              {
+                "group": "Branches, tags & aliases",
+                "pages": [
+                  "reference/api/endpoint/branch-create",
+                  "reference/api/endpoint/branch-list",
+                  "reference/api/endpoint/branch-delete",
+                  "reference/api/endpoint/tag-create",
+                  "reference/api/endpoint/tag-list",
+                  "reference/api/endpoint/tag-delete",
+                  "reference/api/endpoint/alias-create",
+                  "reference/api/endpoint/alias-list",
+                  "reference/api/endpoint/alias-retarget",
+                  "reference/api/endpoint/alias-delete"
                 ]
               },
               {
