@@ -103,7 +103,7 @@
       "RefKindQuery": {
         "in": "query",
         "name": "refKind",
-        "description": "Read ref kind. Must be supplied together with refName.",
+        "description": "Read ref kind. Must be supplied together with refName. Selecting a ref that does not exist returns 404 ResourceNotFound; selecting an alias whose target is dangling returns 400 BadRequest.",
         "schema": {
           "type": "string",
           "enum": [
@@ -639,6 +639,7 @@
       "RefContext": {
         "title": "RefContext",
         "type": "object",
+        "description": "Read ref selector. A ref that does not exist returns 404 ResourceNotFound; an alias whose target is dangling returns 400 BadRequest.",
         "additionalProperties": false,
         "properties": {
           "kind": {

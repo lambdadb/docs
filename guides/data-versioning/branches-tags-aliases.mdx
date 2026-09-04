@@ -113,7 +113,7 @@ curl -i -X PATCH \
 
 `GET .../aliases` returns an `aliases` array. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
 
-Deleting an alias target does not delete the alias. A missing target sets `dangling` to `true`; reads through that alias fail until it is retargeted to an existing branch or tag.
+Deleting an alias target does not delete the alias. A missing target sets `dangling` to `true`; reads through that alias return `400 BadRequest` until it is retargeted to an existing branch or tag. Selecting a ref that does not exist returns `404 ResourceNotFound`.
 
 ## Read from a ref
 
