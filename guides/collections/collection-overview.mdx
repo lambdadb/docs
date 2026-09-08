@@ -1,9 +1,9 @@
 ---
 title: Collections and data model
-description: Understand the LambdaDB data model where projects contain collections of flexible documents, similar to tables and rows in a relational database.
+description: Understand how LambdaDB collections organize documents, embeddings, and metadata for AI knowledge and memory.
 ---
 
-A LambdaDB collection is a logical namespace that holds a set of documents, where each document is a set of fields — which, in turn, are key-value pairs that contain your data.
+A LambdaDB collection is the unit for organizing an AI knowledge or memory dataset. It is a logical namespace that holds documents, where each document can contain source data, embeddings, and metadata as key-value fields.
 
 ## Database structure comparison
 
@@ -15,7 +15,7 @@ LambdaDB's structure differs from traditional relational databases. Here's how t
 | Table      | Collection                    |
 | Column/row | Document with key-value pairs |
 
-Think of a LambdaDB project as a database that can contain many collections (similar to tables), and within each collection, you have many documents containing your actual data as flexible key-value pairs.
+Think of a LambdaDB project as a database that can contain many collections (similar to tables). Each collection can represent a memory or knowledge dataset, with its documents stored as flexible key-value pairs.
 
 <Note>
 
@@ -34,32 +34,37 @@ LambdaDB provides a RESTful JSON-based API for interacting with document data. Y
 
 These CRUD-like operations can take place at both individual document level and collection level, giving you flexibility in how you manage your data.
 
-## Zero-copy branching
+## Data versioning
 
-Zero-copy collection fork is a powerful feature that allows you to create a new collection by referencing an existing collection's data, without physically copying the underlying data.
+Every collection has a default branch named `main`. Data versioning adds three kinds of named ref within that collection:
 
-This feature is useful when you want to create a new collection with the same configurations and data as an existing collection,
-in order to load-test, develop, and experiment in an isolated environment.
+- A **branch** is a writable line of history and can start from another branch or an immutable tag.
+- A **tag** is an immutable name for one committed snapshot.
+- An **alias** is a mutable read name that points to a branch or tag.
+
+Reads use `main` when no ref is supplied. Queries, fetches, and lists can instead select a branch, tag, or alias. Writes select a branch name and cannot target a tag or alias.
 
 ### Key benefits
 
-- **Instant creation**: Collections are created immediately without waiting for data transfer.
-- **Storage efficiency**: No additional storage space required for the forked collection.
-- **Isolated environment**: Perfect for load testing, development, and experimentation.
-- **Same configurations**: Inherits all index configurations and data from the source collection.
+- **Isolated writes**: Develop or validate changes without writing to `main`.
+- **Pinned reads**: Use a tag when a workflow must keep reading the same committed snapshot.
+- **Stable routing**: Retarget an alias without changing the read-side ref name.
+- **Point-in-time starts**: Create a branch from a committed snapshot at or before a Unix epoch-millisecond timestamp.
 
 ### Use cases
 
 This feature is particularly useful when you want to:
 
 - Create isolated environments for testing without affecting production data.
-- Set up staging environments that mirror production collections.
-- Experiment with different query patterns or configurations.
-- Perform load testing with real data volumes.
-- Create backup references for disaster recovery scenarios.
+- Set up staging or validation histories inside one collection.
+- Pin a dataset version for evaluation or reproducible retrieval.
+- Move a read alias between a branch and a tag during a controlled rollout.
+- Create a recovery branch from retained history.
 
 <Info>
 
-Changes made to documents in a forked collection do not affect the original collection, ensuring complete isolation while maintaining efficiency.
+Changes written to one branch do not change another branch. Schema updates, metadata tags, partitioning, and retention are configured at the collection level. Branches are not independent schema-editing environments; tag reads retain the schema pinned with their snapshot.
 
 </Info>
+
+See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) for the REST contract and consistency rules.

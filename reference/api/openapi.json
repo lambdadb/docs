@@ -7,10 +7,16 @@
   },
   "tags": [
     {
-      "name": "collections"
+      "name": "collections",
+      "description": "Create, describe, configure, list, and delete collections."
     },
     {
-      "name": "collections.docs"
+      "name": "versioning",
+      "description": "Manage branches, tags, and aliases within a collection."
+    },
+    {
+      "name": "collections.docs",
+      "description": "Write, fetch, list, and bulk upload documents."
     }
   ],
   "servers": [
@@ -33,7 +39,10 @@
       "maxElapsedTime": 3600000,
       "exponent": 1.5
     },
-    "statusCodes": ["429","5XX"],
+    "statusCodes": [
+      "429",
+      "5XX"
+    ],
     "retryConnectionErrors": true
   },
   "components": {
@@ -45,6 +54,144 @@
         "required": true,
         "schema": {
           "type": "string"
+        }
+      },
+      "BranchName": {
+        "in": "path",
+        "name": "branchName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "TagName": {
+        "in": "path",
+        "name": "tagName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "AliasName": {
+        "in": "path",
+        "name": "aliasName",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "BranchQuery": {
+        "in": "query",
+        "name": "branch",
+        "description": "Write target branch. Defaults to main.",
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      },
+      "RefKindQuery": {
+        "in": "query",
+        "name": "refKind",
+        "description": "Read ref kind. Must be supplied together with refName. Selecting a ref that does not exist returns 404 ResourceNotFound; selecting an alias whose target is dangling returns 400 BadRequest.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "branch",
+            "tag",
+            "alias"
+          ]
+        }
+      },
+      "RefNameQuery": {
+        "in": "query",
+        "name": "refName",
+        "description": "Read ref name. Must be supplied together with refKind.",
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 52,
+          "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+        }
+      }
+    },
+    "responses": {
+      "ResourceNotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ResourceNotFound"
+            },
+            "examples": {
+              "example": {
+                "summary": "Example response for resource not found",
+                "value": {
+                  "message": "Resource not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "Request exceeds the Gateway transport limit. Reduce the request size or use bulk upsert when supported.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Unexpected downstream failure. A failed write response may leave its outcome uncertain.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Transient catalog or storage dependency failure. Use bounded retries where the operation permits.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "GatewayTimeout": {
+        "description": "Gateway request deadline exceeded. A write may have been applied; verify its outcome before retrying.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "CatalogConflict": {
+        "description": "Conditional catalog conflict. Refresh the resource state before deciding whether to retry.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
         }
       }
     },
@@ -58,16 +205,6 @@
       }
     },
     "schemas": {
-      "Status": {
-        "title": "Status",
-        "type": "string",
-        "description": "Status",
-        "enum": [
-          "CREATING",
-          "ACTIVE",
-          "DELETING"
-        ]
-      },
       "EmbeddingConfig": {
         "title": "EmbeddingConfig",
         "type": "object",
@@ -247,30 +384,32 @@
               ]
             }
           ]
-        }
+        },
+        "minProperties": 1,
+        "description": "Nonempty field configuration map. Collection updates must supply the full schema and preserve existing field definitions, including nested fields."
       },
       "PartitionConfig": {
         "title": "PartitionConfig",
         "type": "object",
         "properties": {
-            "fieldName": {
-              "type": "string",
-              "description": "Partition field name."
-            },
-            "dataType": {
-              "type": "string",
-              "description": "Partition field data type.",
-              "enum": [
-                    "keyword"
-                  ]
-            },
-            "numPartitions": {
-              "type": "integer",
-              "description": "The number of partitions.",
-              "minimum": 2,
-              "maximum": 1024
-            }
+          "fieldName": {
+            "type": "string",
+            "description": "Partition field name."
+          },
+          "dataType": {
+            "type": "string",
+            "description": "Partition field data type.",
+            "enum": [
+              "keyword"
+            ]
+          },
+          "numPartitions": {
+            "type": "integer",
+            "description": "The number of partitions.",
+            "minimum": 2,
+            "maximum": 1024
           }
+        }
       },
       "FieldsSelector": {
         "type": "object",
@@ -292,25 +431,33 @@
           }
         },
         "anyOf": [
-          { "required": ["include"] },
-          { "required": ["exclude"] }
+          {
+            "required": [
+              "include"
+            ]
+          },
+          {
+            "required": [
+              "exclude"
+            ]
+          }
         ]
       },
       "PartitionFilter": {
         "title": "PartitionFilter",
         "type": "object",
         "properties": {
-            "field": {
-              "type": "string",
-              "description": "Partition field name."
-            },
-            "in": {
-              "type": "array",
-              "description": "Partition values to filter.",
-              "items": {
-                    "type": "string"
-                }
+          "field": {
+            "type": "string",
+            "description": "Partition field name."
+          },
+          "in": {
+            "type": "array",
+            "description": "Partition values to filter.",
+            "items": {
+              "type": "string"
             }
+          }
         },
         "required": [
           "field",
@@ -332,6 +479,24 @@
           "indexConfigs": {
             "$ref": "#/components/schemas/IndexConfigs"
           },
+          "description": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "tags": {
+            "type": "object",
+            "description": "Collection metadata tags. Up to five entries.",
+            "maxProperties": 5,
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 127,
+              "pattern": "^[^:#,]+$"
+            },
+            "propertyNames": {
+              "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+            }
+          },
           "partitionConfig": {
             "$ref": "#/components/schemas/PartitionConfig"
           },
@@ -341,46 +506,49 @@
           },
           "numDocs": {
             "type": "integer",
-            "description": "Total number of documents."
+            "description": "Document count in the default main branch's committed head, not a sum across branches or the count of a selected ref."
           },
-          "sourceProjectName": {
+          "defaultBranchName": {
             "type": "string",
-            "description": "Source project name."
+            "enum": [
+              "main"
+            ]
           },
-          "sourceCollectionName": {
-            "type": "string",
-            "description": "Source collection name."
-          },
-          "sourceCollectionVersionId": {
-            "type": "string",
-            "description": "Source collection version."
-          },
-          "collectionStatus": {
-            "$ref": "#/components/schemas/Status"
+          "snapshotRetentionInDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31,
+            "default": 30,
+            "description": "Number of days to retain committed snapshots."
           },
           "createdAt": {
             "type": "integer",
-            "description": "Collection creation time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Collection creation time as Unix epoch milliseconds."
           },
           "updatedAt": {
             "type": "integer",
-            "description": "Collection last update time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Collection last update time as Unix epoch milliseconds."
           },
           "dataUpdatedAt": {
             "type": "integer",
-            "description": "Collection data last update time in seconds since the Unix epoch."
+            "format": "int64",
+            "description": "Last data update time recorded in the default main branch's committed head, as Unix epoch milliseconds. Commits without data mutations retain the previous value, so this is not necessarily the latest head commit time. Absent before a committed head exists."
           }
         },
         "required": [
           "projectName",
           "collectionName",
           "indexConfigs",
-          "numDocs",
-          "collectionStatus",
+          "description",
+          "tags",
           "numPartitions",
+          "numDocs",
+          "defaultBranchName",
+          "snapshotRetentionInDays",
           "createdAt",
-          "updatedAt",
-          "dataUpdatedAt"
+          "updatedAt"
         ]
       },
       "MessageResponse": {
@@ -398,7 +566,7 @@
         "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
-        "description": "If your application requires a strongly consistent read, set consistentRead to true. Although a strongly consistent read might take more time than an eventually consistent read, it always returns the last updated value."
+        "description": "Overlay eligible pending writes on a directly selected branch's committed data. Defaults to false. Tag and alias reads reject true. Pending bulk imports are excluded. Returns 429 if the pending payload exceeds the consistent-read limit."
       },
       "IncludeVectors": {
         "title": "IncludeVectors",
@@ -459,13 +627,231 @@
             "type": "string"
           }
         }
+      },
+      "CollectionCreateResponse": {
+        "title": "CollectionCreateResponse",
+        "type": "object",
+        "properties": {
+          "collection": {
+            "type": "object",
+            "properties": {
+              "collectionName": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "object",
+                "description": "Collection metadata tags. Up to five entries.",
+                "maxProperties": 5,
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 127,
+                  "pattern": "^[^:#,]+$"
+                },
+                "propertyNames": {
+                  "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                }
+              },
+              "defaultBranchName": {
+                "type": "string",
+                "enum": [
+                  "main"
+                ]
+              },
+              "snapshotRetentionInDays": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31,
+                "default": 30,
+                "description": "Number of days to retain committed snapshots."
+              },
+              "createdAt": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Collection creation time as Unix epoch milliseconds."
+              }
+            },
+            "required": [
+              "collectionName",
+              "description",
+              "tags",
+              "defaultBranchName",
+              "snapshotRetentionInDays",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "collection"
+        ]
+      },
+      "RefContext": {
+        "title": "RefContext",
+        "type": "object",
+        "description": "Read ref selector. A ref that does not exist returns 404 ResourceNotFound; an alias whose target is dangling returns 400 BadRequest.",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "branch",
+              "tag",
+              "alias"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 52,
+            "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
+      "RefSource": {
+        "title": "RefSource",
+        "oneOf": [
+          {
+            "title": "Branch source",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "branch"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 52,
+                "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+              },
+              "asOf": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Latest committed snapshot cutoff as Unix epoch milliseconds."
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ]
+          },
+          {
+            "title": "Tag source",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "tag"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 52,
+                "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ]
+          }
+        ]
+      },
+      "RefDetails": {
+        "title": "RefDetails",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "snapshotId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null for an empty branch head."
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ref creation time as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "name",
+          "snapshotId",
+          "createdAt"
+        ]
+      },
+      "AliasDetails": {
+        "title": "AliasDetails",
+        "type": "object",
+        "properties": {
+          "aliasId": {
+            "type": "string"
+          },
+          "aliasName": {
+            "type": "string"
+          },
+          "targetKind": {
+            "type": "string",
+            "enum": [
+              "BRANCH",
+              "TAG"
+            ]
+          },
+          "targetName": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "aliasRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dangling": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Alias creation time as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "aliasId",
+          "aliasName",
+          "targetKind",
+          "targetName",
+          "targetId",
+          "aliasRevision",
+          "dangling",
+          "createdAt"
+        ]
       }
     }
   },
   "paths": {
     "/collections": {
       "get": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "listCollections",
         "description": "List all collections in an existing project.",
         "security": [
@@ -487,7 +873,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Next page token.",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it.",
             "schema": {
               "type": "string"
             }
@@ -509,7 +895,7 @@
                     },
                     "nextPageToken": {
                       "type": "string",
-                      "description": "Next page token."
+                      "description": "Opaque token for the next page."
                     }
                   },
                   "required": [
@@ -517,57 +903,34 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for a list of normal collections",
+                  "example": {
                     "value": {
                       "collections": [
                         {
                           "projectName": "example-project-name",
                           "collectionName": "example-collection-name",
                           "indexConfigs": {
-                            "example-field1": {
+                            "title": {
                               "type": "text",
                               "analyzers": [
-                                "standard"
+                                "english"
                               ]
                             },
-                            "example-field2": {
-                              "type": "vector",
-                              "dimensions": 128,
-                              "similarity": "cosine"
+                            "category": {
+                              "type": "keyword"
                             }
                           },
-                          "numDocs": 10000,
-                          "collectionStatus": "ACTIVE"
-                        }
-                      ]
-                    }
-                  },
-                  "forkedCollection": {
-                    "summary": "Example response for a list of forked collections",
-                    "value": {
-                      "collections": [
-                        {
-                          "projectName": "example-project-name",
-                          "collectionName": "example-collection-name",
-                          "indexConfigs": {
-                            "example-field1": {
-                              "type": "text",
-                              "analyzers": [
-                                "standard"
-                              ]
-                            },
-                            "example-field2": {
-                              "type": "vector",
-                              "dimensions": 128,
-                              "similarity": "cosine"
-                            }
+                          "description": "Product catalog",
+                          "tags": {
+                            "environment": "production"
                           },
-                          "numDocs": 10000,
-                          "sourceProjectName": "example-source-project-name",
-                          "sourceCollectionName": "example-source-collection-name",
-                          "sourceCollectionVersionId": "example-source-collection-version-id",
-                          "collectionStatus": "ACTIVE"
+                          "numPartitions": 1,
+                          "numDocs": 1000,
+                          "defaultBranchName": "main",
+                          "snapshotRetentionInDays": 30,
+                          "createdAt": 1788336000000,
+                          "updatedAt": 1788336000000,
+                          "dataUpdatedAt": 1788336060000
                         }
                       ]
                     }
@@ -628,6 +991,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -647,11 +1018,23 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "List Collections"
       },
       "post": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "createCollection",
         "description": "Create a collection.",
         "security": [
@@ -665,85 +1048,75 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "additionalProperties": false,
                 "properties": {
                   "collectionName": {
                     "type": "string",
-                    "description": "Collection name must be unique within a project and the supported maximum length is 52."
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Collection name unique within the project."
                   },
                   "indexConfigs": {
                     "$ref": "#/components/schemas/IndexConfigs"
                   },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "tags": {
+                    "type": "object",
+                    "description": "Collection metadata tags. Up to five entries.",
+                    "maxProperties": 5,
+                    "additionalProperties": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 127,
+                      "pattern": "^[^:#,]+$",
+                      "description": "Must contain at least one non-whitespace character.",
+                      "not": {
+                        "pattern": "^[\\u0009-\\u000d\\u001c-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$"
+                      }
+                    },
+                    "propertyNames": {
+                      "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                    }
+                  },
                   "partitionConfig": {
                     "$ref": "#/components/schemas/PartitionConfig"
                   },
-                  "sourceProjectName": {
-                    "type": "string"
-                  },
-                  "sourceCollectionName": {
-                    "type": "string"
-                  },
-                  "sourceDatetime": {
-                    "type": "string"
-                  },
-                  "sourceProjectApiKey": {
-                    "type": "string"
+                  "snapshotRetentionInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31,
+                    "default": 30,
+                    "description": "Number of days to retain committed snapshots."
                   }
                 },
                 "required": [
-                  "collectionName"
+                  "collectionName",
+                  "indexConfigs"
                 ]
               },
               "examples": {
-                "normalCollection": {
-                  "summary": "Example request body for normal collection creation",
+                "example": {
+                  "summary": "Create a Collection with metadata and retention",
                   "value": {
                     "collectionName": "example-collection-name",
+                    "description": "Product catalog",
+                    "tags": {
+                      "environment": "production"
+                    },
+                    "snapshotRetentionInDays": 30,
                     "indexConfigs": {
-                      "example-field1": {
+                      "title": {
                         "type": "text",
                         "analyzers": [
                           "english"
                         ]
                       },
-                      "example-field2": {
-                        "type": "vector",
-                        "dimensions": 128,
-                        "similarity": "cosine"
+                      "category": {
+                        "type": "keyword"
                       }
                     }
-                  }
-                },
-                "managedEmbeddingCollection": {
-                  "summary": "Example request body for managed embedding collection creation",
-                  "value": {
-                    "collectionName": "example-semantic-collection",
-                    "indexConfigs": {
-                      "body": {
-                        "type": "text",
-                        "analyzers": [
-                          "english"
-                        ]
-                      },
-                      "bodyEmbedding": {
-                        "type": "vector",
-                        "managedEmbedding": true,
-                        "embedding": {
-                          "provider": "openai",
-                          "model": "text-embedding-3-small",
-                          "sourceField": "body"
-                        }
-                      }
-                    }
-                  }
-                },
-                "forkedCollection": {
-                  "summary": "Example request body for collection fork",
-                  "value": {
-                    "collectionName": "example-collection-name",
-                    "sourceProjectName": "example-source-project-name",
-                    "sourceCollectionName": "example-source-collection-name",
-                    "sourceProjectApiKey": "example-source-project-api-key",
-                    "sourceDatetime": "2023-10-01T12:00:00Z"
                   }
                 }
               }
@@ -751,43 +1124,25 @@
           }
         },
         "responses": {
-          "202": {
-            "description": "Created collection",
+          "201": {
+            "description": "Collection created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "collection": {
-                      "$ref": "#/components/schemas/CollectionResponse"
-                    }
-                  },
-                  "required": [
-                    "collection"
-                  ]
+                  "$ref": "#/components/schemas/CollectionCreateResponse"
                 },
                 "examples": {
                   "example": {
-                    "summary": "Example response for a created collection",
                     "value": {
                       "collection": {
-                        "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
-                        "indexConfigs": {
-                          "example-field1": {
-                            "type": "text",
-                            "analyzers": [
-                              "english"
-                            ]
-                          },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
-                          }
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
                         },
-                        "numDocs": 0,
-                        "collectionStatus": "CREATING"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000
                       }
                     }
                   }
@@ -849,6 +1204,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -863,6 +1221,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -884,13 +1250,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Create a Collection"
       }
     },
     "/collections/{collectionName}": {
       "delete": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "deleteCollection",
         "description": "Delete an existing collection.",
         "security": [
@@ -904,8 +1282,8 @@
           }
         ],
         "responses": {
-          "202": {
-            "description": "Collection delete request accepted.",
+          "200": {
+            "description": "Collection logically deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -915,7 +1293,7 @@
                   "example": {
                     "summary": "Example response for a deleted collection",
                     "value": {
-                      "message": "Collection example-collection-name is queued for deletion"
+                      "message": "Collection deletion requested"
                     }
                   }
                 }
@@ -958,6 +1336,9 @@
               }
             }
           },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -972,6 +1353,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -993,11 +1382,23 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Delete a Collection"
       },
       "get": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "getCollection",
         "description": "Get metadata of an existing collection.",
         "security": [
@@ -1027,27 +1428,33 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for an existing collection",
+                  "example": {
                     "value": {
                       "collection": {
                         "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
                         "indexConfigs": {
-                          "example-field1": {
+                          "title": {
                             "type": "text",
                             "analyzers": [
                               "english"
                             ]
                           },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
+                          "category": {
+                            "type": "keyword"
                           }
                         },
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
+                        },
+                        "numPartitions": 1,
                         "numDocs": 1000,
-                        "collectionStatus": "ACTIVE"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000,
+                        "updatedAt": 1788336000000,
+                        "dataUpdatedAt": 1788336060000
                       }
                     }
                   }
@@ -1107,6 +1514,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -1126,11 +1541,23 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Describe a Collection"
       },
       "patch": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "updateCollection",
         "description": "Configure a collection.",
         "security": [
@@ -1149,35 +1576,134 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema.",
                 "properties": {
                   "indexConfigs": {
-                    "$ref": "#/components/schemas/IndexConfigs"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/IndexConfigs"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tags": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "Replaces the entire collection metadata map; {} clears it. Up to five entries.",
+                        "maxProperties": 5,
+                        "additionalProperties": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 127,
+                          "pattern": "^[^:#,]+$",
+                          "description": "Must contain at least one non-whitespace character.",
+                          "not": {
+                            "pattern": "^[\\u0009-\\u000d\\u001c-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$"
+                          }
+                        },
+                        "propertyNames": {
+                          "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "snapshotRetentionInDays": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31,
+                        "description": "Number of days to retain committed snapshots."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
-                "required": [
-                  "indexConfigs"
+                "anyOf": [
+                  {
+                    "required": [
+                      "indexConfigs"
+                    ],
+                    "properties": {
+                      "indexConfigs": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "description"
+                    ],
+                    "properties": {
+                      "description": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "tags"
+                    ],
+                    "properties": {
+                      "tags": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "snapshotRetentionInDays"
+                    ],
+                    "properties": {
+                      "snapshotRetentionInDays": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  }
                 ]
               },
               "examples": {
-                "example": {
-                  "summary": "Example request body for collection configuration",
+                "metadataAndRetention": {
                   "value": {
-                    "indexConfigs": {
-                      "example-field1": {
-                        "type": "text",
-                        "analyzers": [
-                          "english"
-                        ]
-                      },
-                      "example-field2": {
-                        "type": "vector",
-                        "dimensions": 128,
-                        "similarity": "cosine"
-                      },
-                      "example-field3": {
-                        "type": "keyword"
-                      }
-                    }
+                    "description": "Updated product catalog",
+                    "tags": {
+                      "environment": "staging"
+                    },
+                    "snapshotRetentionInDays": 14
+                  }
+                },
+                "clearTags": {
+                  "value": {
+                    "tags": {}
                   }
                 }
               }
@@ -1201,30 +1727,33 @@
                   ]
                 },
                 "examples": {
-                  "normalCollection": {
-                    "summary": "Example response for an updated collection",
+                  "example": {
                     "value": {
                       "collection": {
                         "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
                         "indexConfigs": {
-                          "example-field1": {
+                          "title": {
                             "type": "text",
                             "analyzers": [
                               "english"
                             ]
                           },
-                          "example-field2": {
-                            "type": "vector",
-                            "dimensions": 128,
-                            "similarity": "cosine"
-                          },
-                          "example-field3": {
+                          "category": {
                             "type": "keyword"
                           }
                         },
+                        "description": "Product catalog",
+                        "tags": {
+                          "environment": "production"
+                        },
+                        "numPartitions": 1,
                         "numDocs": 1000,
-                        "collectionStatus": "ACTIVE"
+                        "defaultBranchName": "main",
+                        "snapshotRetentionInDays": 30,
+                        "createdAt": 1788336000000,
+                        "updatedAt": 1788336000000,
+                        "dataUpdatedAt": 1788336060000
                       }
                     }
                   }
@@ -1286,6 +1815,12 @@
               }
             }
           },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1300,6 +1835,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1321,13 +1864,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Configure a Collection"
       }
     },
     "/collections/{collectionName}/docs": {
       "get": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "listDocs",
         "description": "List documents in a collection. Vector values are excluded unless includeVectors is true.",
         "security": [
@@ -1352,7 +1907,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Next page token.",
+            "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages.",
             "schema": {
               "type": "string"
             }
@@ -1365,6 +1920,12 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "$ref": "#/components/parameters/RefKindQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RefNameQuery"
           }
         ],
         "responses": {
@@ -1436,7 +1997,7 @@
                           }
                         }
                       ],
-                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "nextPageToken": "ZXlKcFpDSTZJQ0poWW1NaQ",
                       "isDocsInline": true
                     }
                   }
@@ -1514,6 +2075,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -1533,13 +2102,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "List Documents"
       }
     },
     "/collections/{collectionName}/docs/list": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "listDocsExtended",
         "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion.",
         "security": [
@@ -1569,7 +2150,7 @@
                   },
                   "pageToken": {
                     "type": "string",
-                    "description": "Next page token."
+                    "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages."
                   },
                   "filter": {
                     "type": "object",
@@ -1577,13 +2158,16 @@
                     "description": "Filter applied before pagination. Supports queryString and nested bool filters. Vector and ranking query objects are not supported."
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "includeVectors": {
                     "$ref": "#/components/schemas/IncludeVectors"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 }
               },
@@ -1708,7 +2292,7 @@
                           }
                         }
                       ],
-                      "nextPageToken": "eyJpZCI6ICJhYmMiLCAiY3JlYXRlZF9hdCI6ICIyMDI0LTExLTA1VDE0OjI3OjU2KzAwOjAwIn0=",
+                      "nextPageToken": "ZXlKcFpDSTZJQ0poWW1NaQ",
                       "isDocsInline": true
                     }
                   }
@@ -1770,6 +2354,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1784,6 +2371,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1805,13 +2400,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "List Documents with a Request Body"
       }
     },
     "/collections/{collectionName}/docs/upsert": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "upsertDocs",
         "description": "Upsert documents into a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -1838,11 +2445,17 @@
                       "additionalProperties": true
                     },
                     "description": "A list of documents to upsert. For managed embedding vector fields, omit the managed vector field and provide only the configured source text field."
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
                   "docs"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -1945,6 +2558,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1959,6 +2575,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1980,15 +2604,27 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Upsert Documents"
       }
     },
     "/collections/{collectionName}/docs/bulk-upsert": {
       "get": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "getBulkUpsertDocs",
-        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields.",
+        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields. Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1997,6 +2633,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchQuery"
           }
         ],
         "responses": {
@@ -2035,6 +2674,13 @@
                       "type": "integer",
                       "description": "Object size limit in bytes.",
                       "default": 209715200
+                    },
+                    "headers": {
+                      "type": "object",
+                      "description": "Signed headers to forward unchanged on the presigned PUT, in addition to Content-Type from type.",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -2042,7 +2688,8 @@
                     "type",
                     "httpMethod",
                     "objectKey",
-                    "sizeLimitBytes"
+                    "sizeLimitBytes",
+                    "headers"
                   ]
                 },
                 "examples": {
@@ -2053,7 +2700,10 @@
                       "type": "application/json",
                       "httpMethod": "PUT",
                       "objectKey": "example-object-key",
-                      "sizeLimitBytes": 209715200
+                      "sizeLimitBytes": 209715200,
+                      "headers": {
+                        "If-None-Match": "*"
+                      }
                     }
                   }
                 }
@@ -2136,6 +2786,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -2155,11 +2813,23 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Get a Bulk Upsert URL"
       },
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "bulkUpsertDocs",
         "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with managed embedding vector fields.",
         "security": [
@@ -2182,17 +2852,28 @@
                   "objectKey": {
                     "type": "string",
                     "description": "Object key uploaded based on bulk upsert info."
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Send application/json explicitly when completing the upload; do not rely on a server default."
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
                   "objectKey"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
                   "summary": "Example request body for bulk upsert",
                   "value": {
-                    "objectKey": "example-object-key"
+                    "objectKey": "example-object-key",
+                    "type": "application/json"
                   }
                 }
               }
@@ -2217,7 +2898,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2277,6 +2959,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2291,6 +2976,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2312,13 +3005,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Complete a Bulk Upsert"
       }
     },
     "/collections/{collectionName}/docs/update": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "updateDocs",
         "description": "Update documents in a collection. Note that the maximum supported payload size is 6MB.",
         "security": [
@@ -2345,11 +3050,17 @@
                       "additionalProperties": true
                     },
                     "description": "A list of documents to update. Each document must contain 'id' field to be updated. For managed embedding vector fields, omit the managed vector field and update only the configured source text field."
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
                   }
                 },
                 "required": [
                   "docs"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -2454,6 +3165,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2468,6 +3182,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2489,13 +3211,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Update Documents"
       }
     },
     "/collections/{collectionName}/docs/delete": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "deleteDocs",
         "description": "Delete documents by document IDs or query filter from a collection.",
         "security": [
@@ -2513,24 +3247,43 @@
           "content": {
             "application/json": {
               "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ids": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "A list of document IDs."
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
                     },
-                    "filter": {
-                      "type": "object",
-                      "additionalProperties": true,
-                      "description": "Query filter."
-                    },
-                    "partitionFilter": {
-                      "$ref":"#/components/schemas/PartitionFilter"
-                    }
-                }
+                    "description": "A list of document IDs."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Query filter."
+                  },
+                  "partitionFilter": {
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$",
+                    "description": "Write target branch. Defaults to main when omitted."
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "ids"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "filter"
+                    ]
+                  }
+                ],
+                "description": "Specify exactly one of ids or filter. partitionFilter only narrows that selection and cannot be used alone.",
+                "additionalProperties": false
               },
               "examples": {
                 "deleteByIds": {
@@ -2574,7 +3327,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2628,6 +3382,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2642,6 +3399,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2663,13 +3428,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Delete Documents"
       }
     },
     "/collections/{collectionName}/docs/fetch": {
       "post": {
-        "tags": ["collections.docs"],
+        "tags": [
+          "collections.docs"
+        ],
         "operationId": "fetchDocs",
         "description": "Lookup and return documents by document IDs from a collection.",
         "security": [
@@ -2703,15 +3480,19 @@
                     "$ref": "#/components/schemas/IncludeVectors"
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 },
                 "required": [
                   "ids"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -2789,14 +3570,22 @@
                           "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value1",
-                            "example-field2": [0.1, 0.2, 0.3]
+                            "example-field2": [
+                              0.1,
+                              0.2,
+                              0.3
+                            ]
                           }
                         },
                         {
                           "collection": "example-collection-name",
                           "doc": {
                             "example-field1": "example-value2",
-                            "example-field2": [0.4, 0.5, 0.6]
+                            "example-field2": [
+                              0.4,
+                              0.5,
+                              0.6
+                            ]
                           }
                         }
                       ],
@@ -2806,7 +3595,8 @@
                 }
               }
             }
-          },"400": {
+          },
+          "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
@@ -2860,8 +3650,11 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
-            "description": "Too many requests",
+            "description": "Too many requests, or the pending-write payload exceeds the consistent-read limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2874,6 +3667,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2895,13 +3696,25 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Fetch Documents"
       }
     },
     "/collections/{collectionName}/query": {
       "post": {
-        "tags": ["collections"],
+        "tags": [
+          "collections"
+        ],
         "operationId": "queryCollection",
         "description": "Search a collection with a query and return the most similar documents.",
         "security": [
@@ -2945,15 +3758,19 @@
                     }
                   },
                   "fields": {
-                    "$ref":"#/components/schemas/FieldsSelector"
+                    "$ref": "#/components/schemas/FieldsSelector"
                   },
                   "partitionFilter": {
-                    "$ref":"#/components/schemas/PartitionFilter"
+                    "$ref": "#/components/schemas/PartitionFilter"
+                  },
+                  "ref": {
+                    "$ref": "#/components/schemas/RefContext"
                   }
                 },
                 "required": [
                   "query"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -3050,15 +3867,19 @@
                     "summary": "Example response for documents query",
                     "value": {
                       "took": 10,
-                      "maxScore": 1.0,
+                      "maxScore": 1,
                       "total": 2,
                       "docs": [
                         {
                           "collection": "example-collection-name",
-                          "score": 1.0,
+                          "score": 1,
                           "doc": {
                             "example-field1": "example-value1",
-                            "example-field2": [0.1, 0.2, 0.3]
+                            "example-field2": [
+                              0.1,
+                              0.2,
+                              0.3
+                            ]
                           }
                         },
                         {
@@ -3066,7 +3887,11 @@
                           "score": 0.9,
                           "doc": {
                             "example-field1": "example-value2",
-                            "example-field2": [0.4, 0.5, 0.6]
+                            "example-field2": [
+                              0.4,
+                              0.5,
+                              0.6
+                            ]
                           }
                         }
                       ],
@@ -3131,8 +3956,11 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
-            "description": "Too many requests",
+            "description": "Too many requests, or the pending-write payload exceeds the consistent-read limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3145,6 +3973,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3166,8 +4002,1702 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "summary": "Query a Collection"
+      }
+    },
+    "/collections/{collectionName}/branches": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createBranch",
+        "description": "Create a writable branch from the source's committed state; pending writes are not copied. Omit source to use main. An empty source can create an empty branch.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "branchName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "source": {
+                    "$ref": "#/components/schemas/RefSource"
+                  }
+                },
+                "required": [
+                  "branchName"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "branchName": "candidate",
+                    "source": {
+                      "kind": "branch",
+                      "name": "main"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Branch created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branch": {
+                      "$ref": "#/components/schemas/RefDetails"
+                    }
+                  },
+                  "required": [
+                    "branch"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branch": {
+                        "name": "candidate",
+                        "snapshotId": "snapshot-id",
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Create a Branch"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listBranches",
+        "description": "List branches in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RefDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "branches"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branches": [
+                        {
+                          "name": "candidate",
+                          "snapshotId": "snapshot-id",
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "List Branches"
+      }
+    },
+    "/collections/{collectionName}/branches/{branchName}": {
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteBranch",
+        "description": "Delete a branch. The default main branch cannot be deleted.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Delete a Branch"
+      }
+    },
+    "/collections/{collectionName}/tags": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createTag",
+        "description": "Pin a committed snapshot as an immutable tag. Omit source to use main. An empty head or unavailable asOf history returns 400; verify committed data before tagging.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "tagName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "source": {
+                    "$ref": "#/components/schemas/RefSource"
+                  }
+                },
+                "required": [
+                  "tagName"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "tagName": "validated-2026-09",
+                    "source": {
+                      "kind": "branch",
+                      "name": "candidate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tag": {
+                      "$ref": "#/components/schemas/RefDetails"
+                    }
+                  },
+                  "required": [
+                    "tag"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "tag": {
+                        "name": "validated-2026-09",
+                        "snapshotId": "snapshot-id",
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Create a Tag"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listTags",
+        "description": "List tags in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RefDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "tags": [
+                        {
+                          "name": "validated-2026-09",
+                          "snapshotId": "snapshot-id",
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "List Tags"
+      }
+    },
+    "/collections/{collectionName}/tags/{tagName}": {
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteTag",
+        "description": "Delete a tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/TagName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Delete a Tag"
+      }
+    },
+    "/collections/{collectionName}/aliases": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "createAlias",
+        "description": "Create an alias that targets a branch or tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "aliasName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  },
+                  "target": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "branch",
+                          "tag"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 52,
+                        "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "aliasName",
+                  "target"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "aliasName": "production-read",
+                    "target": {
+                      "kind": "tag",
+                      "name": "validated-2026-09"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alias created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alias": {
+                      "$ref": "#/components/schemas/AliasDetails"
+                    }
+                  },
+                  "required": [
+                    "alias"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "alias": {
+                        "aliasId": "alias-id",
+                        "aliasName": "production-read",
+                        "targetKind": "TAG",
+                        "targetName": "validated-2026-09",
+                        "targetId": "tag-id",
+                        "aliasRevision": 0,
+                        "dangling": false,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAlreadyExists"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for resource already exists",
+                    "value": {
+                      "message": "Resource already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Create an Alias"
+      },
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "listAliases",
+        "description": "List aliases in a collection.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alias list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "aliases": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AliasDetails"
+                      }
+                    }
+                  },
+                  "required": [
+                    "aliases"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "aliases": [
+                        {
+                          "aliasId": "alias-id",
+                          "aliasName": "production-read",
+                          "targetKind": "TAG",
+                          "targetName": "validated-2026-09",
+                          "targetId": "tag-id",
+                          "aliasRevision": 0,
+                          "dangling": false,
+                          "createdAt": 1788336000000
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "List Aliases"
+      }
+    },
+    "/collections/{collectionName}/aliases/{aliasName}": {
+      "patch": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "retargetAlias",
+        "description": "Retarget an alias to a branch or tag.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/AliasName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "branch",
+                          "tag"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 52,
+                        "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "target"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "target": {
+                      "kind": "branch",
+                      "name": "main"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alias retargeted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alias": {
+                      "$ref": "#/components/schemas/AliasDetails"
+                    }
+                  },
+                  "required": [
+                    "alias"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "alias": {
+                        "aliasId": "alias-id",
+                        "aliasName": "production-read",
+                        "targetKind": "BRANCH",
+                        "targetName": "main",
+                        "targetId": "branch-id",
+                        "aliasRevision": 1,
+                        "dangling": false,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Retarget an Alias"
+      },
+      "delete": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "deleteAlias",
+        "description": "Delete an alias.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/AliasName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ref deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "message": "Ref deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Delete an Alias"
       }
     }
   }

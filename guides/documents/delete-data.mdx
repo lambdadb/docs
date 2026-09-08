@@ -7,6 +7,10 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to use the delete endpoint to remove documents from a collection.
 
+The REST request accepts an optional `branch` field. Omitting it deletes from the default branch, `main`; a tag or alias is not a valid write target.
+
+Specify exactly one of `ids` or `filter`. An empty request, both fields together, or `partitionFilter` alone returns `400 BadRequest`. For partitioned collections, `partitionFilter` narrows the IDs or filter selection; it is not an independent deletion selector.
+
 ## Delete documents by IDs
 
 Since LambdaDB documents can always be efficiently accessed using their ID,
@@ -72,6 +76,7 @@ deleting by ID is the most efficient way to remove specific records.
     --header 'content-type: application/json' \
     --header 'x-api-key: <YOUR_API_KEY>' \
     --data '{
+    "branch": "candidate",
     "ids": [
       "example-doc-id-1",
       "example-doc-id-2"
@@ -117,6 +122,7 @@ For example, to delete all documents with genre "documentary" and year 2019 from
     --header 'content-type: application/json' \
     --header 'x-api-key: <YOUR_API_KEY>' \
     --data '{
+    "branch": "candidate",
     "filter": {
       "queryString": {
         "query": "genre:documentary AND year:2019"
@@ -132,4 +138,4 @@ For example, to delete all documents with genre "documentary" and year 2019 from
 To remove all documents from a collection,
 [delete the collection](/guides/collections/manage-collections#delete-a-collection) and
 [recreate it](/guides/collections/create-a-collection#create-a-collection-from-scratch).
-Deletion is asynchronous: if you reuse the **same** collection name, wait until the name is fully released (for example by polling describe until the collection returns not found) before calling create—see [Wait for deletion before recreating](/guides/collections/manage-collections#wait-for-deletion-before-recreating).
+The delete operation makes the logical collection unavailable before returning `200 OK`, so the same collection name can be reused immediately.

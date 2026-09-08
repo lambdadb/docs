@@ -1,6 +1,48 @@
 ---
 title: API reference
-description: Explore the LambdaDB REST API for managing projects, collections, and documents. Authenticate with your project API key to get started.
+description: Explore the LambdaDB REST API for collections, data versioning, and documents.
 ---
 
+The data API lets applications store, version, and retrieve AI knowledge and
+memory through LambdaDB collections. It uses the region-specific base URL
+and project name shown in LambdaDB Cloud and authenticates requests with the
+`x-api-key` header.
 
+Create and manage projects in [LambdaDB Cloud](https://app.lambdadb.ai). The
+public REST API documented here starts with an existing project and covers its
+collections, data versioning, and documents.
+
+Every collection has a default branch named `main`. Read requests can select a
+branch, tag, or alias, while mutation requests can select a branch. See
+[Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) for
+the ref contract and consistency rules.
+
+Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch
+milliseconds. Pagination tokens are opaque strings: return them unchanged to
+the same endpoint.
+
+The Gateway returns `404` for unknown routes, `405` for unsupported methods,
+and `415` when a JSON-consuming route receives an unsupported media type.
+Mapped errors and accepted mutations use a JSON `{ "message": "..." }` body.
+Do not send request bodies on management `GET` or `DELETE` routes.
+
+## Errors and retries
+
+| Status | Meaning and handling |
+| :----- | :------------------- |
+| `400` | Invalid input, ref selector, target, or retained history. An existing dangling alias also returns this status. Correct the request before retrying. |
+| `401` | Authentication failed. Check the project API key and endpoint. |
+| `404` | Collection, selected ref, or requested target does not exist. Refresh dependent state. Repeating a DELETE after deletion can return this status. |
+| `409` | Name collision or conditional catalog conflict. Refresh the resource state before deciding whether to retry. |
+| `413` | Request exceeds the Gateway transport limit. Reduce the request size or use bulk upsert when supported. |
+| `429` | Request throttled, or a consistent read's pending payload exceeds its limit. Back off and retain the server message. Honor `Retry-After` when present; not every response includes it. |
+| `500` | Internal server error. Retain error context for troubleshooting. |
+| `502` | Unexpected downstream failure. A write's outcome may be uncertain. |
+| `503` | Transient catalog or storage dependency failure. Use bounded retries where the operation permits. |
+| `504` | Gateway deadline exceeded. A write may already have been applied; verify the outcome before retrying. |
+
+Mapped errors return a JSON `message`; internal catalog error names are not a public structured `code` field. An unsuccessful or timed-out write response does not always mean that no mutation occurred. Check the resulting state before repeating a mutation whose outcome is uncertain.
+
+JSON requests accept `application/json; charset=UTF-8`. A missing or unsupported media type may return `415` before authentication. Strict request parsing rejects unknown fields. Management GET and DELETE routes reject even an unnecessary `{}` body.
+
+Object-storage errors during a presigned upload have their own response format. See [Bulk upload retries](/guides/documents/bulk-upsert-data#upload-retries) for the create-only PUT and `412` behavior.

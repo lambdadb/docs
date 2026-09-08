@@ -14,6 +14,7 @@ This page shows you how to use the fetch endpoint to fetch documents by IDs from
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. (Python: `consistent_read`) | boolean          |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | partitionFilter | Partition filter. | object |  |  |
+| ref | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }`. | object |  | `main` branch |
 
 <Tip>
 
@@ -88,11 +89,12 @@ To fetch documents, specify the document IDs (up to 100 IDs).
   ```
 
   ```bash cURL
-  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/fetch" \
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs/fetch" \
     -H "Content-Type: application/json" \
     -H "x-api-key: ${YOUR_API_KEY}" \
     -d '{
       "ids": ["33201222"],
+      "ref": { "kind": "tag", "name": "validated-2026-09" },
       "includeVectors": true,
       "fields": {
         "include": ["url", "title", "text"]
@@ -101,6 +103,10 @@ To fetch documents, specify the document IDs (up to 100 IDs).
   ```
 
 </CodeGroup>
+
+`consistentRead: true` is supported only when `ref` directly selects a branch. Tag and alias reads reject consistent reads. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#read-from-a-ref).
+
+Consistent reads overlay eligible pending writes. Pending bulk imports remain invisible until committed, and a pending payload above the consistent-read limit returns `429`.
 
 The response will look like this:
 
@@ -115,8 +121,8 @@ The response will look like this:
         "id": "33201222",
         "url": "https://en.wikipedia.org/wiki/LambdaDB",
         "title": "LambdaDB",
-        "text": "LambdaDB is an AI-native database ... ",
-        "vector": [0.6, -0.12, 0.65, 0.2, 0.3, ...]
+        "text": "LambdaDB is the vector lake for AI memory ... ",
+        "vector": [0.6, -0.12, 0.65, 0.2, 0.3]
       }
     }
   ],

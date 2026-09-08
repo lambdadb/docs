@@ -1,0 +1,198 @@
+---
+title: Branches, tags, and aliases
+description: Create writable branches, pin immutable tags, route reads through aliases, and select a ref for LambdaDB document operations.
+---
+
+LambdaDB data versioning provides named histories for the knowledge or memory stored in a collection. Every collection starts with a default branch named `main`.
+
+| Ref type | Purpose | Writable | Target can change |
+|:----|:--------|:---------|:------------------|
+| Branch | Isolated line of document history | Yes | Advances when writes commit |
+| Tag | Immutable name for one committed snapshot | No | No |
+| Alias | Stable read name for a branch or tag | No | Yes, with `PATCH` |
+
+Refs are scoped to one collection. Branch merge, direct branch reset, ref rename, and cross-collection snapshot sharing are not part of this API. Branch, tag, and alias names must contain 3 to 52 letters, numbers, underscores, or hyphens.
+
+## Create and list branches
+
+Create a branch from `main`:
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "branchName": "candidate",
+    "source": { "kind": "branch", "name": "main" }
+  }'
+```
+
+Omit `source` to use `main`. A branch may have an empty head, in which case `snapshotId` is `null`.
+
+Branch creation copies the source's committed state. It does not copy pending writes. Schema and retention updates remain collection-scoped; tag reads use their pinned schema.
+
+```json
+{
+  "branch": {
+    "name": "candidate",
+    "snapshotId": "<snapshot-id>",
+    "createdAt": 1788336000000
+  }
+}
+```
+
+List branches:
+
+```bash
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+The response contains a `branches` array with the same `name`, `snapshotId`, and epoch-millisecond `createdAt` fields.
+
+## Point-in-time branches
+
+Set `source.asOf` to select the latest committed snapshot at or before that Unix epoch-millisecond timestamp:
+
+```json
+{
+  "branchName": "recovery-check",
+  "source": {
+    "kind": "branch",
+    "name": "main",
+    "asOf": 1788336000000
+  }
+}
+```
+
+`asOf` is valid only when `source.kind` is `branch`. Missing or no-longer-retained history returns `400 BadRequest`. It selects committed history, so it cannot recover a write that was still pending at the requested time. There is no public snapshot-history-list API.
+
+## Create and list tags
+
+A tag pins one committed snapshot and cannot be retargeted:
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/tags" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "tagName": "validated-2026-09",
+    "source": { "kind": "branch", "name": "candidate" }
+  }'
+```
+
+Omit `source` to pin the current `main` snapshot. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array.
+
+A tag cannot be created from an empty head. Verify the intended committed data with `consistentRead: false` before creating a release tag; a read that includes pending writes does not prove those writes will be captured by the tag. Ref lists are unpaginated, and there are no individual branch, tag, or alias GET routes.
+
+## Create, retarget, and list aliases
+
+An alias points to a branch or tag:
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/aliases" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "aliasName": "production-read",
+    "target": { "kind": "tag", "name": "validated-2026-09" }
+  }'
+```
+
+Retarget it without changing the alias name used by readers:
+
+```bash
+curl -i -X PATCH \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/aliases/production-read" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "target": { "kind": "branch", "name": "main" }
+  }'
+```
+
+`GET .../aliases` returns an `aliases` array. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
+
+Deleting an alias target does not delete the alias. A missing target sets `dangling` to `true`; reads through that alias return `400 BadRequest` until it is retargeted to an existing branch or tag. Selecting a ref that does not exist returns `404 ResourceNotFound`.
+
+Aliases bind to the target's identity. Recreating a branch or tag under the same name does not repair a dangling alias; explicitly retarget it to the new target.
+
+## Read from a ref
+
+Query, fetch, and extended list request bodies accept:
+
+```json
+{
+  "ref": {
+    "kind": "branch",
+    "name": "candidate"
+  }
+}
+```
+
+`ref.kind` accepts `branch`, `tag`, or `alias`. Add this object alongside the endpoint's normal fields. Omitting `ref` reads from `main`.
+
+The GET list endpoint has no request body. Supply `refKind` and `refName` together:
+
+```bash
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs?refKind=alias&refName=production-read" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+Supplying only one of `refKind` or `refName` is invalid.
+
+### Consistent reads
+
+Query and fetch requests support `consistentRead: true` only when they directly select a branch. Tag and alias reads reject it, including an alias that currently targets a branch.
+
+Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload exceeds the limit, independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
+
+Page tokens record a search position, not a fixed snapshot. Branches can advance and aliases can move between pages. Use the same immutable tag on every page for a stable export, keeping filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
+
+## Write to a branch
+
+Upsert, update, delete, and bulk-upsert request bodies accept an optional `branch` string. Omitting it writes to `main`.
+
+```json
+{
+  "branch": "candidate",
+  "docs": [
+    { "id": "doc-1", "title": "Candidate document" }
+  ]
+}
+```
+
+The value is resolved as a branch name. A tag or alias is not a valid write target.
+
+For bulk upsert, use the same branch for both control calls:
+
+```text
+GET  .../docs/bulk-upsert?branch=candidate
+POST .../docs/bulk-upsert
+{
+  "objectKey": "...",
+  "type": "application/json",
+  "branch": "candidate"
+}
+```
+
+Set `Content-Type` to the response's `type` value and send every entry in its `headers` map unchanged with the presigned `PUT`.
+
+## Delete a ref
+
+Delete a named ref with its type-specific route:
+
+```text
+DELETE .../branches/{branchName}
+DELETE .../tags/{tagName}
+DELETE .../aliases/{aliasName}
+```
+
+The default `main` branch cannot be deleted independently from its collection. Deleting a ref does not delete the collection.
+
+The default branch cannot be changed. Deleting an already absent ref can return `404`.

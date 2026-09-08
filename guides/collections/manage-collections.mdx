@@ -9,12 +9,14 @@ This page shows you how to manage your existing collections including listing, d
 
 ## List collections
 
-Retrieve a complete list of all collections in your project along with their metadata and status information. The endpoint supports optional pagination.
+Retrieve collections in your project with their configuration and metadata. The endpoint supports optional pagination.
 
 | Parameter  | Description                                      | Type    | Required | Default |
 | :--------- | :----------------------------------------------- | :------ | :------- | :------ |
 | size       | Max number of collections to return in one page. | integer |          |         |
 | pageToken  | Token for the next page of results.              | string  |          |         |
+
+Treat `pageToken` as opaque. Return it unchanged to the same endpoint.
 
 <CodeGroup>
 
@@ -95,11 +97,15 @@ The response includes detailed information about each collection. When there are
         "title": {"type": "text"},
         "category": {"type": "keyword"}
       },
+      "description": "Product catalog",
+      "tags": {"environment": "production"},
       "numDocs": 1250,
-      "sourceProjectName": "source-project-name",
-      "sourceCollectionName": "source-collection-name",
-      "sourceCollectionVersionId": "wR0NyDJbqDiHMaaV597GjczO2oGQyG7T",
-      "collectionStatus": "ACTIVE"
+      "numPartitions": 1,
+      "defaultBranchName": "main",
+      "snapshotRetentionInDays": 30,
+      "createdAt": 1788336000000,
+      "updatedAt": 1788336000000,
+      "dataUpdatedAt": 1788336060000
     }
   ],
   "nextPageToken": "eyJ..."
@@ -108,7 +114,7 @@ The response includes detailed information about each collection. When there are
 
 ## Describe a collection
 
-Get detailed information about a specific collection, including its configuration, document count, and current status.
+Get detailed information about a specific collection, including its configuration, document count, default branch, and retention period. `numDocs` and `dataUpdatedAt` describe the default `main` branch's committed head. They are not totals across branches or statistics for a selected ref. `dataUpdatedAt` may be absent before the first snapshot commits.
 
 <CodeGroup>
 
@@ -135,36 +141,76 @@ curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection"
 
 </CodeGroup>
 
-The response provides comprehensive collection details:
+The REST response wraps the collection details in `collection`. SDK convenience methods may return the inner object:
 
 ```json
 {
-  "projectName": "your-project",
-  "collectionName": "example-collection",
-  "indexConfigs": {
-    "title": {
-      "type": "text",
-      "analyzers": ["standard", "korean"]
+  "collection": {
+    "projectName": "your-project",
+    "collectionName": "example-collection",
+    "indexConfigs": {
+      "title": {
+        "type": "text",
+        "analyzers": ["standard", "korean"]
+      },
+      "embedding": {
+        "type": "vector",
+        "dimensions": 768,
+        "similarity": "cosine"
+      }
     },
-    "embedding": {
-      "type": "vector",
-      "dimensions": 768,
-      "similarity": "cosine"
-    }
-  },
-  "numDocs": 1250,
-  "sourceProjectName": "source-project-name",
-  "sourceCollectionName": "source-collection-name",
-  "sourceCollectionVersionId": "wR0NyDJbqDiHMaaV597GjczO2oGQyG7T",
-  "collectionStatus": "ACTIVE"
+    "description": "Product catalog",
+    "tags": {"environment": "production"},
+    "numDocs": 1250,
+    "numPartitions": 1,
+    "defaultBranchName": "main",
+    "snapshotRetentionInDays": 30,
+    "createdAt": 1788336000000,
+    "updatedAt": 1788336000000,
+    "dataUpdatedAt": 1788336060000
+  }
 }
 ```
+
+Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds.
+
+## Configure a collection
+
+Update one or more of `indexConfigs`, `description`, `tags`, or
+`snapshotRetentionInDays`:
+
+```bash
+curl -i -X PATCH \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "description": "Validated product catalog",
+    "tags": { "environment": "production" },
+    "snapshotRetentionInDays": 14
+  }'
+```
+
+The REST response is `200 OK` with the full `collection` wrapper. Omitted or `null` fields remain unchanged; at least one supported field must be non-null.
+
+| Field | Supplied value |
+| :---- | :------------- |
+| `description` | Replaces the description; `""` clears it. Maximum 255 characters. |
+| `tags` | Replaces the entire metadata map, rather than merging keys; `{}` clears it. |
+| `snapshotRetentionInDays` | Integer from `1` through `31`; there is no unlimited-retention value. |
+| `indexConfigs` | Nonempty full schema, preserving existing field definitions and adding new top-level fields. |
+
+Existing field definitions must remain unchanged, including their nested field maps. Adding a child under an existing object field is not supported by the current update contract. `partitionConfig` and `defaultBranchName` cannot be changed with PATCH.
+
+Metadata tags allow up to five entries. Keys must match `[A-Za-z0-9_.-]{1,63}`; values must be nonblank, at most 127 characters, and cannot contain `:`, `#`, or `,`. These metadata tags are separate from data-versioning tags.
 
 ## Delete a collection
 
 Permanently delete a collection and all of its associated data and resources. This operation cannot be undone.
 
-Deletion is **asynchronous**: the API returns **202 Accepted** and queues the work in the background. Until the job finishes, the collection name is still reserved—you may see `collectionStatus` **`DELETING`** from [Describe a collection](#describe-a-collection), and creating a collection with the same name can fail with a resource-already-exists error. For large collections (for example thousands of documents), this phase can take **a minute or longer**. Use the [wait-for-deletion pattern](#wait-for-deletion-before-recreating) before calling create again with the same name.
+The API performs the logical deletion transition before returning `200 OK`. The deleted collection becomes unavailable and its name can be reused immediately.
+
+Physical cleanup may continue after the response. Recreating the name creates a new collection identity; discard cached state for the old collection. Deleting an already absent collection can return `404`.
 
 <CodeGroup>
 
@@ -188,146 +234,14 @@ curl -i -X DELETE "$BASE_URL/projects/$PROJECT_NAME/collections/collection-to-de
 
 </CodeGroup>
 
+The REST response is:
+
+```json
+{
+  "message": "Collection deletion requested"
+}
+```
+
 <Warning>
 Deleting a collection is irreversible and will permanently remove all documents and metadata. Make sure you have proper backups if needed before proceeding with this operation.
 </Warning>
-
-## Collection status
-
-Collections can have the following status values:
-
-| Status     | Description |
-|:-----------|:------------|
-| `CREATING` | Collection is being created and not yet available |
-| `ACTIVE`   | Collection is ready for read/write operations |
-| `DELETING` | Collection is being deleted asynchronously; the name stays reserved until removal completes |
-
-## Wait for deletion before recreating
-
-If you delete a collection and immediately call create with the **same** `collectionName`, the create request may fail (for example **Resource already exists** / `ResourceAlreadyExists`) even though you already issued delete. That is expected while the collection is still being removed.
-
-**What to do:** After a successful delete call, poll **Describe** (`get`) until the collection **no longer exists** (typically HTTP **404** / `ResourceNotFound` from the API), then create. Checking `collectionStatus === "DELETING"` on each successful `get` confirms you are still in the teardown phase.
-
-**Prefer `get` over `list` for this:** `list` can still include the collection for some time after delete; describe-by-name reflects the lifecycle more directly for a single collection.
-
-<CodeGroup>
-
-```python Python
-import time
-
-collection_name = "knowledge-layer"
-poll_interval_s = 2.0
-max_wait_s = 900.0  # allow long-running deletes for large collections
-
-with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
-    client.collections.delete(collection_name=collection_name)
-
-    deadline = time.monotonic() + max_wait_s
-    while time.monotonic() < deadline:
-        try:
-            meta = client.collections.get(collection_name=collection_name)
-        except Exception as exc:
-            # When the collection is fully gone, describe returns 404 — use the not-found type your SDK maps to that response.
-            code = getattr(exc, "status_code", None) or getattr(exc, "status", None)
-            if code == 404:
-                break
-            raise
-        # Still present (often with status=DELETING); the name is not free yet.
-        time.sleep(poll_interval_s)
-    else:
-        raise TimeoutError(f"Timed out after {max_wait_s}s waiting for {collection_name!r} to be removed")
-
-    # Use the same index_configs you would pass to a normal create.
-    client.collections.create(collection_name=collection_name, index_configs=your_index_configs)
-```
-
-```typescript TypeScript
-import { LambdaDBClient } from "@functional-systems/lambdadb";
-
-const collectionName = "knowledge-layer";
-const pollMs = 2000;
-const timeoutMs = 900_000;
-
-const client = new LambdaDBClient({
-  projectApiKey: "YOUR_API_KEY",
-  baseUrl: "YOUR_BASE_URL",
-  projectName: "YOUR_PROJECT_NAME",
-});
-
-await client.collection(collectionName).delete();
-
-const deadline = Date.now() + timeoutMs;
-while (Date.now() < deadline) {
-  try {
-    // Still present (often with status=DELETING); the name is not free yet.
-    await client.collection(collectionName).get();
-    await new Promise((r) => setTimeout(r, pollMs));
-  } catch (e: unknown) {
-    // When the collection is fully removed, describe should fail with a not-found style error (often HTTP 404).
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.toLowerCase().includes("not found") || msg.includes("404")) break;
-    throw e;
-  }
-}
-if (Date.now() >= deadline) throw new Error(`Timeout waiting for ${collectionName} to be removed`);
-
-await client.createCollection({
-  collectionName,
-  indexConfigs: {
-    /* same fields as a normal create */
-  },
-});
-```
-
-```go Go
-package main
-
-import (
-	"context"
-	"errors"
-	"log"
-	"time"
-
-	lambdadb "github.com/lambdadb/go-lambdadb"
-	"github.com/lambdadb/go-lambdadb/models/apierrors"
-	"github.com/lambdadb/go-lambdadb/models/components"
-)
-
-func example(ctx context.Context, client *lambdadb.Client) {
-	poll := 2 * time.Second
-	deadline := time.Now().Add(900 * time.Second)
-	name := "knowledge-layer"
-
-	if _, err := client.Collection(name).Delete(ctx); err != nil {
-		log.Fatal(err)
-	}
-
-	for time.Now().Before(deadline) {
-		meta, err := client.Collection(name).Get(ctx)
-		if err != nil {
-			var nf *apierrors.ResourceNotFoundError
-			if errors.As(err, &nf) {
-				break
-			}
-			log.Fatal(err)
-		}
-		_ = meta // still present (often with status=DELETING); the name is not free yet
-		time.Sleep(poll)
-	}
-	if time.Now().After(deadline) {
-		log.Fatalf("timeout waiting for collection %q to be removed", name)
-	}
-
-	_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
-		CollectionName: name,
-		IndexConfigs: map[string]interface{}{
-			/* same fields as a normal create */
-		},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-```
-
-</CodeGroup>
