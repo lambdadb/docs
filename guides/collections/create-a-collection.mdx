@@ -12,7 +12,7 @@ This page shows you how to create a collection with various configurations.
 | Parameter | Type | Required | Description |
 |:----------|:-----|:---------|:------------|
 | collectionName | string | ✓ | Unique name within the project; 3 to 52 letters, numbers, underscores, or hyphens |
-| indexConfigs | object | ✓ | Field configuration for indexing |
+| indexConfigs | object | ✓ | Nonempty field configuration for indexing |
 | description | string |  | Collection description, up to 255 characters |
 | tags | object |  | Up to five metadata key-value pairs |
 | partitionConfig | object |  | Partition configuration |
@@ -116,6 +116,8 @@ A successful REST request returns `201 Created`. Collection creation also create
 ```
 
 Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds.
+
+The create response is intentionally compact. Use describe or list to retrieve `indexConfigs`, document counts, and the full collection model. `201` confirms catalog creation; it does not guarantee query-serving readiness or completed indexing. Handle loading and retry states using actual operations; there is no collection-status readiness field to poll.
 
 ## Create a collection with managed embeddings
 
@@ -258,6 +260,8 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 ## Snapshot retention
 
 Every collection retains committed snapshots for 30 days by default. Set `snapshotRetentionInDays` to an integer from `1` through `31` when creating the collection, or change it later with the collection update API.
+
+Omitting retention on create selects the default; explicitly sending `null` is rejected. See [Collection PATCH rules](/guides/collections/manage-collections#configure-a-collection) for update and metadata-tag semantics.
 
 Point-in-time history is available by creating a branch rather than cloning another collection. A `source.asOf` value is a Unix epoch timestamp in milliseconds and must refer to a branch in the same collection. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#point-in-time-branches).
 

@@ -63,7 +63,7 @@ This feature is particularly useful when you want to:
 
 <Info>
 
-Changes written to one branch do not change another branch. Collection schema, metadata tags, partitioning, and retention remain collection-level configuration shared by every ref.
+Changes written to one branch do not change another branch. Schema updates, metadata tags, partitioning, and retention are configured at the collection level. Branches are not independent schema-editing environments; tag reads retain the schema pinned with their snapshot.
 
 </Info>
 

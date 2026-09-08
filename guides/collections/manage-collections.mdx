@@ -114,7 +114,7 @@ The response includes detailed information about each collection. When there are
 
 ## Describe a collection
 
-Get detailed information about a specific collection, including its configuration, document count, default branch, and retention period.
+Get detailed information about a specific collection, including its configuration, document count, default branch, and retention period. `numDocs` and `dataUpdatedAt` describe the default `main` branch's committed head. They are not totals across branches or statistics for a selected ref. `dataUpdatedAt` may be absent before the first snapshot commits.
 
 <CodeGroup>
 
@@ -141,32 +141,34 @@ curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection"
 
 </CodeGroup>
 
-The response provides comprehensive collection details:
+The REST response wraps the collection details in `collection`. SDK convenience methods may return the inner object:
 
 ```json
 {
-  "projectName": "your-project",
-  "collectionName": "example-collection",
-  "indexConfigs": {
-    "title": {
-      "type": "text",
-      "analyzers": ["standard", "korean"]
+  "collection": {
+    "projectName": "your-project",
+    "collectionName": "example-collection",
+    "indexConfigs": {
+      "title": {
+        "type": "text",
+        "analyzers": ["standard", "korean"]
+      },
+      "embedding": {
+        "type": "vector",
+        "dimensions": 768,
+        "similarity": "cosine"
+      }
     },
-    "embedding": {
-      "type": "vector",
-      "dimensions": 768,
-      "similarity": "cosine"
-    }
-  },
-  "description": "Product catalog",
-  "tags": {"environment": "production"},
-  "numDocs": 1250,
-  "numPartitions": 1,
-  "defaultBranchName": "main",
-  "snapshotRetentionInDays": 30,
-  "createdAt": 1788336000000,
-  "updatedAt": 1788336000000,
-  "dataUpdatedAt": 1788336060000
+    "description": "Product catalog",
+    "tags": {"environment": "production"},
+    "numDocs": 1250,
+    "numPartitions": 1,
+    "defaultBranchName": "main",
+    "snapshotRetentionInDays": 30,
+    "createdAt": 1788336000000,
+    "updatedAt": 1788336000000,
+    "dataUpdatedAt": 1788336060000
+  }
 }
 ```
 
@@ -189,15 +191,26 @@ curl -i -X PATCH \
   }'
 ```
 
-Retention must be an integer from `1` through `31`. Set `tags` to `{}` to clear
-all collection metadata tags. An update request must include at least one
-supported field.
+The REST response is `200 OK` with the full `collection` wrapper. Omitted or `null` fields remain unchanged; at least one supported field must be non-null.
+
+| Field | Supplied value |
+| :---- | :------------- |
+| `description` | Replaces the description; `""` clears it. Maximum 255 characters. |
+| `tags` | Replaces the entire metadata map, rather than merging keys; `{}` clears it. |
+| `snapshotRetentionInDays` | Integer from `1` through `31`; there is no unlimited-retention value. |
+| `indexConfigs` | Nonempty full schema, preserving existing field definitions and adding new top-level fields. |
+
+Existing field definitions must remain unchanged, including their nested field maps. Adding a child under an existing object field is not supported by the current update contract. `partitionConfig` and `defaultBranchName` cannot be changed with PATCH.
+
+Metadata tags allow up to five entries. Keys must match `[A-Za-z0-9_.-]{1,63}`; values must be nonblank, at most 127 characters, and cannot contain `:`, `#`, or `,`. These metadata tags are separate from data-versioning tags.
 
 ## Delete a collection
 
 Permanently delete a collection and all of its associated data and resources. This operation cannot be undone.
 
 The API performs the logical deletion transition before returning `200 OK`. The deleted collection becomes unavailable and its name can be reused immediately.
+
+Physical cleanup may continue after the response. Recreating the name creates a new collection identity; discard cached state for the old collection. Deleting an already absent collection can return `404`.
 
 <CodeGroup>
 

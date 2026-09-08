@@ -9,6 +9,8 @@ This page shows you how to use the delete endpoint to remove documents from a co
 
 The REST request accepts an optional `branch` field. Omitting it deletes from the default branch, `main`; a tag or alias is not a valid write target.
 
+Specify exactly one of `ids` or `filter`. An empty request, both fields together, or `partitionFilter` alone returns `400 BadRequest`. For partitioned collections, `partitionFilter` narrows the IDs or filter selection; it is not an independent deletion selector.
+
 ## Delete documents by IDs
 
 Since LambdaDB documents can always be efficiently accessed using their ID,

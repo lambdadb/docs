@@ -30,6 +30,8 @@ curl -i -X POST \
 
 Omit `source` to use `main`. A branch may have an empty head, in which case `snapshotId` is `null`.
 
+Branch creation copies the source's committed state. It does not copy pending writes. Schema and retention updates remain collection-scoped; tag reads use their pinned schema.
+
 ```json
 {
   "branch": {
@@ -65,7 +67,7 @@ Set `source.asOf` to select the latest committed snapshot at or before that Unix
 }
 ```
 
-`asOf` is valid only when `source.kind` is `branch`. The requested time must fall within the collection's retained snapshot history.
+`asOf` is valid only when `source.kind` is `branch`. Missing or no-longer-retained history returns `400 BadRequest`. It selects committed history, so it cannot recover a write that was still pending at the requested time. There is no public snapshot-history-list API.
 
 ## Create and list tags
 
@@ -83,6 +85,8 @@ curl -i -X POST \
 ```
 
 Omit `source` to pin the current `main` snapshot. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array.
+
+A tag cannot be created from an empty head. Verify the intended committed data with `consistentRead: false` before creating a release tag; a read that includes pending writes does not prove those writes will be captured by the tag. Ref lists are unpaginated, and there are no individual branch, tag, or alias GET routes.
 
 ## Create, retarget, and list aliases
 
@@ -115,6 +119,8 @@ curl -i -X PATCH \
 
 Deleting an alias target does not delete the alias. A missing target sets `dangling` to `true`; reads through that alias return `400 BadRequest` until it is retargeted to an existing branch or tag. Selecting a ref that does not exist returns `404 ResourceNotFound`.
 
+Aliases bind to the target's identity. Recreating a branch or tag under the same name does not repair a dangling alias; explicitly retarget it to the new target.
+
 ## Read from a ref
 
 Query, fetch, and extended list request bodies accept:
@@ -143,6 +149,10 @@ Supplying only one of `refKind` or `refName` is invalid.
 ### Consistent reads
 
 Query and fetch requests support `consistentRead: true` only when they directly select a branch. Tag and alias reads reject it, including an alias that currently targets a branch.
+
+Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload exceeds the limit, independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
+
+Page tokens record a search position, not a fixed snapshot. Branches can advance and aliases can move between pages. Use the same immutable tag on every page for a stable export, keeping filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
 
 ## Write to a branch
 
@@ -184,3 +194,5 @@ DELETE .../aliases/{aliasName}
 ```
 
 The default `main` branch cannot be deleted independently from its collection. Deleting a ref does not delete the collection.
+
+The default branch cannot be changed. Deleting an already absent ref can return `404`.

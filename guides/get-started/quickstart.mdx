@@ -241,9 +241,9 @@ message: Upsert request is accepted
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
 - **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
 - **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries.
-  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when you query or fetch data from a collection.
+  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying or fetching a branch directly. This overlays eligible pending writes, excluding pending bulk imports, and can return `429` if the pending payload exceeds its limit. Tag and alias reads reject this option.
 
-**Check indexing status:** You can view collection stats to verify that your documents have been indexed:
+**Check committed data:** The calls below show collection statistics. `numDocs` and `dataUpdatedAt` describe the default `main` branch's committed head; `dataUpdatedAt` may be absent before its first commit. To verify particular writes on any branch, query or fetch the expected records from that branch with `consistentRead: false`.
 
 <CodeGroup>
 ```python Python

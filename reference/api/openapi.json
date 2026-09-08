@@ -143,6 +143,56 @@
             }
           }
         }
+      },
+      "PayloadTooLarge": {
+        "description": "Request exceeds the Gateway transport limit. Reduce the request size or use bulk upsert when supported.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Unexpected downstream failure. A failed write response may leave its outcome uncertain.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Transient catalog or storage dependency failure. Use bounded retries where the operation permits.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "GatewayTimeout": {
+        "description": "Gateway request deadline exceeded. A write may have been applied; verify its outcome before retrying.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
+      },
+      "CatalogConflict": {
+        "description": "Conditional catalog conflict. Refresh the resource state before deciding whether to retry.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -334,7 +384,9 @@
               ]
             }
           ]
-        }
+        },
+        "minProperties": 1,
+        "description": "Nonempty field configuration map. Collection updates must supply the full schema and preserve existing field definitions, including nested fields."
       },
       "PartitionConfig": {
         "title": "PartitionConfig",
@@ -454,7 +506,7 @@
           },
           "numDocs": {
             "type": "integer",
-            "description": "Total number of documents."
+            "description": "Document count in the default main branch's committed head, not a sum across branches or the count of a selected ref."
           },
           "defaultBranchName": {
             "type": "string",
@@ -482,7 +534,7 @@
           "dataUpdatedAt": {
             "type": "integer",
             "format": "int64",
-            "description": "Collection data last update time as Unix epoch milliseconds."
+            "description": "Default main branch head commit time as Unix epoch milliseconds. Absent before a committed head exists."
           }
         },
         "required": [
@@ -514,7 +566,7 @@
         "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
-        "description": "Strongly consistent read. Supported only when the request directly selects a branch."
+        "description": "Overlay eligible pending writes on a directly selected branch's committed data. Defaults to false. Tag and alias reads reject true. Pending bulk imports are excluded. Returns 429 if the pending payload exceeds the consistent-read limit."
       },
       "IncludeVectors": {
         "title": "IncludeVectors",
@@ -939,6 +991,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -958,6 +1018,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Collections"
@@ -1131,6 +1200,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1145,6 +1217,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1166,6 +1246,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Create a Collection"
@@ -1243,6 +1332,9 @@
               }
             }
           },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1257,6 +1349,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1278,6 +1378,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Delete a Collection"
@@ -1401,6 +1510,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -1420,6 +1537,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Describe a Collection"
@@ -1448,36 +1574,114 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "Provide at least one field.",
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema.",
                 "properties": {
                   "indexConfigs": {
-                    "$ref": "#/components/schemas/IndexConfigs"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/IndexConfigs"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "description": {
-                    "type": "string",
-                    "maxLength": 255
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "tags": {
-                    "type": "object",
-                    "description": "Collection metadata tags. Up to five entries.",
-                    "maxProperties": 5,
-                    "additionalProperties": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 127,
-                      "pattern": "^[^:#,]+$"
-                    },
-                    "propertyNames": {
-                      "pattern": "^[A-Za-z0-9_.-]{1,63}$"
-                    }
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "Replaces the entire collection metadata map; {} clears it. Up to five entries.",
+                        "maxProperties": 5,
+                        "additionalProperties": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 127,
+                          "pattern": "^[^:#,]+$"
+                        },
+                        "propertyNames": {
+                          "pattern": "^[A-Za-z0-9_.-]{1,63}$"
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "snapshotRetentionInDays": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 31,
-                    "description": "Number of days to retain committed snapshots."
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31,
+                        "description": "Number of days to retain committed snapshots."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
-                }
+                },
+                "anyOf": [
+                  {
+                    "required": [
+                      "indexConfigs"
+                    ],
+                    "properties": {
+                      "indexConfigs": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "description"
+                    ],
+                    "properties": {
+                      "description": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "tags"
+                    ],
+                    "properties": {
+                      "tags": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "snapshotRetentionInDays"
+                    ],
+                    "properties": {
+                      "snapshotRetentionInDays": {
+                        "not": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  }
+                ]
               },
               "examples": {
                 "metadataAndRetention": {
@@ -1603,6 +1807,12 @@
               }
             }
           },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -1617,6 +1827,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1638,6 +1856,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Configure a Collection"
@@ -1672,7 +1899,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Opaque token returned by the previous page. Do not decode or modify it.",
+            "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages.",
             "schema": {
               "type": "string"
             }
@@ -1840,6 +2067,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -1859,6 +2094,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Documents"
@@ -1898,7 +2142,7 @@
                   },
                   "pageToken": {
                     "type": "string",
-                    "description": "Opaque token returned by the previous page. Do not decode or modify it."
+                    "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages."
                   },
                   "filter": {
                     "type": "object",
@@ -2102,6 +2346,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2116,6 +2363,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2137,6 +2392,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Documents with a Request Body"
@@ -2182,7 +2446,8 @@
                 },
                 "required": [
                   "docs"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -2285,6 +2550,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2299,6 +2567,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2320,6 +2596,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Upsert Documents"
@@ -2331,7 +2616,7 @@
           "collections.docs"
         ],
         "operationId": "getBulkUpsertDocs",
-        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields.",
+        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields. Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2493,6 +2778,14 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "500": {
@@ -2512,6 +2805,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Get a Bulk Upsert URL"
@@ -2545,7 +2847,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "default": "application/json"
+                    "description": "Send application/json explicitly when completing the upload; do not rely on a server default."
                   },
                   "branch": {
                     "type": "string",
@@ -2555,7 +2857,8 @@
                 },
                 "required": [
                   "objectKey"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -2648,6 +2951,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2662,6 +2968,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2683,6 +2997,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Complete a Bulk Upsert"
@@ -2728,7 +3051,8 @@
                 },
                 "required": [
                   "docs"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -2833,6 +3157,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -2847,6 +3174,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2868,6 +3203,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Update Documents"
@@ -2917,7 +3261,21 @@
                     "pattern": "^[a-zA-Z0-9_-]{3,52}$",
                     "description": "Write target branch. Defaults to main when omitted."
                   }
-                }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "ids"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "filter"
+                    ]
+                  }
+                ],
+                "description": "Specify exactly one of ids or filter. partitionFilter only narrows that selection and cannot be used alone.",
+                "additionalProperties": false
               },
               "examples": {
                 "deleteByIds": {
@@ -3016,6 +3374,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -3030,6 +3391,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3051,6 +3420,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Delete Documents"
@@ -3105,7 +3483,8 @@
                 },
                 "required": [
                   "ids"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -3263,8 +3642,11 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
-            "description": "Too many requests",
+            "description": "Too many requests, or the pending-write payload exceeds the consistent-read limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3277,6 +3659,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3298,6 +3688,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Fetch Documents"
@@ -3362,7 +3761,8 @@
                 },
                 "required": [
                   "query"
-                ]
+                ],
+                "additionalProperties": false
               },
               "examples": {
                 "example": {
@@ -3548,8 +3948,11 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
-            "description": "Too many requests",
+            "description": "Too many requests, or the pending-write payload exceeds the consistent-read limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3562,6 +3965,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3583,6 +3994,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Query a Collection"
@@ -3594,7 +4014,7 @@
           "versioning"
         ],
         "operationId": "createBranch",
-        "description": "Create a writable branch. Omit source to use main.",
+        "description": "Create a writable branch from the source's committed state; pending writes are not copied. Omit source to use main. An empty source can create an empty branch.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3671,9 +4091,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3710,6 +4127,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "409": {
             "description": "Resource already exists",
             "content": {
@@ -3728,6 +4148,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -3742,6 +4165,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3763,6 +4194,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Create a Branch"
@@ -3818,9 +4258,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3857,6 +4294,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -3871,6 +4311,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3892,6 +4340,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Branches"
@@ -3935,9 +4392,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3974,6 +4428,12 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -3988,6 +4448,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4009,6 +4477,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Delete a Branch"
@@ -4020,7 +4497,7 @@
           "versioning"
         ],
         "operationId": "createTag",
-        "description": "Create an immutable tag. Omit source to use main.",
+        "description": "Pin a committed snapshot as an immutable tag. Omit source to use main. An empty head or unavailable asOf history returns 400; verify committed data before tagging.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4097,9 +4574,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4136,6 +4610,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "409": {
             "description": "Resource already exists",
             "content": {
@@ -4154,6 +4631,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4168,6 +4648,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4189,6 +4677,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Create a Tag"
@@ -4244,9 +4741,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4283,6 +4777,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4297,6 +4794,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4318,6 +4823,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Tags"
@@ -4361,9 +4875,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4400,6 +4911,12 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4414,6 +4931,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4435,6 +4960,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Delete a Tag"
@@ -4549,9 +5083,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4588,6 +5119,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "409": {
             "description": "Resource already exists",
             "content": {
@@ -4606,6 +5140,9 @@
               }
             }
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4620,6 +5157,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4641,6 +5186,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Create an Alias"
@@ -4701,9 +5255,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4740,6 +5291,9 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4754,6 +5308,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4775,6 +5337,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "List Aliases"
@@ -4884,9 +5455,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4923,6 +5491,15 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -4937,6 +5514,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4958,6 +5543,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Retarget an Alias"
@@ -4999,9 +5593,6 @@
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/ResourceNotFound"
-          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -5038,6 +5629,12 @@
               }
             }
           },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
           "429": {
             "description": "Too many requests",
             "content": {
@@ -5052,6 +5649,14 @@
                       "message": "Too many requests"
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -5073,6 +5678,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         },
         "summary": "Delete an Alias"

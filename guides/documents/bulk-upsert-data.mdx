@@ -94,6 +94,8 @@ If you need to control the upload yourself (e.g. from a different process or sto
 
 Both REST control calls accept a branch. Use the same branch for the upload-URL request and the completion request; omitting it in both places writes to `main`.
 
+The uploaded object is bound to that branch's write stream. Do not reuse its key for another branch or after deleting and recreating the original branch. Send `type: "application/json"` explicitly in the REST completion request; do not rely on a server default.
+
 ### Step 1: Get bulk upsert information
 
 <CodeGroup>
@@ -246,6 +248,12 @@ Upload the document list as JSON to the `url`. Set `Content-Type` to the returne
 </CodeGroup>
 
 The cURL headers show the current `type` and `headers` response values. Always set `Content-Type` from `type` and use the exact signed header names and values returned for that upload URL.
+
+### Upload retries
+
+The signed upload is create-only (`If-None-Match: *`). Uploading again to an object that already exists can return `412` from object storage. This is not a LambdaDB JSON error. Acquire a new URL for a new upload attempt rather than blindly repeating the same PUT. If the upload or completion outcome is uncertain, verify the prior outcome before automatically submitting another import.
+
+For browser uploads, the target deployment's CORS configuration must allow the returned signed headers. Use the returned `httpMethod` and enforce `sizeLimitBytes`.
 
 ## Response
 

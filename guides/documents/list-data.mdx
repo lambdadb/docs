@@ -17,6 +17,8 @@ This page shows you how to use the list endpoint to list documents in a collecti
 
 Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`.
 
+Tokens record a search position, not a snapshot pin. A branch may advance or an alias may be retargeted between pages. For a stable multi-page export, select the same immutable tag on every page and keep filter, partition, field-selection, and vector options unchanged. Restart pagination when the environment, project, collection, ref, or those options change. List requests do not support `consistentRead`.
+
 <CodeGroup>
 
   ```python Python

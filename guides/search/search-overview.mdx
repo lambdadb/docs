@@ -53,6 +53,8 @@ Common parameters for the request body of a query are as follows:
   LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries.
   If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying a branch directly, at the expense of potential higher latency and cost. Tag and alias reads reject `consistentRead: true`, including an alias that targets a branch.
 
+  This overlays eligible pending writes; pending bulk imports remain invisible until committed. A pending payload above the consistent-read limit returns `429`. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
+
 </Note>
 
 Query results are returned in the following format:
