@@ -534,7 +534,7 @@
           "dataUpdatedAt": {
             "type": "integer",
             "format": "int64",
-            "description": "Default main branch head commit time as Unix epoch milliseconds. Absent before a committed head exists."
+            "description": "Last data update time recorded in the default main branch's committed head, as Unix epoch milliseconds. Commits without data mutations retain the previous value, so this is not necessarily the latest head commit time. Absent before a committed head exists."
           }
         },
         "required": [
@@ -1070,7 +1070,11 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 127,
-                      "pattern": "^[^:#,]+$"
+                      "pattern": "^[^:#,]+$",
+                      "description": "Must contain at least one non-whitespace character.",
+                      "not": {
+                        "pattern": "^[\\u0009-\\u000d\\u001c-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$"
+                      }
                     },
                     "propertyNames": {
                       "pattern": "^[A-Za-z0-9_.-]{1,63}$"
@@ -1607,7 +1611,11 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 127,
-                          "pattern": "^[^:#,]+$"
+                          "pattern": "^[^:#,]+$",
+                          "description": "Must contain at least one non-whitespace character.",
+                          "not": {
+                            "pattern": "^[\\u0009-\\u000d\\u001c-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$"
+                          }
                         },
                         "propertyNames": {
                           "pattern": "^[A-Za-z0-9_.-]{1,63}$"
