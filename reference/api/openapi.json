@@ -193,6 +193,16 @@
             }
           }
         }
+      },
+      "RefDeleteConflict": {
+        "description": "The branch or tag is referenced by an alias, or a conditional catalog conflict occurred. For a referenced target, delete or retarget every referencing alias before retrying deletion. Do not blindly retry an in-use target.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -386,7 +396,7 @@
           ]
         },
         "minProperties": 1,
-        "description": "Nonempty field configuration map. Collection updates must supply the full schema and preserve existing field definitions, including nested fields."
+        "description": "Nonempty full schema. Collection updates preserve all existing fields and their settings while allowing new top-level fields and nested children at any depth. Removing or changing an existing field is rejected."
       },
       "PartitionConfig": {
         "title": "PartitionConfig",
@@ -770,29 +780,93 @@
           }
         ]
       },
-      "RefDetails": {
-        "title": "RefDetails",
+      "SnapshotDetails": {
+        "title": "SnapshotDetails",
+        "type": "object",
+        "properties": {
+          "snapshotId": {
+            "type": "string",
+            "description": "Immutable snapshot identity."
+          },
+          "snapshotCommittedAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Snapshot commit time as Unix epoch milliseconds, distinct from ref creation time and collection dataUpdatedAt."
+          }
+        },
+        "required": [
+          "snapshotId",
+          "snapshotCommittedAt"
+        ]
+      },
+      "BranchDetails": {
+        "title": "BranchDetails",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "headSnapshot": {
+            "description": "Current committed head. Explicitly null for an empty branch.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parentSnapshot": {
+            "description": "Fixed snapshot from which the branch was created, not the previous head. Explicitly null for main and branches created from an empty source, even after their head advances. This metadata does not extend snapshot retention.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Branch creation time as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "name",
+          "headSnapshot",
+          "parentSnapshot",
+          "createdAt"
+        ]
+      },
+      "TagDetails": {
+        "title": "TagDetails",
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
           },
           "snapshotId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Null for an empty branch head."
+            "type": "string",
+            "description": "Immutable snapshot pinned by the tag. A tag cannot pin an empty head."
+          },
+          "snapshotCommittedAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Pinned snapshot commit time as Unix epoch milliseconds."
           },
           "createdAt": {
             "type": "integer",
             "format": "int64",
-            "description": "Ref creation time as Unix epoch milliseconds."
+            "description": "Tag creation time as Unix epoch milliseconds, independent of the pinned snapshot commit time."
           }
         },
         "required": [
           "name",
           "snapshotId",
+          "snapshotCommittedAt",
           "createdAt"
         ]
       },
@@ -825,7 +899,8 @@
             "minimum": 0
           },
           "dangling": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the bound target identity is missing. Reads of a dangling alias return 400. Deletion of a non-default branch or a tag is blocked with 409 while aliases reference it."
           },
           "createdAt": {
             "type": "integer",
@@ -1578,7 +1653,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema.",
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema. New fields may be added at any object depth while retaining existing fields and their settings.",
                 "properties": {
                   "indexConfigs": {
                     "anyOf": [
@@ -4078,7 +4153,7 @@
                   "type": "object",
                   "properties": {
                     "branch": {
-                      "$ref": "#/components/schemas/RefDetails"
+                      "$ref": "#/components/schemas/BranchDetails"
                     }
                   },
                   "required": [
@@ -4090,8 +4165,15 @@
                     "value": {
                       "branch": {
                         "name": "candidate",
-                        "snapshotId": "snapshot-id",
-                        "createdAt": 1788336000000
+                        "createdAt": 1788336000000,
+                        "headSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        },
+                        "parentSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        }
                       }
                     }
                   }
@@ -4242,7 +4324,7 @@
                     "branches": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/RefDetails"
+                        "$ref": "#/components/schemas/BranchDetails"
                       }
                     }
                   },
@@ -4256,8 +4338,15 @@
                       "branches": [
                         {
                           "name": "candidate",
-                          "snapshotId": "snapshot-id",
-                          "createdAt": 1788336000000
+                          "createdAt": 1788336000000,
+                          "headSnapshot": {
+                            "snapshotId": "snapshot-id",
+                            "snapshotCommittedAt": 1788335940000
+                          },
+                          "parentSnapshot": {
+                            "snapshotId": "snapshot-id",
+                            "snapshotCommittedAt": 1788335940000
+                          }
                         }
                       ]
                     }
@@ -4368,7 +4457,7 @@
           "versioning"
         ],
         "operationId": "deleteBranch",
-        "description": "Delete a branch. The default main branch cannot be deleted.",
+        "description": "Delete a branch. Deleting the default main branch returns 400. Deleting another branch returns 409 while any alias references it. Delete or retarget all referencing aliases first.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4440,7 +4529,7 @@
             "$ref": "#/components/responses/ResourceNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/CatalogConflict"
+            "$ref": "#/components/responses/RefDeleteConflict"
           },
           "429": {
             "description": "Too many requests",
@@ -4561,7 +4650,7 @@
                   "type": "object",
                   "properties": {
                     "tag": {
-                      "$ref": "#/components/schemas/RefDetails"
+                      "$ref": "#/components/schemas/TagDetails"
                     }
                   },
                   "required": [
@@ -4574,7 +4663,8 @@
                       "tag": {
                         "name": "validated-2026-09",
                         "snapshotId": "snapshot-id",
-                        "createdAt": 1788336000000
+                        "createdAt": 1788336000000,
+                        "snapshotCommittedAt": 1788335940000
                       }
                     }
                   }
@@ -4725,7 +4815,7 @@
                     "tags": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/RefDetails"
+                        "$ref": "#/components/schemas/TagDetails"
                       }
                     }
                   },
@@ -4740,7 +4830,8 @@
                         {
                           "name": "validated-2026-09",
                           "snapshotId": "snapshot-id",
-                          "createdAt": 1788336000000
+                          "createdAt": 1788336000000,
+                          "snapshotCommittedAt": 1788335940000
                         }
                       ]
                     }
@@ -4851,7 +4942,7 @@
           "versioning"
         ],
         "operationId": "deleteTag",
-        "description": "Delete a tag.",
+        "description": "Delete a tag. Deletion returns 409 while any alias references this target. Delete or retarget all referencing aliases first.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4923,7 +5014,7 @@
             "$ref": "#/components/responses/ResourceNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/CatalogConflict"
+            "$ref": "#/components/responses/RefDeleteConflict"
           },
           "429": {
             "description": "Too many requests",

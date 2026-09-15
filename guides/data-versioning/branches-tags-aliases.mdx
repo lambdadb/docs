@@ -28,7 +28,7 @@ curl -i -X POST \
   }'
 ```
 
-Omit `source` to use `main`. A branch may have an empty head, in which case `snapshotId` is `null`.
+Omit `source` to use `main`. A branch may have an empty head, in which case `headSnapshot` and `parentSnapshot` are both explicitly `null`.
 
 Branch creation copies the source's committed state. It does not copy pending writes. Schema and retention updates remain collection-scoped; tag reads use their pinned schema.
 
@@ -36,7 +36,14 @@ Branch creation copies the source's committed state. It does not copy pending wr
 {
   "branch": {
     "name": "candidate",
-    "snapshotId": "<snapshot-id>",
+    "headSnapshot": {
+      "snapshotId": "<snapshot-id>",
+      "snapshotCommittedAt": 1788335940000
+    },
+    "parentSnapshot": {
+      "snapshotId": "<snapshot-id>",
+      "snapshotCommittedAt": 1788335940000
+    },
     "createdAt": 1788336000000
   }
 }
@@ -50,7 +57,16 @@ curl -i \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
-The response contains a `branches` array with the same `name`, `snapshotId`, and epoch-millisecond `createdAt` fields.
+The response contains a `branches` array with the same fields as the create response:
+
+| Field | Meaning |
+| :---- | :------ |
+| `headSnapshot` | Current committed head, or `null` before a committed head exists. |
+| `parentSnapshot` | Fixed snapshot from which the branch was created, not the previous head. `null` for `main` and branches created from an empty source, even after their first commit. |
+| `snapshotCommittedAt` | Snapshot commit time in Unix epoch milliseconds, inside each non-null snapshot object alongside `snapshotId`. |
+| `createdAt` | Branch creation time in Unix epoch milliseconds, independent of snapshot commit times. |
+
+When created from a nonempty source, a branch initially has matching head and parent snapshots. The head can advance while the parent stays fixed. Parent metadata does not guarantee that the original snapshot remains available beyond retention. Branch responses do not have a top-level `snapshotId`.
 
 ## Point-in-time branches
 
@@ -86,6 +102,19 @@ curl -i -X POST \
 
 Omit `source` to pin the current `main` snapshot. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array.
 
+Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds.
+
+```json
+{
+  "tag": {
+    "name": "validated-2026-09",
+    "snapshotId": "<snapshot-id>",
+    "snapshotCommittedAt": 1788335940000,
+    "createdAt": 1788336060000
+  }
+}
+```
+
 A tag cannot be created from an empty head. Verify the intended committed data with `consistentRead: false` before creating a release tag; a read that includes pending writes does not prove those writes will be captured by the tag. Ref lists are unpaginated, and there are no individual branch, tag, or alias GET routes.
 
 ## Create, retarget, and list aliases
@@ -117,9 +146,9 @@ curl -i -X PATCH \
 
 `GET .../aliases` returns an `aliases` array. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
 
-Deleting an alias target does not delete the alias. A missing target sets `dangling` to `true`; reads through that alias return `400 BadRequest` until it is retargeted to an existing branch or tag. Selecting a ref that does not exist returns `404 ResourceNotFound`.
+Deleting a non-default branch or a tag that is referenced by any alias returns `409 Conflict`. Delete or retarget every referencing alias before deleting the target; retrying the same deletion without changing those references will not resolve the conflict. Deleting an alias does not delete its target.
 
-Aliases bind to the target's identity. Recreating a branch or tag under the same name does not repair a dangling alias; explicitly retarget it to the new target.
+Aliases bind to the target's identity, not just its name. The response retains a `dangling` field for a missing target; if such a state is encountered, reads return `400 BadRequest`. It is not the normal result of target deletion, which is blocked while aliases reference it. Recreating a target name does not repair the old identity binding. Selecting a ref that does not exist returns `404 ResourceNotFound`.
 
 ## Read from a ref
 
@@ -193,6 +222,6 @@ DELETE .../tags/{tagName}
 DELETE .../aliases/{aliasName}
 ```
 
-The default `main` branch cannot be deleted independently from its collection. Deleting a ref does not delete the collection.
+The default `main` branch cannot be deleted independently from its collection; an attempt returns `400 BadRequest`. Other branches and tags cannot be deleted while any alias references them (`409 Conflict`). Delete or retarget those aliases first. Deleting a ref does not delete the collection.
 
 The default branch cannot be changed. Deleting an already absent ref can return `404`.

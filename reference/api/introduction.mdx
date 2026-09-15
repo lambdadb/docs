@@ -33,7 +33,7 @@ Do not send request bodies on management `GET` or `DELETE` routes.
 | `400` | Invalid input, ref selector, target, or retained history. An existing dangling alias also returns this status. Correct the request before retrying. |
 | `401` | Authentication failed. Check the project API key and endpoint. |
 | `404` | Collection, selected ref, or requested target does not exist. Refresh dependent state. Repeating a DELETE after deletion can return this status. |
-| `409` | Name collision or conditional catalog conflict. Refresh the resource state before deciding whether to retry. |
+| `409` | Name collision, conditional catalog conflict, or deletion of a branch/tag referenced by an alias. For a referenced target, delete or retarget all referencing aliases before retrying deletion; otherwise refresh the resource state before deciding whether to retry. |
 | `413` | Request exceeds the Gateway transport limit. Reduce the request size or use bulk upsert when supported. |
 | `429` | Request throttled, or a consistent read's pending payload exceeds its limit. Back off and retain the server message. Honor `Retry-After` when present; not every response includes it. |
 | `500` | Internal server error. Retain error context for troubleshooting. |
