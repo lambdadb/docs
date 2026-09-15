@@ -94,7 +94,7 @@ If you need to control the upload yourself (e.g. from a different process or sto
 
 Both REST control calls accept a branch. Use the same branch for the upload-URL request and the completion request; omitting it in both places writes to `main`.
 
-The uploaded object is bound to that branch's write stream. Do not reuse its key for another branch or after deleting and recreating the original branch. Send `type: "application/json"` explicitly in the REST completion request; do not rely on a server default.
+The uploaded object is bound to that branch's write stream. Do not reuse its key for another branch or after deleting and recreating the original branch. The REST completion request's `type` field is optional; the examples use `"application/json"`. The server validates the uploaded object's Content-Type, not this request field. Setting `type` does not replace sending the required `Content-Type` header during upload.
 
 ### Step 1: Get bulk upsert information
 

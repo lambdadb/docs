@@ -2930,7 +2930,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "description": "Send application/json explicitly when completing the upload; do not rely on a server default."
+                    "description": "Optional completion request field; the examples use application/json. The server validates the uploaded object's Content-Type rather than this field. The upload must have Content-Type application/json."
                   },
                   "branch": {
                     "type": "string",
@@ -3567,7 +3567,28 @@
                 "required": [
                   "ids"
                 ],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "if": {
+                  "required": [
+                    "consistentRead"
+                  ],
+                  "properties": {
+                    "consistentRead": {
+                      "const": true
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "ref": {
+                      "properties": {
+                        "kind": {
+                          "const": "branch"
+                        }
+                      }
+                    }
+                  }
+                }
               },
               "examples": {
                 "example": {
@@ -3845,7 +3866,28 @@
                 "required": [
                   "query"
                 ],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "if": {
+                  "required": [
+                    "consistentRead"
+                  ],
+                  "properties": {
+                    "consistentRead": {
+                      "const": true
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "ref": {
+                      "properties": {
+                        "kind": {
+                          "const": "branch"
+                        }
+                      }
+                    }
+                  }
+                }
               },
               "examples": {
                 "example": {
