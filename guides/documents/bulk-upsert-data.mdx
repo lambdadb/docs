@@ -161,25 +161,37 @@ Response:
 
 Upload the document list as JSON to the `url`. Set `Content-Type` to the returned `type` and include every entry in the returned `headers` map, then call the bulk-upsert API with the `objectKey` from step 1. Do not drop, rename, or recompute signed headers.
 
+The Python tab below is a complete alternative to its Step 1 snippet: it obtains a fresh upload URL, uploads, and completes the import inside one client context. Run it on its own so the client remains open through completion. The TypeScript, Go, and cURL tabs continue from Step 1.
+
+For the manual Python upload, also install `requests` with `pip install requests`.
+
 <CodeGroup>
 
   ```python Python
   import json
   import requests
+  from lambdadb import LambdaDB
 
   docs = [
       {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
   ]
-  upload_headers = {"Content-Type": get_bulk_upsert.type.value, **get_bulk_upsert.headers}
-  # Upload to presigned URL
-  resp = requests.put(
-      get_bulk_upsert.url,
-      data=json.dumps({"docs": docs}),
-      headers=upload_headers,
-  )
-  resp.raise_for_status()
-  # Complete bulk upsert
-  coll.docs.bulk_upsert(object_key=get_bulk_upsert.object_key)
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+      get_bulk_upsert = coll.docs.get_bulk_upsert()
+      upload_headers = {"Content-Type": get_bulk_upsert.type.value, **get_bulk_upsert.headers}
+      # Upload to presigned URL
+      resp = requests.put(
+          get_bulk_upsert.url,
+          data=json.dumps({"docs": docs}),
+          headers=upload_headers,
+      )
+      resp.raise_for_status()
+      # Complete bulk upsert while the client is still open
+      coll.docs.bulk_upsert(object_key=get_bulk_upsert.object_key)
   ```
 
   ```typescript TypeScript
