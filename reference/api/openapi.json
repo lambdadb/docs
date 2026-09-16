@@ -724,36 +724,39 @@
           "name"
         ]
       },
+      "BranchSource": {
+        "title": "Branch source",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "branch"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 52,
+            "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+          },
+          "asOf": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Latest committed snapshot cutoff as Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
       "RefSource": {
         "title": "RefSource",
         "oneOf": [
           {
-            "title": "Branch source",
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "branch"
-                ]
-              },
-              "name": {
-                "type": "string",
-                "minLength": 3,
-                "maxLength": 52,
-                "pattern": "^[a-zA-Z0-9_-]{3,52}$"
-              },
-              "asOf": {
-                "type": "integer",
-                "format": "int64",
-                "description": "Latest committed snapshot cutoff as Unix epoch milliseconds."
-              }
-            },
-            "required": [
-              "kind",
-              "name"
-            ]
+            "$ref": "#/components/schemas/BranchSource"
           },
           {
             "title": "Tag source",
@@ -799,12 +802,41 @@
           "snapshotCommittedAt"
         ]
       },
+      "ParentBranchDetails": {
+        "title": "ParentBranchDetails",
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "description": "Identity of the direct source branch at creation time."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the direct source branch at creation time."
+          }
+        },
+        "required": [
+          "branchId",
+          "name"
+        ]
+      },
       "BranchDetails": {
         "title": "BranchDetails",
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
+          },
+          "parentBranch": {
+            "description": "Fixed identity and name of the direct source branch, even when its selected snapshot originated on an ancestor or its head was empty. Explicitly null for main or when no parent was recorded. Historical metadata only: it does not prevent parent deletion, and recreating the parent's name does not change this identity.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParentBranchDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "headSnapshot": {
             "description": "Current committed head. Explicitly null for an empty branch.",
@@ -836,6 +868,7 @@
         },
         "required": [
           "name",
+          "parentBranch",
           "headSnapshot",
           "parentSnapshot",
           "createdAt"
@@ -4139,7 +4172,7 @@
           "versioning"
         ],
         "operationId": "createBranch",
-        "description": "Create a writable branch from the source's committed state; pending writes are not copied. Omit source to use main. An empty source can create an empty branch.",
+        "description": "Create a writable branch from another branch's committed state in the same collection; pending writes are not copied. Omit source to use main. Only a branch source is allowed; tag and alias sources return 400 BadRequest. Optional source.asOf selects a retained committed snapshot. An empty source can create an empty branch, with parentBranch still recording the source branch.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4165,7 +4198,7 @@
                     "pattern": "^[a-zA-Z0-9_-]{3,52}$"
                   },
                   "source": {
-                    "$ref": "#/components/schemas/RefSource"
+                    "$ref": "#/components/schemas/BranchSource"
                   }
                 },
                 "required": [
@@ -4207,6 +4240,10 @@
                     "value": {
                       "branch": {
                         "name": "candidate",
+                        "parentBranch": {
+                          "branchId": "main-branch-id",
+                          "name": "main"
+                        },
                         "createdAt": 1788336000000,
                         "headSnapshot": {
                           "snapshotId": "snapshot-id",
@@ -4380,6 +4417,10 @@
                       "branches": [
                         {
                           "name": "candidate",
+                          "parentBranch": {
+                            "branchId": "main-branch-id",
+                            "name": "main"
+                          },
                           "createdAt": 1788336000000,
                           "headSnapshot": {
                             "snapshotId": "snapshot-id",
@@ -4389,6 +4430,16 @@
                             "snapshotId": "snapshot-id",
                             "snapshotCommittedAt": 1788335940000
                           }
+                        },
+                        {
+                          "name": "main",
+                          "parentBranch": null,
+                          "createdAt": 1788335800000,
+                          "headSnapshot": {
+                            "snapshotId": "snapshot-id",
+                            "snapshotCommittedAt": 1788335940000
+                          },
+                          "parentSnapshot": null
                         }
                       ]
                     }
@@ -4636,7 +4687,7 @@
           "versioning"
         ],
         "operationId": "createTag",
-        "description": "Pin a committed snapshot as an immutable tag. Omit source to use main. An empty head or unavailable asOf history returns 400; verify committed data before tagging.",
+        "description": "Pin a committed snapshot from a branch or tag in the same collection as an immutable tag. A tag source pins the same snapshot, not a chain of tags. Alias sources are not allowed, and source.asOf is valid only for a branch source. Omit source to use main. An empty head or unavailable asOf history returns 400; verify committed data before tagging.",
         "security": [
           {
             "ProjectApiKey": []

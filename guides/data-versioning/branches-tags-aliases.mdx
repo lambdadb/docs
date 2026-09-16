@@ -28,7 +28,7 @@ curl -i -X POST \
   }'
 ```
 
-Omit `source` to use `main`. A branch may have an empty head, in which case `headSnapshot` and `parentSnapshot` are both explicitly `null`.
+Omit `source` to use `main`. A branch can be created only from another branch in the same collection; tag and alias sources return `400 BadRequest`. A branch created from an empty source has explicitly `null` `headSnapshot` and `parentSnapshot`, but `parentBranch` still identifies the source branch.
 
 Branch creation copies the source's committed state. It does not copy pending writes. Schema and retention updates remain collection-scoped; tag reads use their pinned schema.
 
@@ -36,6 +36,10 @@ Branch creation copies the source's committed state. It does not copy pending wr
 {
   "branch": {
     "name": "candidate",
+    "parentBranch": {
+      "branchId": "<main-branch-id>",
+      "name": "main"
+    },
     "headSnapshot": {
       "snapshotId": "<snapshot-id>",
       "snapshotCommittedAt": 1788335940000
@@ -61,12 +65,15 @@ The response contains a `branches` array with the same fields as the create resp
 
 | Field | Meaning |
 | :---- | :------ |
+| `parentBranch` | Fixed direct source branch at creation time, with `branchId` and `name`. Explicitly `null` for `main` or when no parent was recorded. |
 | `headSnapshot` | Current committed head, or `null` before a committed head exists. |
 | `parentSnapshot` | Fixed snapshot from which the branch was created, not the previous head. `null` for `main` and branches created from an empty source, even after their first commit. |
 | `snapshotCommittedAt` | Snapshot commit time in Unix epoch milliseconds, inside each non-null snapshot object alongside `snapshotId`. |
 | `createdAt` | Branch creation time in Unix epoch milliseconds, independent of snapshot commit times. |
 
 When created from a nonempty source, a branch initially has matching head and parent snapshots. The head can advance while the parent stays fixed. Parent metadata does not guarantee that the original snapshot remains available beyond retention. Branch responses do not have a top-level `snapshotId`.
+
+`parentBranch` records the requested source branch, not the branch where the selected snapshot originated. For example, a branch created from `dev` records `dev` even if its snapshot originated on `main`, including when selected through `asOf`. This historical metadata does not prevent deleting the parent branch. Deleting the parent or recreating its name does not change the recorded identity.
 
 ## Point-in-time branches
 
@@ -101,6 +108,8 @@ curl -i -X POST \
 ```
 
 Omit `source` to pin the current `main` snapshot. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array.
+
+A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag pins the same snapshot; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
 
 Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds.
 
