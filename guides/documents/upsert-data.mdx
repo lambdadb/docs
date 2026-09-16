@@ -9,6 +9,8 @@ This page shows you how to upsert documents into a collection.
 
 The REST request accepts an optional `branch` field. Omitting it writes to the default branch, `main`; a tag or alias is not a valid write target.
 
+Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values.
+
 <Note>
 
   If the collection contains managed embedding vector fields, send only the configured source text fields. Do not send direct vector values for managed embedding fields in an upsert request.
@@ -46,8 +48,8 @@ The REST request accepts an optional `branch` field. Omitting it writes to the d
   const collection = client.collection("my_collection");
   await collection.docs.upsert({
     docs: [
-      { id: "33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", denseVector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparseVector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
-      { url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", denseVector: [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], sparseVector: { "0": 0.8, "4": 0.1, "11": 0.1, "63": 0.54 } },
+      { id: "33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", dense_vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+      { url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", dense_vector: [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], sparse_vector: { "0": 0.8, "4": 0.1, "11": 0.1, "63": 0.54 } },
     ],
   });
   ```

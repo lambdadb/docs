@@ -43,7 +43,7 @@ with LambdaDB(
     base_url="YOUR_BASE_URL",
     project_name="YOUR_PROJECT_NAME",
 ) as client:
-    coll = client.collection(collection_name)
+    coll = client.collection("my_collection")
     results = coll.query(
         query={"queryString": {"query": "*:*"}},
         size=10,
@@ -59,7 +59,7 @@ const client = new LambdaDBClient({
   baseUrl: "YOUR_BASE_URL",
   projectName: "YOUR_PROJECT_NAME",
 });
-const collection = client.collection(collectionName);
+const collection = client.collection("my_collection");
 const results = await collection.query({
   query: { queryString: { query: "*:*" } },
   size: 10,
@@ -83,10 +83,10 @@ func main() {
     lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
     lambdadb.WithAPIKey("YOUR_API_KEY"),
   )
-  coll := client.Collection(collectionName)
-  results, err := coll.Query(ctx, lambdadb.QueryCollectionInput{
+  coll := client.Collection("my_collection")
+  results, err := coll.Query(ctx, lambdadb.QueryInput{
     Query: map[string]interface{}{"queryString": map[string]interface{}{"query": "*:*"}},
-    Size:  10,
+    Size:  lambdadb.Int64(10),
     Sort:  []map[string]interface{}{{"field1": "desc"}, {"field2": "asc"}},
   })
   if err != nil {

@@ -18,6 +18,8 @@ LambdaDB also supports bulk upsert operation to insert or update multiple docume
 
 The easiest way to bulk upsert is to use the SDK's one-step method. The client uploads your documents to the presigned URL and completes the bulk upsert for you (up to 200MB).
 
+Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values.
+
 <CodeGroup>
 
   ```python Python
@@ -48,8 +50,8 @@ The easiest way to bulk upsert is to use the SDK's one-step method. The client u
   });
   const collection = client.collection("my_collection");
   const docs = [
-    { id: "bulk_1", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", denseVector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparseVector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
-    { id: "bulk_2", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", denseVector: [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0] },
+    { id: "bulk_1", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", dense_vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+    { id: "bulk_2", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", dense_vector: [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0] },
   ];
   await collection.docs.bulkUpsertDocs({ docs });
   ```
@@ -75,7 +77,7 @@ The easiest way to bulk upsert is to use the SDK's one-step method. The client u
       {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
       {"id": "bulk_2", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp", "text": "Winamp is a media player for Windows, macOS and Android ...", "dense_vector": []float64{1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0}},
     }
-    _, err := coll.Docs().BulkUpsertDocuments(ctx, docs)
+    _, err := coll.Docs().BulkUpsertDocuments(ctx, lambdadb.UpsertDocsInput{Docs: docs})
     if err != nil {
       log.Fatal(err)
     }
@@ -196,7 +198,7 @@ For the manual Python upload, also install `requests` with `pip install requests
 
   ```typescript TypeScript
   const docs = [
-    { id: "bulk_33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", denseVector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparseVector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+    { id: "bulk_33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", dense_vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
   ];
   // Upload to presigned URL
   const uploadRes = await fetch(info.url, {
@@ -232,7 +234,7 @@ For the manual Python upload, also install `requests` with `pip install requests
     log.Fatalf("upload failed: %s", uploadRes.Status)
   }
   // Complete bulk upsert
-  _, err = client.Collection("my_collection").Docs().BulkUpsert(ctx, lambdadb.BulkUpsertDocsInput{ObjectKey: info.ObjectKey})
+  _, err = client.Collection("my_collection").Docs().BulkUpsert(ctx, lambdadb.BulkUpsertInput{ObjectKey: info.ObjectKey})
   if err != nil {
     log.Fatal(err)
   }
@@ -240,10 +242,10 @@ For the manual Python upload, also install `requests` with `pip install requests
 
   ```bash cURL
   # 1. Upload to the presigned URL from step 1
-  curl -X PUT "<provided_url>" \
+  curl --fail -X PUT "<provided_url>" \
     -H 'Content-Type: application/json' \
     -H 'If-None-Match: *' \
-    -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}]}'
+    -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}]}' &&
 
   # 2. Complete bulk upsert with the objectKey from step 1
   curl -i -X POST \

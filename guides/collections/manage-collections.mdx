@@ -7,6 +7,8 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to manage your existing collections including listing, describing, and deleting operations.
 
+Later snippets reuse the imports and client setup from the first example. For Go, place the snippets inside `main`, import `context`, `log`, and `github.com/lambdadb/go-lambdadb` as `lambdadb`, and initialize `ctx := context.Background()`. See the [Quickstart](/guides/get-started/quickstart) for a complete Go setup.
+
 ## List collections
 
 Retrieve collections in your project with their configuration and metadata. The endpoint supports optional pagination.
@@ -120,8 +122,8 @@ Get detailed information about a specific collection, including its configuratio
 
 ```python Python
 with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
-    meta = client.collection("example-collection").get()
-    # or client.collections.get(collection_name="example-collection")
+    meta = client.collections.get(collection_name="example-collection")
+    print(meta.collection)
 ```
 
 ```typescript TypeScript
@@ -132,6 +134,7 @@ console.log(meta);
 ```go Go
 meta, err := client.Collection("example-collection").Get(ctx)
 if err != nil { log.Fatal(err) }
+log.Printf("%+v", meta)
 ```
 
 ```bash cURL
@@ -215,7 +218,8 @@ Physical cleanup may continue after the response. Recreating the name creates a 
 <CodeGroup>
 
 ```python Python
-client.collections.delete(collection_name="collection-to-delete")
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    client.collections.delete(collection_name="collection-to-delete")
 ```
 
 ```typescript TypeScript
@@ -223,7 +227,7 @@ await client.collection("collection-to-delete").delete();
 ```
 
 ```go Go
-err := client.Collection("collection-to-delete").Delete(ctx)
+_, err = client.Collection("collection-to-delete").Delete(ctx)
 if err != nil { log.Fatal(err) }
 ```
 

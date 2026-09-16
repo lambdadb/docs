@@ -113,9 +113,9 @@ func main() {
     lambdadb.WithAPIKey("YOUR_API_KEY"),
   )
   coll := client.Collection("my_collection")
-  results, err := coll.Query(ctx, lambdadb.QueryCollectionInput{
+  results, err := coll.Query(ctx, lambdadb.QueryInput{
     Query: map[string]interface{}{"queryString": map[string]interface{}{"query": "*:*"}},
-    Size:  10,
+    Size:  lambdadb.Int64(10),
   })
   if err != nil {
     log.Fatal(err)

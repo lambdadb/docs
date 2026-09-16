@@ -93,6 +93,8 @@ This deletes all documents matching the filter query.
 
 For example, to delete all documents with genre "documentary" and year 2019 from a collection, use the following code:
 
+These snippets reuse the imports and client setup above. For Go, replace the ID-deletion call inside `main` with the filter example below.
+
 <CodeGroup>
   
   ```python Python
@@ -112,8 +114,13 @@ For example, to delete all documents with genre "documentary" and year 2019 from
   ```
 
   ```go Go
-  filter := &lambdadb.QueryFilter{QueryString: &lambdadb.QueryStringFilter{Query: "genre:documentary AND year:2019"}}
+  filter := map[string]any{
+    "queryString": map[string]any{"query": "genre:documentary AND year:2019"},
+  }
   _, err := client.Collection("your_collection_name").Docs().Delete(ctx, lambdadb.DeleteDocsInput{Filter: filter})
+  if err != nil {
+    log.Fatal(err)
+  }
   ```
 
   ```bash cURL

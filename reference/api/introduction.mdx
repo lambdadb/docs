@@ -8,9 +8,12 @@ memory through LambdaDB collections. It uses the region-specific base URL
 and project name shown in LambdaDB Cloud and authenticates requests with the
 `x-api-key` header.
 
-Create and manage projects in [LambdaDB Cloud](https://app.lambdadb.ai). The
-public REST API documented here starts with an existing project and covers its
-collections, data versioning, and documents.
+Create and manage projects and their API keys in [LambdaDB Cloud](https://app.lambdadb.ai).
+Project creation does not automatically issue an API key: create one in the
+project's **API Keys** tab and securely save the full value shown once at key creation.
+See [API key management](/guides/get-started/quickstart#manage-api-keys) for permissions and key replacement.
+The public REST API documented here starts with an existing project and key,
+and covers collections, data versioning, and documents, not key administration.
 
 Every collection has a default branch named `main`. Read requests can select a
 branch, tag, or alias, while mutation requests can select a branch. See

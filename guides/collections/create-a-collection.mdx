@@ -64,19 +64,38 @@ await client.createCollection({
 ```
 
 ```go Go
-client := lambdadb.New(
-  lambdadb.WithBaseURL("YOUR_BASE_URL"),
-  lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
-  lambdadb.WithAPIKey("YOUR_API_KEY"),
+package main
+
+import (
+  "context"
+  "log"
+
+  lambdadb "github.com/lambdadb/go-lambdadb"
+  "github.com/lambdadb/go-lambdadb/models/components"
 )
-_, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
-  CollectionName: "example-collection",
-  IndexConfigs: map[string]interface{}{
-    "url":     map[string]interface{}{"type": "keyword"},
-    "author":  map[string]interface{}{"type": "keyword"},
-    "content": map[string]interface{}{"type": "text", "analyzers": []string{"japanese", "korean", "english"}},
-  },
-})
+
+func main() {
+  ctx := context.Background()
+  client := lambdadb.New(
+    lambdadb.WithBaseURL("YOUR_BASE_URL"),
+    lambdadb.WithProjectName("YOUR_PROJECT_NAME"),
+    lambdadb.WithAPIKey("YOUR_API_KEY"),
+  )
+  _, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
+    CollectionName: "example-collection",
+    IndexConfigs: map[string]components.IndexConfigsUnion{
+      "url": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+      "author": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+      "content": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+        Type: components.TypeTextText,
+        Analyzers: []components.Analyzer{components.AnalyzerJapanese, components.AnalyzerKorean, components.AnalyzerEnglish},
+      }),
+    },
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ```bash cURL

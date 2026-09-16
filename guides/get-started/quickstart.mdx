@@ -8,7 +8,7 @@ import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
 This guide walks you through getting a **project API key**, installing an SDK, creating your first searchable knowledge collection, and running hybrid search queries. You'll store source documents with text, keyword, and dense vector fields, then combine lexical matching with vector similarity to retrieve relevant knowledge.
 
-## 🔑 Step 1: Get your API key
+## 🔑 Step 1: Create your API key
 
 You'll use a **project API key** from **[LambdaDB Cloud](https://app.lambdadb.ai)** starting in Step 3.
 
@@ -23,7 +23,15 @@ public API and SDK documentation starts with an existing project.
 
 2. **Create a project** — Accounts without a payment method are on the **Free** plan. Choose an AWS region that fits your latency or data-residency needs.
 
-3. **Copy your project API key** — The API key is shown only once after the project is created. Store it somewhere safe, then use it with the **base URL** and **project name** from the console starting in Step 3.
+3. **Create a project API key** — Project creation does not automatically create an API key. Once the project is ready, open its **API Keys** tab, select **Create key** (or **Create your first key**), enter a name, and create the key.
+
+4. **Save the key and connection details** — The full key value is shown only once, immediately after key creation. Store it securely, then use it with the project's **base URL** and **project name** from the console starting in Step 3.
+
+### Manage API keys
+
+Organization **Owners** and **Admins** can create and revoke project API keys in the **API Keys** tab. If you cannot create a key, ask an Owner or Admin. The key list does not reveal saved key values; if you lose a value, create a replacement key.
+
+To replace a key, create a new one, update your application's credentials, and verify that it works before revoking the old key. Revocation cannot be undone and applications still using the revoked key will lose access. Key management is available through LambdaDB Cloud, not the public data API or SDKs documented here.
 
 <CloudConnectionDetails />
 
@@ -69,10 +77,12 @@ A collection is where you store the documents, embeddings, and metadata that mak
 
 Let's create a collection that combines text search with vector similarity:
 
+Run the steps in order using one language. Python steps open a new client context for each operation and reuse `collection_name`. TypeScript steps reuse the initialized client. For Go, append the later snippets inside `main`, before its closing brace, using the imports shown in Step 3. Replace all connection placeholders before running.
+
 <CodeGroup>
 
 ```python Python
-from lambdadb import LambdaDB, models
+from lambdadb import LambdaDB
 
 # Initialize the LambdaDB client with the base URL and project name from your LambdaDB Cloud project
 with LambdaDB(
@@ -111,7 +121,7 @@ const client = new LambdaDBClient({
   projectName: "YOUR_PROJECT_NAME",
 });
 const collectionName = "your_collection_name_here";
-const res = await client.createCollection({
+const createResult = await client.createCollection({
   collectionName,
   indexConfigs: {
     text: { type: "text", analyzers: ["english", "korean"] },
@@ -119,7 +129,7 @@ const res = await client.createCollection({
     vector: { type: "vector", dimensions: 10, similarity: "cosine" },
   },
 });
-console.log(res);
+console.log(createResult);
 ```
 
 ```go Go
@@ -130,6 +140,7 @@ import (
   "fmt"
   "log"
   lambdadb "github.com/lambdadb/go-lambdadb"
+  "github.com/lambdadb/go-lambdadb/models/components"
 )
 
 func main() {
@@ -140,18 +151,25 @@ func main() {
     lambdadb.WithAPIKey("your_api_key_here"),
   )
   collectionName := "your_collection_name_here"
-  res, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
+  createResult, err := client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
     CollectionName: collectionName,
-    IndexConfigs: map[string]interface{}{
-      "text":    map[string]interface{}{"type": "text", "analyzers": []string{"english", "korean"}},
-      "keyword": map[string]interface{}{"type": "keyword"},
-      "vector":  map[string]interface{}{"type": "vector", "dimensions": 10, "similarity": "cosine"},
+    IndexConfigs: map[string]components.IndexConfigsUnion{
+      "text": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+        Type: components.TypeTextText,
+        Analyzers: []components.Analyzer{components.AnalyzerEnglish, components.AnalyzerKorean},
+      }),
+      "keyword": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+      "vector": components.CreateIndexConfigsUnionVector(components.IndexConfigsVector{
+        Type: components.TypeVectorVector,
+        Dimensions: 10,
+        Similarity: components.SimilarityCosine.ToPointer(),
+      }),
     },
   })
   if err != nil {
     log.Fatal(err)
   }
-  fmt.Printf("%+v\n", res)
+  fmt.Printf("%+v\n", createResult)
 }
 ```
 </CodeGroup>
@@ -177,6 +195,8 @@ The underlying REST response is `201 Created` and includes the default branch:
 - **Vector field**: 10-dimensional vectors using cosine similarity.
 - **Keyword field**: Added to support exact match filtering.
 
+`201 Created` confirms collection creation, not query-serving readiness. If a subsequent operation encounters a loading or transient error, follow [Errors and retries](/reference/api/introduction#errors-and-retries); do not recreate the collection to wait for readiness.
+
 ## 📄 Step 4: Add documents
 
 Now let's add some sample documents. Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
@@ -194,15 +214,14 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
     print(res)
 ```
 ```typescript TypeScript
-const client = new LambdaDBClient({ projectApiKey: "your_api_key_here", baseUrl: "YOUR_BASE_URL", projectName: "YOUR_PROJECT_NAME" });
 const collection = client.collection(collectionName);
 const docs = [
   { id: "doc1", text: "Serverless computing does not mean no servers are involved...", keyword: "serverless", vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
   { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications...", keyword: "cloud", vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1] },
   { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers...", keyword: ["serverless", "infrastructure"], vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] },
 ];
-const res = await collection.docs.upsert({ docs });
-console.log(res);
+const upsertResult = await collection.docs.upsert({ docs });
+console.log(upsertResult);
 ```
 ```go Go
 coll := client.Collection(collectionName)
@@ -211,10 +230,10 @@ docs := []map[string]interface{}{
   {"id": "doc2", "text": "Instead, it refers to a cloud computing model...", "keyword": "cloud", "vector": []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1}},
   {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision...", "keyword": []string{"serverless", "infrastructure"}, "vector": []float64{0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2}},
 }
-res, err := coll.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{Docs: docs})
+upsertResult, err := coll.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{Docs: docs})
 if err != nil { log.Fatal(err) }
-if res != nil {
-  log.Printf("message: %s", res.Message)
+if upsertResult != nil && upsertResult.MessageResponse != nil {
+  log.Printf("message: %s", upsertResult.MessageResponse.Message)
 }
 ```
 </CodeGroup>
@@ -247,12 +266,13 @@ message: Upsert request is accepted
 
 <CodeGroup>
 ```python Python
-res = client.collection(collection_name).get()  # or client.collections.get(collection_name=collection_name)
-print(res)
+with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    meta = client.collections.get(collection_name=collection_name)
+    print(meta.collection)
 ```
 ```typescript TypeScript
-const res = await client.collection(collectionName).get();
-console.log(res);
+const meta = await client.collection(collectionName).get();
+console.log(meta);
 ```
 ```go Go
 meta, err := client.Collection(collectionName).Get(ctx)
@@ -284,14 +304,13 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
     # Use `res.documents` if you want document bodies only (no scores).
     for item in res.docs:
         doc_id = str(item.doc.get("id"))
-        score = f"{item.score:.2f}"
+        score = f"{item.score:.2f}" if item.score is not None else "n/a"
         keyword = str(item.doc.get("keyword"))
         text = str(item.doc.get("text", ""))[:60]
         print(f"{doc_id:<5} | {score:<5} | {keyword:<15} | {text}...")
 ```
 ```typescript TypeScript
-const collection = client.collection(collectionName);
-const res = await collection.query({
+const fullTextResult = await collection.query({
   size: 10,
   query: {
     bool: [
@@ -302,7 +321,7 @@ const res = await collection.query({
   consistentRead: true,
 });
 console.log("🔍 Search Results:");
-for (const item of res.docs ?? []) {
+for (const item of fullTextResult.docs ?? []) {
   const docId = String(item.doc?.id);
   const score = item.score?.toFixed(2);
   const keyword = String(item.doc?.keyword);
@@ -311,27 +330,27 @@ for (const item of res.docs ?? []) {
 }
 ```
 ```go Go
-coll := client.Collection(collectionName)
-res, err := coll.Query(ctx, lambdadb.QueryCollectionInput{
-  Size: 10,
+fullTextResult, err := coll.Query(ctx, lambdadb.QueryInput{
+  Size: lambdadb.Int64(10),
   Query: map[string]interface{}{
     "bool": []interface{}{
       map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
       map[string]interface{}{"queryString": map[string]interface{}{"query": "keyword:serverless"}, "occur": "must"},
     },
   },
-  ConsistentRead: lambdadb.Ptr(true),
+  ConsistentRead: lambdadb.Bool(true),
 })
 if err != nil { log.Fatal(err) }
 log.Println("🔍 Search Results:")
-for _, r := range res.Docs {
+for _, r := range fullTextResult.Docs {
   doc := r.Doc
   docID := fmt.Sprintf("%v", doc["id"])
-  score := r.Score
+  score := "n/a"
+  if r.Score != nil { score = fmt.Sprintf("%.2f", *r.Score) }
   keyword := fmt.Sprintf("%v", doc["keyword"])
   text := fmt.Sprintf("%v", doc["text"])
   if len(text) > 60 { text = text[:60] }
-  log.Printf("%-5s | %.2f | %-15s | %s...", docID, score, keyword, text)
+  log.Printf("%-5s | %-5s | %-15s | %s...", docID, score, keyword, text)
 }
 ```
 </CodeGroup>
@@ -378,10 +397,11 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
     )
     print("🔄 Hybrid Search Results:")
     for item in res.docs:
-        print(f"{item.doc.get('id')} | {item.score:.2f} | {item.doc.get('text', '')[:50]}...")
+        score = f"{item.score:.2f}" if item.score is not None else "n/a"
+        print(f"{item.doc.get('id')} | {score} | {item.doc.get('text', '')[:50]}...")
 ```
 ```typescript TypeScript
-const res = await collection.query({
+const hybridResult = await collection.query({
   size: 10,
   query: {
     l2: [
@@ -392,31 +412,32 @@ const res = await collection.query({
   consistentRead: true,
 });
 console.log("🔄 Hybrid Search Results:");
-for (const item of res.docs ?? []) {
+for (const item of hybridResult.docs ?? []) {
   console.log(`${item.doc?.id} | ${item.score?.toFixed(2)} | ${String(item.doc?.text).slice(0, 50)}...`);
 }
 ```
 ```go Go
-res, err = coll.Query(ctx, lambdadb.QueryCollectionInput{
-  Size: 10,
+hybridResult, err := coll.Query(ctx, lambdadb.QueryInput{
+  Size: lambdadb.Int64(10),
   Query: map[string]interface{}{
     "l2": []interface{}{
       map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
       map[string]interface{}{"knn": map[string]interface{}{"field": "vector", "k": 5, "queryVector": []float64{0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0}}},
     },
   },
-  ConsistentRead: lambdadb.Ptr(true),
+  ConsistentRead: lambdadb.Bool(true),
 })
 if err != nil { log.Fatal(err) }
 log.Println("🔄 Hybrid Search Results:")
-for _, r := range res.Docs {
+for _, r := range hybridResult.Docs {
   doc := r.Doc
   docID := fmt.Sprintf("%v", doc["id"])
-  score := r.Score
+  score := "n/a"
+  if r.Score != nil { score = fmt.Sprintf("%.2f", *r.Score) }
   keyword := fmt.Sprintf("%v", doc["keyword"])
   text := fmt.Sprintf("%v", doc["text"])
   if len(text) > 50 { text = text[:50] }
-  log.Printf("%s | %.2f | %s | %s...", docID, score, keyword, text)
+  log.Printf("%s | %s | %s | %s...", docID, score, keyword, text)
 }
 ```
 </CodeGroup>
@@ -456,13 +477,14 @@ When you're finished experimenting, clean up your resources:
 
 <CodeGroup>
 ```python Python
-client.collections.delete(collection_name=collection_name)
+with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    client.collections.delete(collection_name=collection_name)
 ```
 ```typescript TypeScript
 await client.collection(collectionName).delete();
 ```
 ```go Go
-err := client.Collection(collectionName).Delete(ctx)
+_, err = client.Collection(collectionName).Delete(ctx)
 if err != nil { log.Fatal(err) }
 ```
 </CodeGroup>
