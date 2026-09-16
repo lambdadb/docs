@@ -7,6 +7,8 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over documents (for example, to export or scan) without running a ranked search.
 
+Large responses may return documents through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
+
 | Parameter   | Description                                      | Type    | Required | Default |
 | :---------- | :----------------------------------------------- | :------ | :------- | :------ |
 | size        | Max number of documents to return per page (1–100). | integer |          | 100     |

@@ -2070,10 +2070,12 @@
                       "type": "string"
                     },
                     "isDocsInline": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "Whether docs are included inline. When false, docs is empty and the result items must be downloaded from docsUrl."
                     },
                     "docsUrl": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field."
                     }
                   },
                   "required": [
@@ -2365,10 +2367,12 @@
                       "type": "string"
                     },
                     "isDocsInline": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "Whether docs are included inline. When false, docs is empty and the result items must be downloaded from docsUrl."
                     },
                     "docsUrl": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field."
                     }
                   },
                   "required": [
@@ -3674,11 +3678,11 @@
                     },
                     "isDocsInline": {
                       "type": "boolean",
-                      "description": "Whether the list of documents is included."
+                      "description": "Whether docs are included inline. When false, docs is empty and the result items must be downloaded from docsUrl."
                     },
                     "docsUrl": {
                       "type": "string",
-                      "description": "Download URL for the list of documents."
+                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field."
                     }
                   },
                   "required": [
@@ -3864,8 +3868,14 @@
                 "type": "object",
                 "properties": {
                   "size": {
-                    "type": "integer",
-                    "description": "Number of documents to return. Note that the maximum number of documents is 100."
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 10,
+                    "description": "Number of documents to return, from 1 to 100. Defaults to 10 when omitted or null."
                   },
                   "query": {
                     "type": "object",
@@ -3998,11 +4008,11 @@
                     },
                     "isDocsInline": {
                       "type": "boolean",
-                      "description": "Whether the list of documents is included."
+                      "description": "Whether docs are included inline. When false, docs is empty and the result items must be downloaded from docsUrl."
                     },
                     "docsUrl": {
                       "type": "string",
-                      "description": "Optional download URL for the list of documents."
+                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field."
                     }
                   },
                   "required": [

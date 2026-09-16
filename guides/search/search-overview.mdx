@@ -19,7 +19,7 @@ Common parameters for the request body of a query are as follows:
 
 | Parameter      | Description                                                  | Type    | Required | Default |
 |:-------------- |:-------------------------------------------------------------|:------- |:-------- |:------- |
-| size           | The number of results to return for each query               | integer | ✓        |         |
+| size           | The number of results to return (1–100). Omitted or `null` uses the default. | integer or null | | 10 |
 | query          | Query object (details in the [subsections](/guides/search/query-string))                         | object  | ✓        |         |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
@@ -65,6 +65,10 @@ Query results are returned in the following format:
 | maxScore | Highest returned document `score`                    | float     |
 | total    | The total number of matching documents               | long      |
 | docs     | Contains returned documents and metadata             | object[]  |
+| isDocsInline | Whether `docs` is included inline in the REST response | boolean |
+| docsUrl | Presigned download URL when `isDocsInline` is `false` | string |
+
+Large results may be returned through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
 
 ## Example
 

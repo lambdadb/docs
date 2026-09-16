@@ -1,23 +1,33 @@
 ---
 title: Query limits
-description: Review LambdaDB query constraints including maximum result size, execution timeout, boolean clause limits, and sparse vector value caps per request.
+description: Review LambdaDB query constraints, large-result downloads, execution timeout, boolean clause limits, and sparse vector value caps per request.
 ---
 
 | Metric              | Limit  |
 |:------------------- |:------ |
 | Max `size` value    | 100    |
-| Max result size     | 6MB    |
 | Max execution time  | 30s    |
 | Max boolean clauses | 4,096  |
 | Max non-zero values for sparse vector query | 4,096  |
 | Value range for sparse vector query | 0-64  |
 
-The query result size is affected by the dimension of the vectors and
-whether vector values are included in the result.
+## Large results
+
+Query results do not have a hard 6 MB total-result limit. When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; other query limits still apply.
+
+For direct REST requests, check `isDocsInline` before reading `docs`. When it is `false`, send a `GET` request to the complete `docsUrl` without changing its query parameters or forwarding your LambdaDB API key. The downloaded JSON is an array of result items, not an object containing a `docs` field. An empty inline `docs` array in this case does not mean there are no results.
+
+Fetch and list responses use the same download mechanism. The high-level collection methods in Python SDK 0.9.0 and Go SDK 0.4.0 download these results automatically.
+
+<Warning>
+
+  TypeScript SDK 0.5.0 expects a different downloaded payload shape and cannot currently load these offloaded results. Use the direct REST flow above for large results until this SDK behavior is corrected.
+
+</Warning>
 
 <Tip>
 
-  If a query fails due to exceeding the 6MB result size limit, choose a lower `size` value,
+  To reduce result size and download overhead, choose a lower `size` value,
   or `includeVectors=false` (Python: `include_vectors=False`) to exclude vector values from the result.
 
 </Tip>
