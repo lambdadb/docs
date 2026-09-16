@@ -3,13 +3,12 @@ title: "Roadmap & Changelog"
 description: "Track the LambdaDB product roadmap and changelog, including upcoming features like integrated embeddings, partition management, and recent releases."
 ---
 
-Last updated: September 16, 2026
+Last updated: September 17, 2026
 
 ## Up Next
 
 - Query and indexing performance, always
 - Explicit partition management: add and delete collection partitions beyond hash-based partitioning
-- MCP support for agentic search and retrieval
 
 ## Changelog
 
@@ -18,6 +17,9 @@ Last updated: September 16, 2026
 - Added [data versioning](/guides/data-versioning/branches-tags-aliases) with writable branches, immutable tags, and mutable aliases for collection data.
 - Added per-collection snapshot retention and standardized collection and ref timestamps as Unix epoch milliseconds.
 - Released stable data versioning support in the [Python 0.9.0, JavaScript/TypeScript 0.5.0, and Go 0.4.0 SDKs](/reference/sdk/introduction#data-versioning-support).
+- Fixed large-result downloads in [JavaScript/TypeScript SDK 0.5.1](https://github.com/lambdadb/lambdadb-typescript-client/releases/tag/v0.5.1) for query, fetch, and list operations.
+- Updated the [Migration CLI](/guides/migrations/overview) to 0.1.6 with current collection API support, signed bulk uploads, and improved checkpoint resume behavior.
+- Updated the [MCP server](/guides/get-started/use-with-mcp) for the current API, including ref-scoped reads, branch-scoped writes, and large-result downloads.
 
 ### May 2026
 
