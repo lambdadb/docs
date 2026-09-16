@@ -20,6 +20,20 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 </CardGroup>
 
+## Data versioning support
+
+Use these stable SDK versions or later for the collection, branch, tag, and alias APIs documented here:
+
+| SDK | Version | SDK guide |
+| :-- | :------ | :-------- |
+| Python | [0.9.0](https://pypi.org/project/lambdadb/0.9.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.9.0/docs/sdks/versioning/README.md) |
+| JavaScript/TypeScript | [0.5.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.5.0) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.5.0/docs/data-versioning.md) |
+| Go | [0.4.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.4.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.4.0/docs/sdks/versioning/README.md) |
+
+Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
+
+REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps with datetime helpers such as `created_at_dt`; the TypeScript collection-scoped client returns `Date` values; Go provides time getters. Branch parent and snapshot fields can be null, so check them before accessing their fields.
+
 ## Compatibility clients
 
 <CardGroup cols={1}>

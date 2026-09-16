@@ -13,6 +13,108 @@ LambdaDB data versioning provides named histories for the knowledge or memory st
 
 Refs are scoped to one collection. Branch merge, direct branch reset, ref rename, and cross-collection snapshot sharing are not part of this API. Branch, tag, and alias names must contain 3 to 52 letters, numbers, underscores, or hyphens.
 
+## Use the SDKs
+
+Install a [supported SDK version](/reference/sdk/introduction#data-versioning-support) and use your project's connection details from LambdaDB Cloud. These examples assume an existing `knowledge-base` collection with a `title` text field and no branch named `candidate`. Run one language example or the REST alternative below, not both against the same branch name. The Go function accepts a client configured as shown in the [Quickstart](/guides/get-started/quickstart).
+
+<CodeGroup>
+
+```python Python
+from lambdadb import BranchSource, LambdaDB, Ref
+
+with LambdaDB(
+    project_api_key="YOUR_API_KEY",
+    base_url="YOUR_BASE_URL",
+    project_name="YOUR_PROJECT_NAME",
+) as client:
+    collection = client.collection("knowledge-base")
+    branch = collection.branches.create(
+        "candidate", source=BranchSource.branch("main")
+    ).branch
+    if branch.parent_branch is not None:
+        print(branch.parent_branch.name)
+    if branch.head_snapshot is not None:
+        print(branch.head_snapshot.snapshot_id)
+
+    collection.docs.upsert(
+        docs=[{"id": "doc-1", "title": "Candidate document"}], branch="candidate"
+    )
+    result = collection.docs.fetch(
+        ids=["doc-1"], ref=Ref.branch("candidate"), consistent_read=True
+    )
+```
+
+```typescript TypeScript
+import { LambdaDBClient, branchRef, branchSource } from "@functional-systems/lambdadb";
+
+const client = new LambdaDBClient({
+  projectApiKey: "YOUR_API_KEY",
+  baseUrl: "YOUR_BASE_URL",
+  projectName: "YOUR_PROJECT_NAME",
+});
+const collection = client.collection("knowledge-base");
+const { branch } = await collection.branches.create({
+  branchName: "candidate",
+  source: branchSource("main"),
+});
+if (branch.parentBranch !== null) console.log(branch.parentBranch.name);
+if (branch.headSnapshot !== null) console.log(branch.headSnapshot.snapshotId);
+
+await collection.docs.upsert({
+  docs: [{ id: "doc-1", title: "Candidate document" }],
+  branch: "candidate",
+});
+const result = await collection.docs.fetch({
+  ids: ["doc-1"],
+  ref: branchRef("candidate"),
+  consistentRead: true,
+});
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func versioningExample(ctx context.Context, client *lambdadb.Client) error {
+    collection := client.Collection("knowledge-base")
+    branch, err := collection.Branches().Create(ctx, lambdadb.CreateBranchInput{
+        BranchName: "candidate",
+        Source:     lambdadb.BranchSource("main"),
+    })
+    if err != nil {
+        return err
+    }
+    if branch.ParentBranch != nil {
+        fmt.Println(branch.ParentBranch.Name)
+    }
+    if branch.HeadSnapshot != nil {
+        fmt.Println(branch.HeadSnapshot.SnapshotID)
+    }
+
+    _, err = collection.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{
+        Docs:   []map[string]interface{}{{"id": "doc-1", "title": "Candidate document"}},
+        Branch: lambdadb.String("candidate"),
+    })
+    if err != nil {
+        return err
+    }
+    _, err = collection.Docs().Fetch(ctx, lambdadb.FetchDocsInput{
+        Ids:            []string{"doc-1"},
+        Ref:            lambdadb.BranchRef("candidate"),
+        ConsistentRead: lambdadb.Bool(true),
+    })
+    return err
+}
+```
+
+</CodeGroup>
+
+This fetch includes eligible pending writes on `candidate`; it does not prove that a snapshot has committed. Before creating a tag, verify the intended committed data with `consistentRead: false`. See [Consistent reads](#consistent-reads) for limits and the bulk-import exclusion.
+
 ## Create and list branches
 
 Create a branch from `main`:
