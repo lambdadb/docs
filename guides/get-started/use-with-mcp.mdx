@@ -3,7 +3,7 @@ title: Use with MCP
 description: Connect LambdaDB to AI assistants via the Model Context Protocol. Configure MCP clients like Claude Desktop to search and manage collections.
 ---
 
-LambdaDB can be used from any **Model Context Protocol (MCP)** client through the **LambdaDB MCP server**. This is useful when you want an AI assistant to inspect collections, list documents, fetch records, or run search queries against a LambdaDB project.
+LambdaDB can be used from any **Model Context Protocol (MCP)** client through the **LambdaDB MCP server**. This makes the knowledge and memory stored in LambdaDB available to AI assistants that need to inspect collections, list documents, fetch records, or run search queries against a project.
 
 This guide shows a local setup flow using a **project API key**, **base URL**, and **project name** from LambdaDB Cloud.
 
@@ -14,6 +14,7 @@ You will need:
 - A LambdaDB **project API key**
 - Your project's **base URL**
 - Your **project name**
+- Node.js **20.7.0 or later** and npm
 - A local copy of the **LambdaDB MCP server**
 - An MCP client such as **Claude Desktop**
 
@@ -29,25 +30,27 @@ From **[LambdaDB Cloud](https://app.lambdadb.ai)**, collect the following values
 - **Project name**
 - **Project API key**
 
+Project creation does not automatically issue an API key. In the project's **API Keys** tab, an organization Owner or Admin must select **Create key** and save the full value when it is shown. Use that saved value for the MCP configuration; it cannot be revealed again from the key list. See [API key management](/guides/get-started/quickstart#manage-api-keys).
+
 <Warning>
   Store your project API key securely. Do not commit it to source control or share it in screenshots, prompts, or logs.
 </Warning>
 
 ## Step 2: Build the LambdaDB MCP server
 
-Clone the LambdaDB MCP server locally, then build it:
+Clone the LambdaDB MCP server's `main` branch, then build it. The current server uses LambdaDB TypeScript SDK 0.5.1, including automatic large-result downloads.
 
 ```bash
-git clone https://github.com/lambdadb/lambdadb-mcp
+git clone --branch main https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
-npm install
+npm ci
 npm run build
 ```
 
-If you are using the repository's local environment workflow, you can also create a local `.env` file:
+If you are using the repository's local environment workflow, you can also create a local `.env.local` file:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
 Then set:
@@ -58,6 +61,8 @@ LAMBDADB_PROJECT_NAME=YOUR_PROJECT_NAME
 LAMBDADB_PROJECT_API_KEY=YOUR_PROJECT_API_KEY
 LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false
 ```
+
+For local execution with this file, run `npm run start:env`. The launcher loads `.env.local` when present, otherwise `.env`; exported environment variables take precedence. Direct `node dist/index.js` execution does not load these files automatically. The MCP client configuration below supplies its own environment variables.
 
 <Tip>
   Keep `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false` until you have validated the read-only tools in your client.
@@ -102,6 +107,8 @@ Recommended first checks:
 2. Call `lambdadb_get_collection` for a known collection.
 3. Run `lambdadb_query_collection` with a small query against that collection.
 
+Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+
 ## Optional: Enable write tools
 
 The LambdaDB MCP server can also expose write operations such as:
@@ -109,6 +116,8 @@ The LambdaDB MCP server can also expose write operations such as:
 - `lambdadb_create_collection`
 - `lambdadb_upsert_docs`
 - `lambdadb_delete_docs`
+
+Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 
 To enable them, change:
 

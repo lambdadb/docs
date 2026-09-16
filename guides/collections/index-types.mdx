@@ -150,12 +150,11 @@ This type is for date and time in [RFC 3339 format](https://datatracker.ietf.org
 <CodeGroup>
 
 ```python Python
-import pytz
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Example datetime usage
-dt = datetime.now()
-print(dt.astimezone(pytz.UTC).isoformat(timespec="seconds"))
+dt = datetime.now(timezone.utc)
+print(dt.isoformat(timespec="seconds"))
 # Output: 2024-11-05T14:27:56+00:00
 
 # Index configuration

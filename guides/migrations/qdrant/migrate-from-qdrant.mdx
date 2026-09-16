@@ -39,7 +39,7 @@ Install a specific version:
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-sh install.sh --version v0.1.5 --install-dir "$HOME/.local/bin"
+sh install.sh --version v0.1.6 --install-dir "$HOME/.local/bin"
 ```
 
 Check the Qdrant command:
@@ -107,7 +107,7 @@ Review the generated mapping before running the migration. In particular, check 
 
 <Note>
 
-Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it is missing and waits until it is ready before writing documents.
+Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it is missing, then begins writing documents. Transient write failures use the CLI's retry policy; no collection-status polling is performed.
 
 </Note>
 
@@ -148,6 +148,8 @@ lambdadb-migration qdrant \
 Migration progress is written to stderr with accepted count, percent, batch size, rate, and elapsed time.
 
 The CLI stores checkpoints under `.lambdadb-migration/checkpoints` by default. If the command is interrupted, rerun the same command to resume. Use `--migration.restart` to ignore an existing checkpoint and start from the beginning.
+
+Completed runs skip re-reading and uploading documents on rerun. To migrate new source data, use `--migration.restart`. See [checkpoint and validation behavior](/guides/migrations/overview#common-cli-behavior), including locally saved validation samples.
 
 Use `--migration.create-collection=false` when the target LambdaDB collection already exists and the migration should not create it.
 

@@ -13,9 +13,9 @@ The CLI inventories the source system, generates an editable LambdaDB mapping, c
 
 | Source | Status | Notes |
 |:-------|:-------|:------|
-| Qdrant | Supported in CLI `v0.1.5` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Pinecone Serverless | Supported in CLI `v0.1.5` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Elasticsearch | Supported in CLI `v0.1.5` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
+| Qdrant | Supported in CLI `v0.1.6` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Pinecone Serverless | Supported in CLI `v0.1.6` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Elasticsearch | Supported in CLI `v0.1.6` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
 | OpenSearch | Planned | Use the same CLI workflow once OpenSearch support is available. |
 | Chroma | Planned | Use the same CLI workflow once Chroma support is available. |
 | Weaviate | Planned | Use the same CLI workflow once Weaviate support is available. |
@@ -32,7 +32,7 @@ The CLI inventories the source system, generates an editable LambdaDB mapping, c
 
 ## Install the CLI
 
-Install the latest release:
+Use CLI `v0.1.6` or later with the current LambdaDB API. Install the latest release:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh | sh
@@ -42,7 +42,7 @@ Install a specific version:
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-sh install.sh --version v0.1.5 --install-dir "$HOME/.local/bin"
+sh install.sh --version v0.1.6 --install-dir "$HOME/.local/bin"
 ```
 
 Make sure the install directory is on your `PATH`, then check the CLI:
@@ -63,11 +63,13 @@ export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
 export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
 ```
 
-Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it does not already exist, then waits until the collection is ready before writing documents.
+Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it does not already exist, then begins writing documents. The CLI does not poll a collection status; transient write failures use its retry policy.
 
 Use `--migration.create-collection=false` when the LambdaDB collection already exists and the migration should fail instead of creating it.
 
 The CLI stores local checkpoints under `.lambdadb-migration/checkpoints` by default. If a migration is interrupted, rerun the same command to resume from the last saved checkpoint. Use `--migration.restart` to start from the beginning.
+
+A completed checkpoint skips re-reading and uploading documents on rerun. Use `--migration.restart` to migrate new source data after a completed run. Validation-enabled runs retain sample documents in local checkpoint files so validation can be retried without uploading again; protect these files as source data. If a completed checkpoint has no saved samples, restart to collect them or use `--migration.validation-sample-size=0` for count-only validation.
 
 ## Validation
 
