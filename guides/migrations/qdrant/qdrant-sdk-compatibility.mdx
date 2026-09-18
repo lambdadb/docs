@@ -23,6 +23,8 @@ Use LambdaDB native APIs directly when:
 - You need LambdaDB-specific query features such as lexical plus vector hybrid search.
 - You want the clearest long-term API surface after migration.
 
+The compatibility clients map Qdrant `Dot` to LambdaDB `dot_product`, which requires unit-length document and query vectors. If your inner-product search relies on vector magnitudes, use LambdaDB native APIs with `max_inner_product` and validate ranking and score handling. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
+
 ## Install
 
 Python support is available in `lambdadb >= 0.8.2`:
@@ -302,3 +304,9 @@ For a full Qdrant migration workflow, start with the migration guide:
     Install and use the official LambdaDB SDKs.
   </Card>
 </CardGroup>
+
+## Need help adapting your application?
+
+Not sure whether the compatibility client covers your Qdrant usage? Email [support@lambdadb.ai](mailto:support@lambdadb.ai) or ask in the [LambdaDB community Slack](https://join.slack.com/t/lambdadbcommunity/shared_invite/zt-3sg7565zm-sCTW3odRkEQt~auWUVVsTw) for help assessing the supported path and any application changes.
+
+Share your language and client package versions, the API call you need, and a sanitized example or error if available. These details help us identify whether to use the compatibility client, rewrite the call with the LambdaDB SDK, or plan around an unsupported feature.

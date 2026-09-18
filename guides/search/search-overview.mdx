@@ -25,7 +25,7 @@ Common parameters for the request body of a query are as follows:
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
 | sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)) | object[] | | |
-| partitionFilter | Partition filter | object |  |  |
+| partitionFilter | Select physical partitions by values of the configured partition field; unselected partitions are not searched. See [Partition selection](#select-partitions-to-search). | object |  | All partitions |
 | ref | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }` | object | | `main` branch |
 
 <Tip>
@@ -69,6 +69,34 @@ Query results are returned in the following format:
 | docsUrl | Presigned download URL when `isDocsInline` is `false` | string |
 
 Large results may be returned through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
+
+## Select partitions to search
+
+Partitioning is configured by the application through the collection's `partitionConfig`. On a partitioned collection, top-level `partitionFilter` limits the request to the physical partitions associated with the supplied field values. Other partitions are not searched. Without `partitionFilter`, the search scope includes all partitions.
+
+For example, assume the collection has a `tenant_id` keyword index, a `content` text index, and `partitionConfig` set to `{ "fieldName": "tenant_id", "dataType": "keyword", "numPartitions": 4 }`. Send this query body to search the authorized tenant's data:
+
+```json
+{
+  "partitionFilter": {
+    "field": "tenant_id",
+    "in": ["tenant_42"]
+  },
+  "query": {
+    "queryString": {
+      "query": "refund",
+      "defaultField": "content"
+    }
+  },
+  "size": 10
+}
+```
+
+`field` must match the configured partition field, and `in` contains field values, not physical partition IDs. Hash partitioning can place several field values in the same physical partition; the request also restricts matches to the supplied values. Derive permitted values in your backend from the caller's authorization.
+
+Use query predicates, including `knn.filter`, for additional document conditions within that search scope. A document predicate alone does not replace `partitionFilter` for skipping physical partitions. Internal sharding distributes query execution and has no user-facing configuration; it is separate from this explicit partition selection.
+
+See [Create a partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection) for setup and [Read usage](/guides/costs/understanding-costs#read-usage) for the effect of partition selection on billing.
 
 ## Example
 

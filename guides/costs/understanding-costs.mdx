@@ -1,13 +1,13 @@
 ---
 title: Understanding costs
-description: Learn how LambdaDB serverless pricing works across read usage, write usage, storage, and inference usage. Covers per-request minimums, consistency surcharges, and managed embedding usage.
+description: Learn how LambdaDB usage pricing works across reads, writes, storage, and inference, including request minimums and promotional pricing for data returned and retention storage.
 ---
 
-LambdaDB offers a **Free** plan and a **Standard** plan.
+LambdaDB offers a **Free** plan and a **Pay as You Go** plan.
 
 There is **no minimum cost** or base fee. If you have no usage, your cost is **$0**.
 
-On the **Standard** plan, usage is metered in four dimensions: **read usage**, **write usage**, **storage usage**, and **inference usage**. Charges are based on actual measured usage at the rates below.
+On the **Pay as You Go** plan, reads, writes, storage, and inference are billed from measured usage at the rates below. Data returned and retention storage are also metered, with fees waived during the promotion described below.
 
 For the latest pricing details, see [Pricing](https://lambdadb.ai/pricing).
 
@@ -16,7 +16,7 @@ For the latest pricing details, see [Pricing](https://lambdadb.ai/pricing).
 LambdaDB offers two plans:
 
 - **Free**: includes up to **1 PB read usage**, **2 GB write usage**, **2 GB storage usage**, and **500K LIU inference usage** per month at **no cost**. After a Free plan limit is reached, additional usage is **restricted**.
-- **Standard**: usage is billed based on actual measured **read usage**, **write usage**, **storage usage**, and **inference usage** as described below.
+- **Pay as You Go**: usage is billed at the rates described below, with no minimum charge or per-collection fixed fee. Inactive collections still incur storage usage while their data is retained.
 
 ## Read usage
 
@@ -28,7 +28,7 @@ The following requests contribute to read usage based on **collection size**:
 - **Document fetch** ([document fetch](/reference/api/endpoint/document-fetch))
 - **Document list** ([document list](/reference/api/endpoint/document-list))
 
-For these operations, the size of the collection is reflected in read usage.
+For these operations, read usage reflects collection size. On a partitioned collection, `partitionFilter` narrows the request to selected physical partitions, and read usage reflects their combined size. Unselected partitions are not searched. This requires explicit partition selection; an ordinary document predicate does not by itself narrow the billed partition scope. See [Partition selection](/guides/search/search-overview#select-partitions-to-search).
 
 **Per-request minimum:** each request is counted as at least **1 GB** of read usage.
 
@@ -54,6 +54,17 @@ If you use **branching**, logical storage and physical storage can differ; billi
 
 Usage is computed from **hourly averages** of stored data. Those averages are summed into **GB-hours** over the billing period (not a single end-of-month snapshot).
 
+## Data returned and retention storage
+
+The [public pricing page](https://lambdadb.ai/pricing), checked on September 18, 2026, also lists these usage meters:
+
+| Meter | Published rate | Promotional status |
+|:------|:---------------|:-------------------|
+| Data returned in query responses | $0.05 per GB returned | Free during the promotional period |
+| Retention storage for deleted data kept in the retention window | $0.10 per GB-month | Free during the promotional period |
+
+Billing for these two meters starts with advance notice. Include them when estimating costs beyond the promotion; do not treat the promotional waiver as a permanent free tier. Retention storage for deleted data is distinct from an inactive collection whose documents remain stored. The regular storage charge still applies to that inactive collection.
+
 ## Inference usage
 
 Inference usage applies when LambdaDB calls a managed model provider on your behalf, such as managed embedding generation during document writes or `knn.queryText` searches on managed embedding fields.
@@ -76,4 +87,4 @@ See also [Managed embeddings](/guides/collections/managed-embeddings).
 
 ## Billing cycle
 
-On the **first day of each calendar month**, usage for the **previous month**—read, write, storage, and inference—is aggregated and invoiced for the **Standard** plan.
+On the **first day of each calendar month**, billable usage for the **previous month** is aggregated and invoiced on the **Pay as You Go** plan. The data-returned and retention-storage fees are waived during their promotional period.

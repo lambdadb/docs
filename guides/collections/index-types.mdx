@@ -49,7 +49,7 @@ LambdaDB supports four analyzers for tokenization: `standard` (default), `korean
 
 ## keyword
 
-`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Keyword indexes are often used in sorting, aggregations, and term-level queries.
+`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Use keyword indexes for sorting and exact-value filters. The documented query API does not provide aggregation operations.
 
 <Note>
 
@@ -455,7 +455,7 @@ complete_index_config = {
 
 <Note>
 
-Leave a comment in our [community channel](https://discord.gg/dnKm7WUHWg) or [contact us](https://lambdadb.ai/contact) if you need an analyzer not listed above.
+Ask in the [LambdaDB community Slack](https://join.slack.com/t/lambdadbcommunity/shared_invite/zt-3sg7565zm-sCTW3odRkEQt~auWUVVsTw) or email [support@lambdadb.ai](mailto:support@lambdadb.ai) if you need an analyzer not listed above.
 
 </Note>
 
@@ -465,5 +465,9 @@ Leave a comment in our [community channel](https://discord.gg/dnKm7WUHWg) or [co
 |:-------|:------------|:---------|
 | `cosine` | Cosine similarity | Most common for text embeddings |
 | `euclidean` | Euclidean distance | Geometric distance calculations |
-| `dot_product` | Dot product similarity | Fast similarity computation |
-| `max_inner_product` | Maximum inner product | Specialized similarity metric |
+| `dot_product` | Dot product for unit-length vectors | Document and query vectors are already normalized to unit length |
+| `max_inner_product` | Maximum inner product without a normalization requirement | Preserve vector magnitudes when they contribute to relevance |
+
+For dense vectors, use `dot_product` only when both document and query vectors have unit length. Use `max_inner_product` to preserve an unnormalized inner-product objective; normalizing vectors can change that ranking. These semantics follow [Lucene's vector similarity definitions](https://lucene.apache.org/core/10_4_0/core/org/apache/lucene/index/VectorSimilarityFunction.html). This normalization requirement does not apply to `sparseVector` fields.
+
+Dense-vector query results contain relevance scores, not raw distances or inner products. Validate score thresholds separately when migrating between systems.

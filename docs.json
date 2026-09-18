@@ -28,6 +28,12 @@
             "pages": [
               "guides/migrations/overview",
               {
+                "group": "PostgreSQL",
+                "pages": [
+                  "guides/migrations/postgresql/search-with-postgresql"
+                ]
+              },
+              {
                 "group": "Qdrant",
                 "pages": [
                   "guides/migrations/qdrant/migrate-from-qdrant",
