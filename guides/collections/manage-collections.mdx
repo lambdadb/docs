@@ -200,7 +200,7 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 | :---- | :------------- |
 | `description` | Replaces the description; `""` clears it. Maximum 255 characters. |
 | `tags` | Replaces the entire metadata map, rather than merging keys; `{}` clears it. |
-| `snapshotRetentionInDays` | Integer from `1` through `31`; there is no unlimited-retention value. |
+| `snapshotRetentionInDays` | Integer from `1` through `31`; there is no unlimited-retention value for this setting. Snapshots pinned by an existing tag remain available beyond this period; see [Snapshot retention](/guides/collections/create-a-collection#snapshot-retention). |
 | `indexConfigs` | Nonempty full schema, preserving existing fields and their settings while adding top-level or nested fields. |
 
 New fields can be added under existing objects at any depth. Include all existing fields in the submitted schema, including nested children, and preserve their types and settings. For example, adding `profile.city` is supported when `profile.name` and its settings are retained. Removing an existing field or changing its type, analyzers, vector settings, or embedding configuration is rejected. `partitionConfig` and `defaultBranchName` cannot be changed with PATCH.
