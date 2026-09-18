@@ -258,6 +258,8 @@ Omit `source` to pin the current `main` snapshot. The create response wraps the 
 
 A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag pins the same snapshot; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
 
+As long as the tag exists, its pinned snapshot remains available even beyond the collection's [snapshot retention period](/guides/collections/create-a-collection#snapshot-retention). For example, with a 30-day retention period, a tagged snapshot remains readable through the tag after 30 days. This makes tags suitable for long-term savepoints, such as a data version associated with a code release. The tag preserves that snapshot, not all earlier snapshots.
+
 Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds.
 
 ```json
@@ -512,5 +514,7 @@ DELETE .../aliases/{aliasName}
 ```
 
 The default `main` branch cannot be deleted independently from its collection; an attempt returns `400 BadRequest`. Other branches and tags cannot be deleted while any alias references them (`409 Conflict`). Delete or retarget those aliases first. Deleting a ref does not delete the collection.
+
+Deleting a tag removes its protection of the pinned snapshot; it does not immediately delete the snapshot. Once the snapshot is outside the retention period and no branch head or other tag references it, it becomes eligible for cleanup.
 
 The default branch cannot be changed. Deleting an already absent ref can return `404`.

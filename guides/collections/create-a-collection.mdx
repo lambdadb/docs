@@ -280,6 +280,8 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 Every collection retains committed snapshots for 30 days by default. Set `snapshotRetentionInDays` to an integer from `1` through `31` when creating the collection, or change it later with the collection update API.
 
+Snapshots pinned by an existing [tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) remain available even after this retention period expires. Use tags to preserve specific committed versions as long-term savepoints. A tag protects its pinned snapshot, not the collection's entire history. Collection metadata `tags` are labels and do not pin snapshots.
+
 Omitting retention on create selects the default; explicitly sending `null` is rejected. See [Collection PATCH rules](/guides/collections/manage-collections#configure-a-collection) for update and metadata-tag semantics.
 
 Point-in-time history is available by creating a branch rather than cloning another collection. A `source.asOf` value is a Unix epoch timestamp in milliseconds and must refer to a branch in the same collection. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#point-in-time-branches).
