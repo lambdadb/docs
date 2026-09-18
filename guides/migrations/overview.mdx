@@ -11,6 +11,8 @@ The CLI inventories the source system, generates an editable LambdaDB mapping, c
 
 ## Supported sources
 
+For PostgreSQL applications, see [Search with PostgreSQL and LambdaDB](/guides/migrations/postgresql/search-with-postgresql) for collection design, search compatibility, and application-owned ingestion. PostgreSQL is not currently a Migration CLI source.
+
 | Source | Status | Notes |
 |:-------|:-------|:------|
 | Qdrant | Supported in CLI `v0.1.6` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
@@ -87,6 +89,9 @@ For Qdrant and Pinecone vector migrations, `--migration.query-overlap` compares 
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Search with PostgreSQL" href="/guides/migrations/postgresql/search-with-postgresql" icon="database">
+    Organize tenant, chat, and repository search datasets and review PostgreSQL search compatibility.
+  </Card>
   <Card title="Migrate from Qdrant" href="/guides/migrations/qdrant/migrate-from-qdrant" icon="arrows-rotate">
     Move Qdrant collections, points, vectors, sparse vectors, and payload indexes to LambdaDB.
   </Card>

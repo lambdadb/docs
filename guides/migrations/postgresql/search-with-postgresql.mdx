@@ -1,0 +1,183 @@
+---
+title: Search with PostgreSQL and LambdaDB
+description: Scale PostgreSQL search across many tenant, chat, or repository datasets with unlimited collections, no per-collection fixed fee, and managed sharding. Review search compatibility and integration work.
+---
+
+PostgreSQL applications often start with built-in full-text search or extensions such as pgvector and pg_search. As the application grows, both the size of each search dataset and the number of independent datasets can become important. A character-chat service may need separate search histories for each user's character and session. A coding service may need separate datasets for users, workspaces, and repositories.
+
+LambdaDB lets you organize search around those application boundaries:
+
+- **No collection count limit:** create collections for the datasets your application needs, without consolidating unrelated data to fit a collection quota.
+- **No per-collection fixed fee:** an inactive collection does not incur a fixed charge just for existing. Stored data remains subject to storage charges, and reads and writes are billed when used.
+- **Managed sharding as a collection grows:** LambdaDB manages internal query sharding, so you do not have to split a growing search dataset across collections and operate shard placement yourself.
+
+Keep PostgreSQL as the source of truth for application data, transactions, and permissions, and use LambdaDB for the derived search data. This guide explains when that separation is useful, how to choose collection boundaries, and what to review before changing your search path.
+
+See [Collection limits](/guides/collections/create-a-collection#collection-limits), [Architecture](/guides/get-started/architecture), and [Understanding costs](/guides/costs/understanding-costs) for the underlying service behavior.
+
+## Two ways search workloads grow
+
+| Growth pattern | What to evaluate in PostgreSQL | How LambdaDB changes the operating model |
+|:---------------|:-------------------------------|:----------------------------------------|
+| A dataset grows larger or receives more traffic | Search latency, index memory, build and maintenance work, and the impact on transactional queries | Search runs in a separate service, with internal sharding managed for the collection. |
+| The number of independent datasets grows | Creating, indexing, rebuilding, and deleting many tables or partitions; different activity levels and retention needs | Collections follow application dataset boundaries without a collection count limit or per-collection fixed fee. |
+
+The second pattern matters even when each dataset is small. For example, a service may retain many chat sessions or repositories while only a small subset receives requests at any given time. Keeping those datasets separate does not require paying a fixed fee for every idle LambdaDB collection.
+
+Measure both patterns together: a large population of inactive collections, many small active collections, and a few large or busy collections. Collection count, total stored bytes, active dataset count, and request volume describe different parts of the workload.
+
+## Choose collection boundaries
+
+Start with the unit your application searches, authorizes, rebuilds, and deletes independently. The following are design examples, not requirements to create a physical PostgreSQL table for every entity.
+
+| Application | Candidate collection boundary | Lifecycle to preserve |
+|:------------|:------------------------------|:----------------------|
+| Character chat | One user's conversation session with a character | Search only the intended conversation; retire or delete its search data independently. |
+| Coding assistant | A workspace or user's repository dataset | Apply repository permissions and rebuild or remove one repository's search data. |
+| B2B search | A tenant or independently managed workspace | Keep customer-specific search settings and data lifecycles separate. |
+
+If multiple users share the same repository and permissions, a shared repository collection may be appropriate. If users have private changes or different visibility, preserve those differences in the collection or query design. Shared character knowledge can similarly be a separate dataset from private conversation history.
+
+### Shared tables and separate search datasets
+
+A PostgreSQL table can feed multiple LambdaDB collections, routed by a stable tenant, chat, or repository identity. Existing separate PostgreSQL tables can also map to separate collections. You do not need to redesign the source schema to match the search layout, but your ingestion code must implement and maintain that mapping.
+
+Using one shared table and a tenant filter is another valid starting point. Review its search behavior before treating it as equivalent to separate indexes: [pgvector documents](https://github.com/pgvector/pgvector#multitenancy) that sharing an approximate index between tenants can affect recall and speed, and suggests separate tables or list partitioning for tenant isolation. Its [filtering guidance](https://github.com/pgvector/pgvector#filtering) also covers exact search over filtered rows, partial indexes, and iterative scans.
+
+Partitioning introduces its own tradeoffs. PostgreSQL's [partitioning guidance](https://www.postgresql.org/docs/18/ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES) discusses planning time and memory costs when partition counts grow. Evaluate the actual query and maintenance workload rather than assuming that either one shared index or one partition per tenant is always preferable.
+
+### Routing, permissions, and versions
+
+Resolve the target collection in your backend from the authenticated user's allowed dataset. A collection boundary scopes the search corpus; it does not automatically reproduce PostgreSQL RLS or allocate dedicated compute. Keep project API keys on the backend and authorize collection and ref selection before returning documents, snippets, or scores.
+
+If you combine multiple source tables in one collection, make document IDs unique across those tables. If a row moves between datasets, remove its old search representation as well as writing the new one.
+
+Use [branches and tags](/guides/data-versioning/branches-tags-aliases) when a single dataset needs different search histories or pinned versions. Application chat branches and Git revisions do not automatically become LambdaDB refs; your application must maintain that relationship. Schemas and retention are configured at the collection level.
+
+Search requests target one collection. If a user searches several repositories or combines shared character knowledge with private chat memory, plan application-side requests, result merging, authorization, and their combined cost.
+
+## Check search compatibility
+
+The current integration path uses LambdaDB's REST API or SDKs and application-owned ingestion. The [Migration CLI](/guides/migrations/overview) does not currently provide a PostgreSQL source connector. A native PostgreSQL extension is under evaluation; SQL-preserving integration is not a released compatibility layer. The examples below use the available API path.
+
+Review the exact PostgreSQL version, installed extensions, index definitions, and production queries. Sharing a vector type or the term BM25 does not establish identical query syntax, results, or transaction behavior.
+
+| Existing PostgreSQL search | Reusable input | LambdaDB mapping and review |
+|:---------------------------|:---------------|:----------------------------|
+| Built-in full-text search with `tsvector`, `tsquery`, and `ts_rank` or `ts_rank_cd` | Original text and metadata | Index source text as `text` and rewrite queries with `queryString`. Review tokenization, stemming, stop words, phrase behavior, and ranking. LambdaDB uses BM25 for text relevance; PostgreSQL ranking functions are not score-compatible. |
+| [pg_search](https://github.com/paradedb/paradedb), [pg_textsearch](https://github.com/timescale/pg_textsearch), or [VectorChord-BM25](https://github.com/supervc-stack/VectorChord-bm25) | Original text and filter fields | Map to text and scalar indexes. Review each extension's operators, analyzers, score ordering, and any highlighting or aggregation dependencies separately. Existing index files and scoring behavior are not imported. |
+| [pgvector](https://github.com/pgvector/pgvector) dense vectors | Existing embedding values | Use an unmanaged `vector` field with matching dimensions and an appropriate similarity metric. Rewrite SQL retrieval as `knn`; validate ranking and score thresholds. |
+| [pgvectorscale](https://github.com/timescale/pgvectorscale) or [VectorChord](https://github.com/supervc-stack/VectorChord) | Existing pgvector embedding values | Review data and query semantics as above. Source index algorithms, compression settings, and tuning parameters do not transfer to LambdaDB. |
+| SQL combining text and vector results | Source text, embeddings, and filters | Reconstruct the ranking with [hybrid queries](/guides/search/hybrid). Review fusion rules, candidate counts, and filters on both retrieval paths. |
+| SQL filters, JOINs, RLS, and transactional reads | Required scalar fields and application authorization rules | Map supported predicates to indexed fields and filters. Keep remaining relational work in PostgreSQL. Ingestion and API calls do not create a shared transaction snapshot. |
+
+Use the [index type reference](/guides/collections/index-types) for field mappings. Export original text rather than serialized `tsvector` values. Convert IDs and source values explicitly; review NULL or missing values, timestamps, arrays, and JSON structures. Dense, sparse, half-precision, and binary vector representations need separate mapping decisions.
+
+## Example: move one chat session's search
+
+Suppose PostgreSQL stores one session in `chat_session_42`, with `id`, `body`, and `embedding vector(3)` columns. Map its search data to a LambdaDB collection named `chat-session-42`. Three-dimensional vectors keep these examples short; use your actual model's dimensions and the same embedding model for documents and queries.
+
+### Create the search collection
+
+Send this body to `POST /projects/{projectName}/collections` on your regional base URL. See [Create a collection](/guides/collections/create-a-collection) for authentication and SDK examples.
+
+```json
+{
+  "collectionName": "chat-session-42",
+  "indexConfigs": {
+    "body": {
+      "type": "text",
+      "analyzers": ["english"]
+    },
+    "embedding": {
+      "type": "vector",
+      "dimensions": 3,
+      "similarity": "cosine"
+    }
+  }
+}
+```
+
+Export rows into documents with a stable string `id`, the original `body`, and the numeric `embedding` array. Load them through [upsert](/guides/documents/upsert-data) or [bulk upsert](/guides/documents/bulk-upsert-data). This is an application-owned export and load step, not an automatic table connection.
+
+### Vector retrieval
+
+Existing pgvector query:
+
+```sql
+SELECT id, body, embedding <=> '[0.1,0.2,0.3]'::vector AS distance
+FROM chat_session_42
+ORDER BY embedding <=> '[0.1,0.2,0.3]'::vector
+LIMIT 10;
+```
+
+LambdaDB request body for `POST /projects/{projectName}/collections/chat-session-42/query`:
+
+```json
+{
+  "query": {
+    "knn": {
+      "field": "embedding",
+      "queryVector": [0.1, 0.2, 0.3],
+      "k": 10
+    }
+  },
+  "size": 10,
+  "includeVectors": false
+}
+```
+
+This preserves the intended session search scope and cosine metric. It does not promise identical ANN neighbors. PostgreSQL returns a distance in the selected `distance` column; LambdaDB returns result items containing `doc` and `score`, ordered by relevance. Adapt result handling and validate any score threshold rather than copying a distance threshold. See [Search overview](/guides/search/search-overview) and [Vector query](/guides/search/vector).
+
+For a shared collection, configure indexed scope fields and put the authorized scope inside `knn.filter`. Filtering an already truncated top-k response can leave too few results. A session-specific collection avoids needing a session predicate to select that corpus, while backend authorization is still required.
+
+### Text retrieval
+
+A PostgreSQL built-in FTS predicate might be:
+
+```sql
+SELECT id, body
+FROM chat_session_42
+WHERE to_tsvector('english', body) @@ plainto_tsquery('english', 'lost key');
+```
+
+The corresponding search intent can be expressed in the same LambdaDB collection with:
+
+```json
+{
+  "query": {
+    "queryString": {
+      "query": "lost AND key",
+      "defaultField": "body"
+    }
+  },
+  "size": 10
+}
+```
+
+The explicit `AND` requests both terms; unqualified terms separated by spaces in LambdaDB query strings are optional clauses. This example returns a ranked, limited result set, while the SQL example selects all matches without ranking. Matching can also differ because PostgreSQL text configurations and LambdaDB analyzers are distinct. Review actual queries and relevance judgments using the [PostgreSQL text-search documentation](https://www.postgresql.org/docs/18/textsearch-controls.html) and [LambdaDB query syntax](/guides/search/query-string).
+
+## Keep the search data current
+
+For ongoing use, define how committed PostgreSQL inserts, updates, and deletes reach LambdaDB after the initial load. A custom integration can use a durable outbox or CDC pipeline, but must handle the snapshot-to-change-stream handoff, retries, ordering, and recovery. There is no automatic synchronization from creating a collection.
+
+Track source progress and search visibility separately. LambdaDB `consistentRead: true` can include eligible pending writes already received by the selected branch; it cannot retrieve PostgreSQL changes that your integration has not delivered. Pending bulk imports remain invisible until committed. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
+
+Apply permission changes and deletions before exposing stale search content. A later PostgreSQL permission check does not undo disclosure of snippets or metadata already returned to the caller. If local checks remove candidates, define how to obtain enough permitted results rather than assuming a fixed over-fetch factor always returns k matches.
+
+## Evaluate performance and total cost
+
+Compare a tuned PostgreSQL baseline with the proposed collection layout. Keep embeddings, data, search quality targets, and traffic distributions comparable.
+
+| Dimension | What to measure |
+|:----------|:----------------|
+| Dataset population | Total collections, active fraction, size distribution, and collection creation or deletion bursts |
+| Search behavior | Vector recall against exact search within the authorized dataset, text relevance, filter selectivity, and underfilled top-k results |
+| Traffic and latency | Concurrency, busy-dataset skew, p50/p95/p99, and first reads after inactivity as well as repeated reads |
+| Source impact and freshness | PostgreSQL transaction latency, export or CDC overhead, delay to searchable updates, and delete propagation |
+| Lifecycle operations | Initial load, rebuild, session or repository deletion, retry, and recovery time |
+| Total cost | Remaining PostgreSQL capacity, synchronization, network transfer, LambdaDB reads and writes, retained storage, and any embedding generation |
+
+Inactive collections have no per-collection fixed fee, but retained storage still contributes to cost. Read usage depends on collection size and has a per-request minimum, so collection boundaries and searches across multiple collections affect the estimate. Use [Understanding costs](/guides/costs/understanding-costs) and the [current pricing](https://lambdadb.ai/pricing) instead of treating either collection count or query count alone as the bill.
+
+Before switching production traffic, validate the mapping and representative queries, exercise update and delete propagation, and run shadow searches through the application. Keep a tested route back to PostgreSQL search until correctness, quality, latency, and total cost meet your requirements. These checks establish the benefit for your workload; there is no universal row-count threshold for moving search out of PostgreSQL.
