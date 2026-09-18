@@ -231,6 +231,10 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 LambdaDB supports hash-based partitioning for a specified field.
 
+You choose the partition field and count through `partitionConfig`. At query time, supply [`partitionFilter`](/guides/search/search-overview#select-partitions-to-search) with values of that field to search only the corresponding physical partitions; other partitions are not searched. Omitting `partitionFilter` leaves all partitions in the search scope.
+
+This is separate from LambdaDB's internal sharding, which distributes execution and exposes no shard-count or placement setting to users.
+
 <CodeGroup>
 
 ```python Python

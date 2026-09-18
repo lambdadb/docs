@@ -28,7 +28,7 @@ The following requests contribute to read usage based on **collection size**:
 - **Document fetch** ([document fetch](/reference/api/endpoint/document-fetch))
 - **Document list** ([document list](/reference/api/endpoint/document-list))
 
-For these operations, the size of the collection is reflected in read usage.
+For these operations, read usage reflects collection size. On a partitioned collection, `partitionFilter` narrows the request to selected physical partitions, and read usage reflects their combined size. Unselected partitions are not searched. This requires explicit partition selection; an ordinary document predicate does not by itself narrow the billed partition scope. See [Partition selection](/guides/search/search-overview#select-partitions-to-search).
 
 **Per-request minimum:** each request is counted as at least **1 GB** of read usage.
 

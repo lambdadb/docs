@@ -9,7 +9,7 @@ LambdaDB lets you organize search around those application boundaries:
 
 - **No collection count limit:** create collections for the datasets your application needs, without consolidating unrelated data to fit a collection quota.
 - **No per-collection fixed fee:** an inactive collection does not incur a fixed charge just for existing. Stored data remains subject to storage charges, and reads and writes are billed when used.
-- **Managed sharding as a collection grows:** LambdaDB manages internal query sharding, so you do not have to split a growing search dataset across collections and operate shard placement yourself.
+- **No shard configuration as a collection grows:** LambdaDB handles distributed search execution internally. Shard counts and placement are not exposed as user settings, so you do not have to manage them as the dataset grows.
 
 Keep PostgreSQL as the source of truth for application data, transactions, and permissions, and use LambdaDB for the derived search data. This guide explains when that separation is useful, how to choose collection boundaries, and what to review before changing your search path.
 
@@ -51,7 +51,20 @@ Choose a boundary that matches common queries and independent lifecycle operatio
 
 For example, keep private session memory separate from shared character knowledge when they have different permissions and lifecycles, and retrieve from both explicitly when needed. For any shared collection, evaluate filtered recall and enforce authorization on every query. For separate collections, account for the requests and result merging needed by searches that span datasets.
 
-Internal query sharding is managed by LambdaDB regardless of this logical layout. The optional [field-based partition configuration](/guides/collections/create-a-collection#create-a-partitioned-collection) is a separate application choice; it does not require you to operate the underlying query shards.
+### Internal sharding and user-configured partitions
+
+Sharding and partitioning serve different purposes here:
+
+| Concept | Purpose | What you configure | Effect on a search request |
+|:--------|:--------|:-------------------|:---------------------------|
+| Internal sharding | Distribute data and search work across execution resources as a collection grows | Nothing: shard counts and placement are not exposed to LambdaDB users | Distributes execution of the selected search scope; sharding alone does not narrow that scope. |
+| Collection partitioning | Divide a collection into physical partitions so a request can skip unrelated partitions | A partition field and count through `partitionConfig`, then field values through `partitionFilter` on the request | Searches only the selected partitions. Other partitions are not searched. |
+
+In a sharded search system, a query generally fans out across all shards within its search scope. Some services require users to configure those shards. LambdaDB handles that distribution internally; this comparison explains the operational work you do not need to manage.
+
+Partitioning is an application-visible feature. For example, configure a shared collection to partition by `tenant_id`, then supply `partitionFilter` for the authorized tenant on each scoped search. LambdaDB excludes unselected physical partitions before searching. Omitting `partitionFilter` leaves all partitions in the search scope. An ordinary query predicate such as `knn.filter` restricts matching documents; it does not substitute for explicit partition selection.
+
+See [partition configuration](/guides/collections/create-a-collection#create-a-partitioned-collection) and the [partition-filter request example](/guides/search/search-overview#select-partitions-to-search). Collection boundaries, partition selection, and document predicates can work together; shard configuration remains internal.
 
 ### Shared tables and separate search datasets
 
@@ -59,7 +72,7 @@ A PostgreSQL table can feed multiple LambdaDB collections, routed by a stable te
 
 Using one shared table and a tenant filter is another valid starting point. Review its search behavior before treating it as equivalent to separate indexes: [pgvector documents](https://github.com/pgvector/pgvector#multitenancy) that sharing an approximate index between tenants can affect recall and speed, and suggests separate tables or list partitioning for tenant isolation. Its [filtering guidance](https://github.com/pgvector/pgvector#filtering) also covers exact search over filtered rows, partial indexes, and iterative scans.
 
-Partitioning introduces its own tradeoffs. PostgreSQL's [partitioning guidance](https://www.postgresql.org/docs/18/ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES) discusses planning time and memory costs when partition counts grow. Evaluate the actual query and maintenance workload rather than assuming that either one shared index or one partition per tenant is always preferable.
+PostgreSQL table partitioning introduces its own tradeoffs. PostgreSQL's [partitioning guidance](https://www.postgresql.org/docs/18/ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES) discusses planning time and memory costs when partition counts grow. Evaluate the actual query and maintenance workload rather than assuming that either one shared index or one partition per tenant is always preferable.
 
 ### Routing, permissions, and versions
 
@@ -98,7 +111,7 @@ In the tables below, **API mapping** means a documented LambdaDB operation exist
 | `ORDER BY embedding <-> query_vector LIMIT k` | API mapping | Configure `similarity: "euclidean"` and use `knn`. Review score thresholds separately from L2 distance thresholds. |
 | `ORDER BY embedding <#> query_vector LIMIT k` | API mapping | Use `similarity: "max_inner_product"` for maximum inner-product retrieval. PostgreSQL returns negative inner product for ascending ordering; LambdaDB returns relevance scores. Preserve vector magnitudes and do not assume `score = -distance`. |
 | L1 (`<+>`), Hamming (`<~>`), or Jaccard (`<%>`) distance | No direct equivalent | These are not supported dense-vector similarity options. Changing to cosine or Euclidean changes the retrieval objective. |
-| `WHERE tenant_id = $1 AND status = $2` combined with vector ordering | Rewrite required | Index the scope fields as appropriate scalar types and express the predicates inside `knn.filter`, using `bool` for combinations. Resolve the allowed tenant in the backend. |
+| `WHERE tenant_id = $1 AND status = $2` combined with vector ordering | Rewrite required | Index the scope fields and express document predicates inside `knn.filter`, using `bool` for combinations. If the collection is partitioned by `tenant_id`, also pass top-level `partitionFilter` to skip other partitions. Resolve the allowed tenant in the backend. |
 | `WHERE distance < threshold`, exact search, or stable tie ordering | Rewrite required | Establish an explicit result contract. A top-k ANN request and its relevance scores do not reproduce a SQL radius query, exact scan, or tie-breaking rule automatically. |
 
 See [pgvector's operator definitions](https://github.com/pgvector/pgvector#querying), [LambdaDB vector metrics](/guides/collections/index-types#supported-similarity-metrics), and [vector filters](/guides/search/vector#vector-query-with-filter-query). Metric selection preserves the intended comparison; ANN candidate selection and score representation still need validation.
@@ -172,7 +185,7 @@ LambdaDB request body for `POST /projects/{projectName}/collections/chat-session
 
 This preserves the intended session search scope and cosine metric. It does not promise identical ANN neighbors. PostgreSQL returns a distance in the selected `distance` column; LambdaDB returns result items containing `doc` and `score`, ordered by relevance. Adapt result handling and validate any score threshold rather than copying a distance threshold. See [Search overview](/guides/search/search-overview) and [Vector query](/guides/search/vector).
 
-For a shared collection, configure indexed scope fields and put the authorized scope inside `knn.filter`. Filtering an already truncated top-k response can leave too few results. A session-specific collection avoids needing a session predicate to select that corpus, while backend authorization is still required.
+For a shared collection, configure indexed scope fields and put the authorized scope inside `knn.filter`. If the collection is partitioned on that scope field, also use top-level `partitionFilter` to exclude unrelated partitions from the search. Filtering an already truncated top-k response can leave too few results. A session-specific collection avoids needing a session predicate to select that corpus, while backend authorization is still required.
 
 ### Text retrieval
 
@@ -221,7 +234,7 @@ Compare a tuned PostgreSQL baseline with the proposed collection layout. Keep em
 | Lifecycle operations | Initial load, rebuild, session or repository deletion, retry, and recovery time |
 | Total cost | Remaining PostgreSQL capacity, synchronization, network transfer, LambdaDB reads and writes, retained storage, and any embedding generation |
 
-Inactive collections have no per-collection fixed fee, but retained storage still contributes to cost. Read usage depends on collection size and has a per-request minimum, so collection boundaries and searches across multiple collections affect the estimate. Use [Understanding costs](/guides/costs/understanding-costs) and the [current pricing](https://lambdadb.ai/pricing) instead of treating either collection count or query count alone as the bill.
+Inactive collections have no per-collection fixed fee, but retained storage still contributes to cost. Read usage reflects the collection's search scope, or the selected partitions when using `partitionFilter`, and has a per-request minimum. Collection boundaries, partition selection, and searches across multiple collections therefore affect the estimate. Use [Understanding costs](/guides/costs/understanding-costs) and the [current pricing](https://lambdadb.ai/pricing) instead of treating either collection count or query count alone as the bill.
 
 ### Example: many retained chats, few active chats
 
