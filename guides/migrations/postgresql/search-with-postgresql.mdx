@@ -257,3 +257,9 @@ The inactive collections contribute 990 GB of the stored data, but no read usage
 Rates were checked against [public pricing](https://lambdadb.ai/pricing) on September 18, 2026. Returned query data and retention storage for deleted data are [temporarily free](/guides/costs/understanding-costs#data-returned-and-retention-storage); the published rates after the promotion are $0.05/GB returned and $0.10/GB-month of retention storage, with advance notice before billing starts. Include those meters when forecasting beyond the promotion. Initial loading, subsequent writes, PostgreSQL, synchronization infrastructure, and network-provider charges are outside this subtotal.
 
 Before switching production traffic, validate the mapping and representative queries, exercise update and delete propagation, and run shadow searches through the application. Keep a tested route back to PostgreSQL search until correctness, quality, latency, and total cost meet your requirements. These checks establish the benefit for your workload; there is no universal row-count threshold for moving search out of PostgreSQL.
+
+## Need help planning your migration?
+
+Not sure how to map your PostgreSQL search workload to LambdaDB? Email [support@lambdadb.ai](mailto:support@lambdadb.ai) or ask in the [LambdaDB community Slack](https://join.slack.com/t/lambdadbcommunity/shared_invite/zt-3sg7565zm-sCTW3odRkEQt~auWUVVsTw) for help with collection design, query compatibility, and migration next steps.
+
+A brief description of your current search extensions, approximate data and tenant/session counts, and the problem you want to solve is enough to start. If useful, include a sanitized example query so we can discuss the mapping in concrete terms.
