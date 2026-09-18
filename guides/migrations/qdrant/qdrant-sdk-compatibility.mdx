@@ -23,6 +23,8 @@ Use LambdaDB native APIs directly when:
 - You need LambdaDB-specific query features such as lexical plus vector hybrid search.
 - You want the clearest long-term API surface after migration.
 
+The compatibility clients map Qdrant `Dot` to LambdaDB `dot_product`, which requires unit-length document and query vectors. If your inner-product search relies on vector magnitudes, use LambdaDB native APIs with `max_inner_product` and validate ranking and score handling. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
+
 ## Install
 
 Python support is available in `lambdadb >= 0.8.2`:

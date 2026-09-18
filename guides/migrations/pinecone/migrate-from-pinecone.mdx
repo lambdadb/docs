@@ -248,13 +248,15 @@ By default, `--migration.query-overlap` reports vector overlap without failing t
 
 ## Mapping details
 
-Use this metric mapping when creating LambdaDB vector fields:
+The Migration CLI generates this default metric mapping for dense vector fields:
 
 | Pinecone metric | LambdaDB similarity |
 |:----------------|:--------------------|
 | `cosine` | `cosine` |
 | `euclidean` | `euclidean` |
 | `dotproduct` | `dot_product` |
+
+For `dotproduct`, verify that both stored vectors and query vectors have unit length before using the generated `dot_product` setting. If vector magnitudes contribute to relevance, set `similarity: max_inner_product` for that dense vector in the generated mapping file before creating the target collection. The CLI does not infer this choice from the source metric name. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics), and validate ranking and score thresholds after migration. This distinction does not apply to sparse-vector indexes.
 
 For a Pinecone dense record:
 

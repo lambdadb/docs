@@ -185,7 +185,7 @@ By default, `--migration.query-overlap` reports dense-vector overlap without fai
 
 ## Mapping details
 
-Use this distance mapping when creating LambdaDB vector fields:
+The Migration CLI generates this default distance mapping for dense vector fields:
 
 | Qdrant distance | LambdaDB similarity |
 |:----------------|:--------------------|
@@ -193,6 +193,8 @@ Use this distance mapping when creating LambdaDB vector fields:
 | `Dot` | `dot_product` |
 | `Euclid` | `euclidean` |
 | `Manhattan` | No direct equivalent. Re-evaluate the embedding/search setup before migrating. |
+
+For `Dot`, verify that both stored vectors and query vectors have unit length before using the generated `dot_product` setting. If vector magnitudes contribute to relevance, set `similarity: max_inner_product` for that dense vector in the generated mapping file before creating the target collection. The CLI does not infer this choice from the source distance name. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics), and validate ranking and score thresholds after migration.
 
 For a Qdrant point with a single dense vector:
 
