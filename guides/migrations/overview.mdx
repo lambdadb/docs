@@ -34,24 +34,66 @@ For PostgreSQL applications, see [Search with PostgreSQL and LambdaDB](/guides/m
 
 ## Install the CLI
 
-Use CLI `v0.1.6` or later with the current LambdaDB API. Install the latest release:
+The current stable release is **v0.1.6**. The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh | sh
-```
+<Tabs>
+  <Tab title="Homebrew">
+    With [Homebrew](https://brew.sh/) on macOS or Linux:
 
-Install a specific version:
+    ```bash
+    brew install lambdadb/tap/lambdadb-migration
+    lambdadb-migration --version
+    lambdadb-migration --help
+    ```
 
-```bash
-curl -fsSLO https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-sh install.sh --version v0.1.6 --install-dir "$HOME/.local/bin"
-```
+    The [public tap](https://github.com/lambdadb/homebrew-tap) installs the released binary without Go or Node. To update:
 
-Make sure the install directory is on your `PATH`, then check the CLI:
+    ```bash
+    brew update
+    brew upgrade lambdadb/tap/lambdadb-migration
+    ```
 
-```bash
-lambdadb-migration --help
-```
+    To remove the binary:
+
+    ```bash
+    brew uninstall lambdadb/tap/lambdadb-migration
+    ```
+
+    The tap currently provides `0.1.6`. Future GitHub releases may reach the tap later, after the formula is updated.
+  </Tab>
+  <Tab title="Standalone installer">
+    Download the installer to a scratch directory and inspect it before running. This example pins both the installer and the binary release:
+
+    ```bash
+    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.6/install.sh
+    less install.sh
+    sh install.sh --version v0.1.6 --install-dir "$HOME/.local/bin"
+    export PATH="$HOME/.local/bin:$PATH"
+    lambdadb-migration --version
+    lambdadb-migration --help
+    ```
+
+    The installer checks the release archive against `checksums.txt`. It requires `curl`, `tar`, and `sha256sum` or `shasum`. No Go or Node runtime is required. Without `--install-dir`, it uses `/usr/local/bin` and may request `sudo`.
+
+    To install or update to the latest GitHub release with the current installer:
+
+    ```bash
+    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
+    less install.sh
+    sh install.sh --install-dir "$HOME/.local/bin"
+    ```
+
+    To remove a standalone installation, use its original directory:
+
+    ```bash
+    sh install.sh --uninstall --install-dir "$HOME/.local/bin"
+    ```
+  </Tab>
+</Tabs>
+
+Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Public Homebrew installation has been verified on macOS arm64 and Linux amd64; macOS amd64 and Linux arm64 archives have checksum and architecture-header verification only. See [installation evidence](https://github.com/lambdadb/homebrew-tap/blob/main/MIGRATION.md#publication-and-validation-evidence).
+
+Before switching installation methods, inspect `type -a lambdadb-migration` and identify which binary is on PATH. Remove only the old installation using its original method. Do not force-overwrite a Homebrew symlink or run the standalone installer against a Homebrew-managed path. Uninstalling the binary does not remove mappings, checkpoints, or credentials.
 
 ## Common CLI behavior
 
@@ -64,6 +106,8 @@ export LAMBDADB_BASE_URL="YOUR_REGION_BASE_URL"
 export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
 export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
 ```
+
+The migration executable reads these environment variables or its own command flags. It does not load `.env` files or the general CLI's saved configuration.
 
 Generated mappings set `target.createCollection: true` by default. With that setting, the migration creates the LambdaDB collection if it does not already exist, then begins writing documents. The CLI does not poll a collection status; transient write failures use its retry policy.
 

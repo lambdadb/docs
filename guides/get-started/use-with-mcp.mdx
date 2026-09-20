@@ -14,8 +14,7 @@ You will need:
 - A LambdaDB **project API key**
 - Your project's **base URL**
 - Your **project name**
-- Node.js **20.7.0 or later** and npm
-- A local copy of the **LambdaDB MCP server**
+- Node.js **22.14.0 or later** and npm
 - An MCP client such as **Claude Desktop**
 
 <Note>
@@ -36,50 +35,48 @@ Project creation does not automatically issue an API key. In the project's **API
   Store your project API key securely. Do not commit it to source control or share it in screenshots, prompts, or logs.
 </Warning>
 
-## Step 2: Build the LambdaDB MCP server
+## Step 2: Choose the published package
 
-Clone the LambdaDB MCP server's `main` branch, then build it. The current server uses LambdaDB TypeScript SDK 0.5.1, including automatic large-result downloads.
-
-```bash
-git clone --branch main https://github.com/lambdadb/lambdadb-mcp
-cd lambdadb-mcp
-npm ci
-npm run build
-```
-
-If you are using the repository's local environment workflow, you can also create a local `.env.local` file:
+The stable npm package is `@functional-systems/lambdadb-mcp@0.1.0`. This guide pins that published version. No source checkout or build is required.
 
 ```bash
-cp .env.example .env.local
+node --version
+npm view @functional-systems/lambdadb-mcp@0.1.0 version engines
 ```
 
-Then set:
+With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-LAMBDADB_BASE_URL=YOUR_BASE_URL
-LAMBDADB_PROJECT_NAME=YOUR_PROJECT_NAME
-LAMBDADB_PROJECT_API_KEY=YOUR_PROJECT_API_KEY
-LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false
+npx --yes @functional-systems/lambdadb-mcp@0.1.0
 ```
 
-For local execution with this file, run `npm run start:env`. The launcher loads `.env.local` when present, otherwise `.env`; exported environment variables take precedence. Direct `node dist/index.js` execution does not load these files automatically. The MCP client configuration below supplies its own environment variables.
+This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-<Tip>
-  Keep `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=false` until you have validated the read-only tools in your client.
-</Tip>
+Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.0` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+
+### Environment variables
+
+| Variable | Meaning |
+|:---------|:--------|
+| `LAMBDADB_BASE_URL` | Required region-specific API base URL from LambdaDB Cloud |
+| `LAMBDADB_PROJECT_NAME` | Required existing project name |
+| `LAMBDADB_PROJECT_API_KEY` | Required project API key |
+| `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` | Optional; defaults to `false`. Set `true` to expose write tools. |
+
+The installed package reads the process environment directly. It does not read the general CLI's config file or automatically load `.env` or `.env.local`. `LAMBDADB_ENV_FILE` is only for the source repository's development launchers. Set secrets through your client's protected local configuration or environment forwarding; do not put the key in command arguments.
 
 ## Step 3: Add the server to your MCP client
 
-For **Claude Desktop**, add an MCP server entry that points to the built `dist/index.js` file.
+For **Claude Desktop**, open **Settings → Developer → Edit Config** and merge this entry into `claude_desktop_config.json`, preserving existing servers. This uses the [official local-server configuration format](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
 
 ```json
 {
   "mcpServers": {
     "lambdadb": {
-      "command": "node",
-      "args": ["/absolute/path/to/lambdadb-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.0"],
       "env": {
-        "LAMBDADB_BASE_URL": "YOUR_BASE_URL",
+        "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
         "LAMBDADB_PROJECT_API_KEY": "YOUR_PROJECT_API_KEY",
         "LAMBDADB_MCP_ENABLE_WRITE_TOOLS": "false"
@@ -89,11 +86,13 @@ For **Claude Desktop**, add an MCP server entry that points to the built `dist/i
 }
 ```
 
-After saving the configuration, restart your MCP client if needed.
+Replace each placeholder locally. This file contains a credential once filled in: keep it private and out of source control. Do not assume a desktop application inherits variables exported in a terminal.
+
+Fully quit and restart Claude Desktop. Other MCP clients can use the same command, arguments, and environment values, but their configuration schema can differ.
 
 ## Step 4: Verify the connection
 
-Once the MCP server is connected, start with the read-only tools:
+Open your client's server/tool list (in Claude Desktop, **Manage connectors → lambdadb**). A read-only connection should advertise these five tools:
 
 - `lambdadb_list_collections`
 - `lambdadb_get_collection`
@@ -101,13 +100,25 @@ Once the MCP server is connected, start with the read-only tools:
 - `lambdadb_list_docs`
 - `lambdadb_fetch_docs`
 
-Recommended first checks:
+Tool discovery confirms the local MCP connection; it does not authenticate to LambdaDB. To check project access:
 
-1. Call `lambdadb_list_collections` to confirm the project connection.
+1. Call `lambdadb_list_collections` with `{ "size": 1 }` to confirm the project connection.
 2. Call `lambdadb_get_collection` for a known collection.
 3. Run `lambdadb_query_collection` with a small query against that collection.
 
 Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+
+For example, pass these arguments to `lambdadb_query_collection` for the sample collection created in the [CLI guide](/guides/get-started/use-with-cli):
+
+```json
+{
+  "collectionName": "cli-demo-docs",
+  "size": 10,
+  "query": { "queryString": { "query": "serverless", "defaultField": "text" } },
+  "ref": { "kind": "branch", "name": "main" },
+  "consistentRead": false
+}
+```
 
 ## Optional: Enable write tools
 
@@ -119,7 +130,7 @@ The LambdaDB MCP server can also expose write operations such as:
 
 Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 
-To enable them, change:
+To enable them, change the environment value and restart the MCP server:
 
 ```bash
 LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true
@@ -128,6 +139,8 @@ LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true
 <Warning>
   Enable write tools only in environments where document creation, updates, and deletion are intended. Start with a non-production project when testing write access from an MCP client.
 </Warning>
+
+Successful writes are accepted before committed search visibility is verified. Confirm expected documents with subsequent reads; tool success alone is not an indexing readiness check.
 
 ## Troubleshooting
 
@@ -140,9 +153,31 @@ If the server starts but tools fail:
 
 If tools are missing:
 
-- Confirm that the MCP client loaded the correct `dist/index.js` path.
+- Confirm that the client launches the pinned npm package or the intended installed executable.
 - Restart the MCP client after editing its configuration.
 - If you expect write tools, make sure `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true` is set.
+
+If the server cannot start:
+
+- Check that the Node executable visible to the client is version 22.14.0 or newer, and that `npx` is on its PATH. For `ENOENT`, use the absolute path returned by `command -v npx` on macOS/Linux or `where npx` on Windows, and ensure Node is also reachable.
+- A missing-variable error means the required values were not supplied to the child process. Editing a checkout's `.env.local` does not configure an npm-launched server.
+- Use `true` or `false` for write opt-in; an invalid boolean fails startup.
+- Check npm/network errors if the pinned package cannot be downloaded. Check JSON syntax and restart the server after configuration changes.
+- On macOS, Claude Desktop logs are under `~/Library/Logs/Claude`; on Windows, `%APPDATA%\Claude\logs`. Inspect `mcp.log` and `mcp-server-lambdadb.log` locally, without sharing credentials or document data.
+
+## Optional: Build from source
+
+For development, use a release tag and Node.js 22.14.0 or later:
+
+```bash
+git clone --branch v0.1.0 https://github.com/lambdadb/lambdadb-mcp
+cd lambdadb-mcp
+npm ci
+npm run build
+cp .env.example .env.local
+```
+
+Fill in `.env.local` locally, then run `npm run start:env`. The source launcher selects `LAMBDADB_ENV_FILE` when set, otherwise `.env.local` if present, otherwise `.env`. Exported values take precedence. Direct `node dist/index.js` does not load these files. See the [repository README](https://github.com/lambdadb/lambdadb-mcp#readme) for development and Inspector usage.
 
 ## Next steps
 
