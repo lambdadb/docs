@@ -1,9 +1,9 @@
 ---
 title: "Roadmap & Changelog"
-description: "Track the LambdaDB product roadmap and changelog, including upcoming features like integrated embeddings, partition management, and recent releases."
+description: "Explore upcoming LambdaDB features and major product releases."
 ---
 
-Last updated: September 17, 2026
+Last updated: September 20, 2026
 
 ## Up Next
 
@@ -12,19 +12,19 @@ Last updated: September 17, 2026
 
 ## Changelog
 
+{/* Highlight new capabilities, integrations, and significant changes to performance,
+pricing, limits, or compatibility. Keep routine fixes and version bumps in repository release notes. */}
+
 ### September 2026
 
-- Added [data versioning](/guides/data-versioning/branches-tags-aliases) with writable branches, immutable tags, and mutable aliases for collection data.
-- Added per-collection snapshot retention and standardized collection and ref timestamps as Unix epoch milliseconds.
-- Released stable data versioning support in the [Python 0.9.0, JavaScript/TypeScript 0.5.0, and Go 0.4.0 SDKs](/reference/sdk/introduction#data-versioning-support).
-- Fixed large-result downloads in [JavaScript/TypeScript SDK 0.5.1](https://github.com/lambdadb/lambdadb-typescript-client/releases/tag/v0.5.1) for query, fetch, and list operations.
-- Updated the [Migration CLI](/guides/migrations/overview) to 0.1.6 with current collection API support, signed bulk uploads, and improved checkpoint resume behavior.
-- Updated the [MCP server](/guides/get-started/use-with-mcp) for the current API, including ref-scoped reads, branch-scoped writes, and large-result downloads.
+- Added [data versioning](/guides/data-versioning/branches-tags-aliases) with writable branches, immutable tags, mutable aliases, and configurable snapshot retention.
+- Released the [LambdaDB CLI](/guides/get-started/use-with-cli) to create collections, import JSONL, and query documents. Available through npm and Homebrew.
+- Published the stable [MCP server](/guides/get-started/use-with-mcp) on npm for connecting AI assistants to LambdaDB.
 
 ### May 2026
 
-- Completed integrated embeddings for managed vector fields. You can now send source text, let LambdaDB generate and store embeddings, and query managed embedding fields with `knn.queryText`. See [Managed embeddings](/guides/collections/managed-embeddings).
-- Added inference usage to [costs and Free plan quotas](/guides/costs/understanding-costs). Managed model usage is measured in LIU.
+- Added [managed embeddings](/guides/collections/managed-embeddings) to generate vectors from source text and search with text queries.
+- Released the [Migration CLI](/guides/migrations/overview) to migrate existing search data into LambdaDB.
 
 ### April 2026
 
