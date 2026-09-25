@@ -186,7 +186,9 @@
   "footer": {
     "socials": {
       "github": "https://github.com/lambdadb",
-      "linkedin": "https://www.linkedin.com/company/lambdadb"
+      "linkedin": "https://www.linkedin.com/company/lambdadb",
+      "x": "https://x.com/lambdadbai",
+      "reddit": "https://www.reddit.com/r/vectorlake/"
     }
   },
   "api": {
