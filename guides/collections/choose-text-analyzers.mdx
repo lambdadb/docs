@@ -5,7 +5,7 @@ description: Choose language-specific text analyzers, compare Chinese word segme
 
 An analyzer turns text into searchable terms. The same analyzer processes both the indexed text and the search text, so your choice affects which documents match and how they rank.
 
-Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Analyzer names are lowercase and case-sensitive; an explicit list must be non-empty and contain no duplicates. Analyzer selection is configured per field, not detected automatically for each document or query.
+Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Use the lowercase analyzer names listed below and select each analyzer at most once. Pass at least one analyzer for a searchable text field; an empty list does not use the default. Analyzer selection is configured per field, not detected automatically for each document or query.
 
 ## Choose a starting point
 

@@ -465,7 +465,7 @@ complete_index_config = {
 | `spanish` | Spanish |
 | `turkish` | Turkish |
 
-Analyzer names are lowercase and case-sensitive. If supplied, `analyzers` must be a non-empty array of distinct supported names. See [Choose text analyzers](/guides/collections/choose-text-analyzers) before combining analyzers or migrating an existing field.
+Use the lowercase names above and avoid duplicates. Omit `analyzers` for the default, or select at least one analyzer; an empty list does not use the default. See [Choose text analyzers](/guides/collections/choose-text-analyzers) before combining analyzers or migrating an existing field.
 
 <Note>
 
