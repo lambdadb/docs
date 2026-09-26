@@ -3,7 +3,7 @@ title: Choose text analyzers
 description: Choose language-specific text analyzers, compare Chinese word segmentation with CJK bigrams, and understand the costs of combining analyzers.
 ---
 
-An analyzer turns text into searchable terms. The same analyzer processes both the indexed text and the search text, so your choice affects which documents match and how they rank.
+An analyzer turns text into searchable terms. The field's configured analyzers process both the indexed text and ordinary search terms, so your choice affects which documents match and how they rank.
 
 Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Use the lowercase analyzer names listed below and select each analyzer at most once. Pass at least one analyzer for a searchable text field; an empty list does not use the default. Analyzer selection is configured per field, not detected automatically for each document or query.
 
@@ -92,7 +92,33 @@ Query the configured field using the usual search API. For example, this query f
 }
 ```
 
-See [Create a collection](/guides/collections/create-a-collection) and [Query string search](/guides/search/query-string) for complete request examples and syntax options.
+### Create a collection with REST
+
+This complete request creates a collection using `chinese`. Set the connection values from your project, as described in the [API reference](/reference/api/introduction).
+
+```bash
+BASE_URL="YOUR_BASE_URL"
+PROJECT_NAME="YOUR_PROJECT_NAME"
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "collectionName": "chinese-articles",
+    "indexConfigs": {
+      "content": { "type": "text", "analyzers": ["chinese"] }
+    }
+  }'
+```
+
+After creating the collection, [upsert documents](/guides/documents/upsert-data) with a `content` field and search using [query string search](/guides/search/query-string). See [Create a collection](/guides/collections/create-a-collection) for other collection options and readiness handling.
+
+## SDK compatibility
+
+Check that your SDK version accepts the analyzer names you select. The analyzer models in [Python 0.9.0](https://github.com/lambdadb/lambdadb-python-client/blob/v0.9.0/src/lambdadb/models/indexconfigs_union.py) and [TypeScript 0.5.1](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.5.1/src/models/indexconfigsunion.ts) accept only `standard`, `english`, `korean`, and `japanese`. Their data versioning support does not imply support for additional analyzer names.
+
+To configure names such as `chinese` or `cjk`, use a version whose analyzer model includes them, or send the REST request above directly. Existing SDK examples that select the original four analyzers remain valid.
 
 ## Combining analyzers
 

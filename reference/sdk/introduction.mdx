@@ -32,6 +32,8 @@ Use these stable SDK versions or later for the collection, branch, tag, and alia
 
 Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
 
+These version requirements cover data versioning. For additional text analyzer names, check [analyzer SDK compatibility](/guides/collections/choose-text-analyzers#sdk-compatibility) before reusing these versions.
+
 REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps with datetime helpers such as `created_at_dt`; the TypeScript collection-scoped client returns `Date` values; Go provides time getters. Branch parent and snapshot fields can be null, so check them before accessing their fields.
 
 ## Compatibility clients
