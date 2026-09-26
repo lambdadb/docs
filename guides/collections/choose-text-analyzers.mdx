@@ -1,0 +1,135 @@
+---
+title: Choose text analyzers
+description: Choose language-specific text analyzers, compare Chinese word segmentation with CJK bigrams, and understand the costs of combining analyzers.
+---
+
+An analyzer turns text into searchable terms. The field's configured analyzers process both the indexed text and ordinary search terms, so your choice affects which documents match and how they rank.
+
+Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Use the lowercase analyzer names listed below and select each analyzer at most once. Pass at least one analyzer for a searchable text field; an empty list does not use the default. Analyzer selection is configured per field, not detected automatically for each document or query.
+
+## Choose a starting point
+
+| Your content or search requirement | Starting point |
+|:-----------------------------------|:---------------|
+| General text without language-specific stemming | `standard` |
+| English, Arabic, French, German, Hindi, Indonesian, Italian, Portuguese, Russian, Spanish, or Turkish | The corresponding language name, such as `spanish` |
+| Korean | `korean` |
+| Japanese | `japanese` |
+| Simplified Chinese, including mixed Chinese-English text | `chinese` |
+| Traditional Chinese or matching two-character sequences within longer CJK words | Evaluate `cjk` |
+| Chinese word matching plus broader character-sequence matching | Evaluate `["chinese", "cjk"]` and its effect on relevance and cost |
+
+Language-specific analyzers can remove common words, normalize characters, or reduce inflected words to stems. They do not translate documents or queries. For example, a Spanish analyzer can produce the same searchable term for `libros` and `libro`, while `standard` keeps those words distinct.
+
+Use the [supported analyzer reference](/guides/collections/index-types#supported-analyzers) for the complete list. For identifiers or values that must match exactly, use a [keyword index](/guides/collections/index-types#keyword).
+
+## Chinese: words or character pairs
+
+`chinese` uses Lucene's SmartChinese analyzer, which uses a dictionary and statistical segmentation for Simplified Chinese. `cjk` forms overlapping pairs of adjacent CJK characters without using a word dictionary. These approaches have different matching behavior; neither is the best choice for every dataset.
+
+For the document text `北京大学` (Peking University):
+
+| Analyzer | Indexed terms |
+|:---------|:--------------|
+| `standard` | `北`, `京`, `大`, `学` |
+| `chinese` | `北京大学` |
+| `cjk` | `北京`, `京大`, `大学` |
+
+This difference affects searches against that document:
+
+| Search text | `chinese` | `cjk` |
+|:------------|:----------|:------|
+| `大学` (university) | Does not match the whole-word term `北京大学` | Matches the `大学` pair |
+| `北京饭店` (Beijing hotel) | Does not match | Can match through the shared `北京` pair |
+
+These examples use ordinary unquoted searches with optional terms, including `queryString` with `skipSyntax: true`. They illustrate matching, not a guarantee about the order of search results.
+
+Choose `chinese` when preserving Chinese word units suits your queries. Evaluate `cjk` when matching character sequences inside compound words, names, or unfamiliar terms is important. CJK pairs can also cross word boundaries, so broader matching may retrieve documents that are not relevant to the intended query.
+
+### Traditional Chinese and short queries
+
+`cjk` can tokenize Traditional Chinese without a Simplified Chinese word dictionary. For example, `軟體工程師` produces `軟體`, `體工`, `工程`, and `程師`.
+
+Neither `chinese` nor `cjk` automatically converts between Simplified and Traditional Chinese. A document containing only `图书` does not match a search for `圖書` with either analyzer. If you need cross-script matching, normalize documents and queries consistently in your application and evaluate the result on your data.
+
+`cjk` is not arbitrary substring search. By default, characters that participate in pairs are not also indexed individually. For example, `中国` produces `中国`, so searching for the single character `中` does not match that text. An isolated CJK character can still produce a single-character term.
+
+For the underlying analysis behavior, see Lucene's [SmartChinese analyzer](https://lucene.apache.org/core/10_4_0/analysis/smartcn/org/apache/lucene/analysis/cn/smart/SmartChineseAnalyzer.html) and [CJK bigram filter](https://lucene.apache.org/core/10_4_0/analysis/common/org/apache/lucene/analysis/cjk/CJKBigramFilter.html).
+
+## Configure your field
+
+Use one analyzer when it meets your search needs. This `indexConfigs` example selects Chinese word segmentation:
+
+```json
+{
+  "content": {
+    "type": "text",
+    "analyzers": ["chinese"]
+  }
+}
+```
+
+To evaluate both approaches on the same field, use:
+
+```json
+{
+  "content": {
+    "type": "text",
+    "analyzers": ["chinese", "cjk"]
+  }
+}
+```
+
+Query the configured field using the usual search API. For example, this query fragment searches for `大学`:
+
+```json
+{
+  "queryString": {
+    "query": "大学",
+    "defaultField": "content",
+    "skipSyntax": true
+  }
+}
+```
+
+### Create a collection with REST
+
+This complete request creates a collection using `chinese`. Set the connection values from your project, as described in the [API reference](/reference/api/introduction).
+
+```bash
+BASE_URL="YOUR_BASE_URL"
+PROJECT_NAME="YOUR_PROJECT_NAME"
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "collectionName": "chinese-articles",
+    "indexConfigs": {
+      "content": { "type": "text", "analyzers": ["chinese"] }
+    }
+  }'
+```
+
+After creating the collection, [upsert documents](/guides/documents/upsert-data) with a `content` field and search using [query string search](/guides/search/query-string). See [Create a collection](/guides/collections/create-a-collection) for other collection options and readiness handling.
+
+## SDK compatibility
+
+Check that your SDK version accepts the analyzer names you select. The analyzer models in [Python 0.9.0](https://github.com/lambdadb/lambdadb-python-client/blob/v0.9.0/src/lambdadb/models/indexconfigs_union.py) and [TypeScript 0.5.1](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.5.1/src/models/indexconfigsunion.ts) accept only `standard`, `english`, `korean`, and `japanese`. Their data versioning support does not imply support for additional analyzer names.
+
+To configure names such as `chinese` or `cjk`, use a version whose analyzer model includes them, or send the REST request above directly. Existing SDK examples that select the original four analyzers remain valid.
+
+## Combining analyzers
+
+Every selected analyzer indexes the same field independently. Selecting `["chinese", "cjk"]` does not run CJK only when Chinese segmentation fails. Ordinary searches consider terms from both analyses, and a document can match either one.
+
+Additional analyzers add indexing work and indexed terms. They can increase storage and query work, and matches through multiple analyses can change relevance scores. Adding more analyzers does not guarantee better relevance or faster searches.
+
+Start with the smallest set that meets your requirements. Compare missed relevant documents, unwanted matches, ranking, index size, indexing throughput, and query latency on representative data before enabling both. For Korean or Japanese content, compare with the dedicated `korean` or `japanese` analyzer rather than assuming CJK pairs replace language-specific analysis.
+
+## Changing an existing field
+
+You cannot change the analyzer list of an existing field, including adding another analyzer to the list. Create a new text field or a new collection with the desired configuration, and index the source text there. For a new field, populate it in the documents you want to search; adding its schema does not copy values from an existing field. For a new collection, import the source documents again.
+
+Validate searches against the new field or collection before switching your application. Existing indexes keep their original analysis behavior. See [Manage collections](/guides/collections/manage-collections) for schema update rules.

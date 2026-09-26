@@ -15,7 +15,7 @@ This type is for full-text values, such as the body of an email or the descripti
 
 `text` indexes are best suited for unstructured but human-readable content. If you need to index structured content such as email addresses, hostnames, status codes, or tags, you should rather use a `keyword` index.
 
-LambdaDB supports four analyzers for tokenization: `standard` (default), `korean`, `japanese`, `english`. You can specify multiple analyzers for a single text field to improve search performance.
+Choose one or more [supported analyzers](#supported-analyzers) for each text field. Omitting `analyzers` uses `["standard"]`. LambdaDB applies every analyzer you select; it does not automatically detect the language. See [Choose text analyzers](/guides/collections/choose-text-analyzers) for language recommendations, Chinese examples, and the tradeoffs of using multiple analyzers.
 
 <CodeGroup>
 
@@ -448,10 +448,24 @@ complete_index_config = {
 
 | Analyzer | Description |
 |:---------|:------------|
-| `standard` | Default general-purpose analyzer |
-| `english` | English language analyzer |
-| `korean` | Korean language analyzer |
-| `japanese` | Japanese language analyzer |
+| `standard` | Default general-purpose Unicode text analysis |
+| `english` | English |
+| `korean` | Korean (Nori) |
+| `japanese` | Japanese (Kuromoji) |
+| `chinese` | Simplified Chinese word segmentation (SmartChinese); also processes mixed Chinese-English text |
+| `cjk` | Overlapping two-character tokens for Chinese, Japanese, and Korean text |
+| `arabic` | Arabic |
+| `french` | French |
+| `german` | German |
+| `hindi` | Hindi |
+| `indonesian` | Indonesian |
+| `italian` | Italian |
+| `portuguese` | Portuguese |
+| `russian` | Russian |
+| `spanish` | Spanish |
+| `turkish` | Turkish |
+
+Use the lowercase names above and avoid duplicates. Omit `analyzers` for the default, or select at least one analyzer; an empty list does not use the default. See [Choose text analyzers](/guides/collections/choose-text-analyzers) before combining analyzers or migrating an existing field.
 
 <Note>
 

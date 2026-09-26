@@ -273,17 +273,31 @@
                 },
                 "analyzers": {
                   "type": "array",
-                  "description": "Analyzers.",
+                  "description": "Text analyzers to apply to this field. Use the lowercase names listed below and avoid duplicates. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for Chinese and CJK tradeoffs.",
                   "items": {
                     "type": "string",
                     "enum": [
                       "standard",
+                      "english",
                       "korean",
                       "japanese",
-                      "english"
+                      "chinese",
+                      "cjk",
+                      "arabic",
+                      "french",
+                      "german",
+                      "hindi",
+                      "indonesian",
+                      "italian",
+                      "portuguese",
+                      "russian",
+                      "spanish",
+                      "turkish"
                     ]
                   },
-                  "default": "standard"
+                  "default": [
+                    "standard"
+                  ]
                 }
               },
               "additionalProperties": false,

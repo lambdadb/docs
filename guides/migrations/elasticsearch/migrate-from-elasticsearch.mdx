@@ -129,7 +129,7 @@ Review the generated mapping before migration:
 - remove payload index configs for fields you only need to store
 - check generated renames for dotted fields such as `metadata.source`
 - confirm `dense_vector` dimensions and similarity
-- add LambdaDB `text` analyzers such as `english`, `korean`, or `japanese` when your Elasticsearch workload depends on language-specific analysis
+- [choose LambdaDB text analyzers](/guides/collections/choose-text-analyzers) when your Elasticsearch workload depends on language-specific analysis; review their matching behavior rather than assuming equivalent Elasticsearch configuration
 - confirm `date` and `date_nanos` values in `_source` are compatible with LambdaDB `datetime` fields, or edit the mapping before creating the collection
 - add explicit field decisions for Elasticsearch multi-fields such as `title.keyword` if your application depends on exact-match behavior
 
