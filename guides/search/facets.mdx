@@ -1,0 +1,78 @@
+---
+title: Keyword facets
+description: Count matching documents by keyword value to build category, brand, and tag filters.
+---
+
+Facets return document counts for values in `keyword` fields, including arrays and nested fields addressed by dotted paths. Use them to show filter choices such as category or brand counts alongside search results.
+
+<Warning>
+Facets and keyword array sorting require a server and SDK build containing this feature and the new keyword index format. This guide does not establish availability in an existing deployment. Review the [index requirements](#index-requirements) before using existing data.
+</Warning>
+
+## Request facets
+
+Add `facets` to the [query request](/reference/api/endpoint/document-query). Each key is an indexed keyword field name. Set its `size` to the maximum number of buckets to return (default 10, range 1–100).
+
+```json
+{
+  "size": 0,
+  "query": {"queryString": {"query": "status:active"}},
+  "facets": {
+    "category": {"size": 5},
+    "tags": {}
+  }
+}
+```
+
+A response includes a `facets` object alongside the usual document results:
+
+```json
+{
+  "took": 4,
+  "total": 0,
+  "docs": [],
+  "isDocsInline": true,
+  "facets": {
+    "category": {"buckets": [{"value": "books", "count": 12}]},
+    "tags": {"buckets": [{"value": "sale", "count": 7}]}
+  }
+}
+```
+
+This **facet-only** request uses `"size": 0` to return no documents. Set `size` to 1–100 to include document results. `total` still counts returned documents, so it is zero in that case. Omit `query` to count all documents in the selected read scope.
+
+## Counting rules
+
+- Counts cover **all documents matching the query**, independent of the number of returned documents or buckets. All query and partition filters apply, including filters on the facet's own field.
+- A document with `["sale", "sale", "new"]` contributes once to `sale` and once to `new`. Bucket counts can therefore sum to more than the number of matching documents.
+- Missing fields, null fields, empty arrays, and values excluded from indexing produce no bucket. Empty strings are indexed values. Existing keyword length limits still apply.
+- Buckets are ordered by count descending, then value ascending in Unicode code point order. Values are not analyzed or folded by locale or case.
+- Every requested field is present in the response; a field without matching indexed values has an empty `buckets` array. Without a facet request, the response omits `facets`.
+- Counts remain inline when document results are downloaded through `docsUrl`.
+
+## Supported queries and read scope
+
+Use facets with `queryString`, `bool` combinations of supported queries, or no query. Vector, sparse vector, and hybrid queries are rejected when facets are requested. Numeric or date range facets, nested bucket aggregations, and excluding a facet's own filter are not supported.
+
+The existing `partitionFilter`, `ref`, and `consistentRead` rules apply. Counts use the selected Branch, Tag, or Alias and the same pending-write visibility as document results. `consistentRead: true` requires a direct Branch read (or the default main Branch when `ref` is omitted); Tags and Aliases reject it. Facets do not introduce a stronger global snapshot guarantee.
+
+## Limits and cost
+
+At most 5 keyword fields can be requested. Counts are exact across the selected partitions: all buckets are combined before selecting the returned top buckets.
+
+If the population exceeds 10,000 distinct (field, value) buckets or 262,144 UTF-8 bytes of distinct values across requested fields, the request fails with HTTP 400 instead of returning partial counts. The same value in two fields counts twice. Narrow the query or request fewer fields; reducing a facet's return `size` does not reduce the number of values that must be counted.
+
+Facets visit all matching documents, so broad queries may cost more than retrieving a small number of top documents. Queries without facets do not perform this additional aggregation.
+
+## Index requirements
+
+Both single-value and array keyword fields use a new index format. Existing indexes, mixed old/new segments, and old Tags are not supported by this feature build.
+
+To use existing data:
+
+1. Use a deployment containing the facet implementation and matching SDK support, or call the REST API directly.
+2. Create a new collection with the required keyword fields.
+3. Reinsert the complete source documents and wait for indexing to finish.
+4. Verify the counts and [array sorting](/guides/search/sort#keyword-array-sorting), then switch application reads to the new collection.
+
+Updating only some documents or merging old segments does not perform this migration. Old immutable Tags retain the old format; create new Tags from the rebuilt data when needed. Automatic or in-place index migration is outside this feature's scope.

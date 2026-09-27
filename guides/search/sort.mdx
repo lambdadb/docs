@@ -121,3 +121,11 @@ Sort by priority (descending) first, then by created_at (ascending):
 When multiple sort fields are specified, the sorting is applied in the order they appear in the array. Documents are first sorted by the first field, then by the second field for documents with the same first field value, and so on.
 
 </Note>
+
+## Keyword array sorting
+
+For `keyword` arrays, ascending order selects the smallest indexed value and descending order selects the largest. For example, `["a", "z"]` sorts using `"a"` in ascending order and `"z"` in descending order. Single values follow the same ordering. Values use Unicode code point order, without analysis, locale collation, or case folding.
+
+Documents with no indexed keyword value sort last in ascending order and first in descending order. Missing fields, null fields, empty arrays, and values excluded by the keyword length limit have no indexed sort value. Empty strings are indexed values.
+
+Array sorting requires the new keyword index format. Existing data needs full reindexing into a new collection; see [index requirements](/guides/search/facets#index-requirements).

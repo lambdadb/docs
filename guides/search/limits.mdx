@@ -11,6 +11,12 @@ description: Review LambdaDB query constraints, large-result downloads, executio
 | Max non-zero values for sparse vector query | 4,096  |
 | Value range for sparse vector query | 0-64  |
 
+## Facet limits
+
+[Keyword facets](/guides/search/facets) support up to 5 fields per request and 1–100 returned buckets per field (default 10). `size: 0` is allowed only when at least one facet is requested.
+
+Aggregation is bounded by 10,000 distinct (field, value) buckets and 262,144 UTF-8 bytes of distinct values across all requested fields. The same value on two fields counts twice toward these limits. Exceeding either limit returns HTTP 400; reduce the matching population or request fewer fields. Lowering the returned bucket count alone does not reduce the aggregation population. Facets remain inline even when documents use `docsUrl`.
+
 ## Large results
 
 Query results do not have a hard 6 MB total-result limit. When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; other query limits still apply.
