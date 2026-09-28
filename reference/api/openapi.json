@@ -3966,7 +3966,7 @@
                     "additionalProperties": {
                       "$ref": "#/components/schemas/FacetRequest"
                     },
-                    "description": "Exact document counts by indexed keyword value. Keys are keyword field names, including dotted paths. Applies all query and partition filters and the selected ref. Requires newly built indexes; existing data must be fully reindexed. At most 10,000 distinct (field, value) buckets and 262,144 UTF-8 value bytes across requested fields; exceeding either bound returns 400 instead of partial counts. Separate memory admission limits return 400 when one request exceeds its estimated budget, or 429 when concurrent requests temporarily exhaust a budget. Request fewer fields or partitions for memory-limit errors; retry temporary 429 errors with backoff."
+                    "description": "Exact document counts by indexed keyword value. Keys are keyword field names, including dotted paths. Applies all query and partition filters and the selected ref. Requires a collection created with facet support. Existing collections retain their previous read/write behavior and return 400 for facet requests; reindex into a new collection to use facets. At most 10,000 distinct (field, value) buckets and 262,144 UTF-8 value bytes across requested fields; exceeding either bound returns 400 instead of partial counts. Separate memory admission limits return 400 when one request exceeds its estimated budget, or 429 when concurrent requests temporarily exhaust a budget. Request fewer fields or partitions for memory-limit errors; retry temporary 429 errors with backoff."
                   }
                 },
                 "additionalProperties": false,

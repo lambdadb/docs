@@ -68,13 +68,15 @@ Facets visit all matching documents, so broad queries may cost more than retriev
 
 ## Index requirements
 
-General keyword fields, both single values and arrays, use a new index format. The top-level document `id` remains a single string and retains its existing format; arrays are not allowed for `id`. This exception does not make existing keyword indexes compatible. Existing indexes, mixed old/new segments, and old Tags are not supported by this feature build.
+Collections created with facet support use a new index format for general keyword fields, both single values and arrays. The top-level document `id` remains a single string and retains its existing format; arrays are not allowed for `id`.
 
-To use existing data:
+Existing collections retain their previous indexing and query behavior, including writes, scalar keyword sorting, and reads through existing Tags and Aliases. Facet requests on these collections or refs return HTTP 400 with a reindexing message. Keyword arrays keep their previous sorting behavior (no indexed sort value) until the data is rebuilt in a new collection.
+
+No reindexing is required to keep using existing functionality. To use facets or keyword array sorting with existing data:
 
 1. Use a deployment containing the facet implementation and matching SDK support, or call the REST API directly.
 2. Create a new collection with the required keyword fields.
 3. Reinsert the complete source documents and wait for indexing to finish.
 4. Verify the counts and [array sorting](/guides/search/sort#keyword-array-sorting), then switch application reads to the new collection.
 
-Updating only some documents or merging old segments does not perform this migration. Old immutable Tags retain the old format; create new Tags from the rebuilt data when needed. Automatic or in-place index migration is outside this feature's scope.
+Updating some or all documents, adding schema fields, or merging old segments does not change a collection's index format. Branches forked from existing data retain that format. Old immutable Tags retain the old format; create new Tags from the rebuilt data when needed. Automatic or in-place index migration is outside this feature's scope.
