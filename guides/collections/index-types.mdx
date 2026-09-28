@@ -15,7 +15,7 @@ This type is for full-text values, such as the body of an email or the descripti
 
 `text` indexes are best suited for unstructured but human-readable content. If you need to index structured content such as email addresses, hostnames, status codes, or tags, you should rather use a `keyword` index.
 
-Choose one or more [supported analyzers](#supported-analyzers) for each text field. Omitting `analyzers` uses `["standard"]`. LambdaDB applies every analyzer you select; it does not automatically detect the language. See [Choose text analyzers](/guides/collections/choose-text-analyzers) for language recommendations, Chinese examples, and the tradeoffs of using multiple analyzers.
+Choose one or more [supported analyzers](#supported-analyzers) for each text field. Omitting `analyzers` uses `["standard"]`. LambdaDB applies every analyzer you select; it does not automatically detect the language. See [Choose text analyzers](/guides/collections/choose-text-analyzers) for single-language and multilingual selection, configuration examples, and the tradeoffs of combining analyzers.
 
 <CodeGroup>
 

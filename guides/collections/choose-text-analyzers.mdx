@@ -1,29 +1,115 @@
 ---
 title: Choose text analyzers
-description: Choose language-specific text analyzers, compare Chinese word segmentation with CJK bigrams, and understand the costs of combining analyzers.
+description: Select text analyzers for your data and search requirements, configure single-language or multilingual fields, and evaluate matching behavior and costs.
 ---
 
 An analyzer turns text into searchable terms. The field's configured analyzers process both the indexed text and ordinary search terms, so your choice affects which documents match and how they rank.
 
-Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Use the lowercase analyzer names listed below and select each analyzer at most once. Pass at least one analyzer for a searchable text field; an empty list does not use the default. Analyzer selection is configured per field, not detected automatically for each document or query.
+Set `analyzers` on a `text` field in your collection's `indexConfigs`. If you omit it, LambdaDB uses `["standard"]`. Analyzer selection is configured per field, not detected automatically for each document or query.
 
-## Choose a starting point
+## Choose an analyzer
+
+Start with the languages in your documents and queries, then decide which word forms should match. Use one analyzer when it meets your needs; evaluate additional analyzers against specific missed matches rather than enabling every supported language.
 
 | Your content or search requirement | Starting point |
 |:-----------------------------------|:---------------|
 | General text without language-specific stemming | `standard` |
-| English, Arabic, French, German, Hindi, Indonesian, Italian, Portuguese, Russian, Spanish, or Turkish | The corresponding language name, such as `spanish` |
+| English, Arabic, French, German, Hindi, Indonesian, Italian, Portuguese, Russian, Spanish, or Turkish | The corresponding language name, such as `english` or `spanish` |
 | Korean | `korean` |
 | Japanese | `japanese` |
-| Simplified Chinese, including mixed Chinese-English text | `chinese` |
-| Traditional Chinese or matching two-character sequences within longer CJK words | Evaluate `cjk` |
-| Chinese word matching plus broader character-sequence matching | Evaluate `["chinese", "cjk"]` and its effect on relevance and cost |
-
-Language-specific analyzers can remove common words, normalize characters, or reduce inflected words to stems. They do not translate documents or queries. For example, a Spanish analyzer can produce the same searchable term for `libros` and `libro`, while `standard` keeps those words distinct.
+| Simplified Chinese | `chinese`; see the [Chinese comparison](#chinese-words-or-character-pairs) |
+| Traditional Chinese or CJK character-pair matching | Evaluate `cjk` and its [matching limitations](#traditional-chinese-and-short-queries) |
+| Multiple languages in the same field | Evaluate the relevant analyzers together; see [Combining analyzers](#combining-analyzers) |
 
 Use the [supported analyzer reference](/guides/collections/index-types#supported-analyzers) for the complete list. For identifiers or values that must match exactly, use a [keyword index](/guides/collections/index-types#keyword).
 
+### Standard or language-specific analysis
+
+`standard` provides general-purpose tokenization and lowercasing without language-specific stemming. A language-specific analyzer can also remove common words, normalize characters, reduce inflected words to stems, or segment text using language-specific rules. The exact processing depends on the analyzer.
+
+For example, `english` reduces `books` and `book` to the same term, while `standard` keeps them distinct. This can help users find inflected forms, but it also changes which distinctions remain searchable. Compare representative queries before choosing between them. See Lucene's [StandardAnalyzer](https://lucene.apache.org/core/10_4_0/core/org/apache/lucene/analysis/standard/StandardAnalyzer.html) and [EnglishAnalyzer](https://lucene.apache.org/core/10_4_0/analysis/common/org/apache/lucene/analysis/en/EnglishAnalyzer.html) for the underlying processing.
+
+For Korean or Japanese text, start with the dedicated `korean` or `japanese` analyzer. CJK character pairs are a different matching strategy, not a replacement for evaluating language-specific analysis.
+
+### One language or several
+
+For a field containing one language, start with that language's analyzer or `standard`, depending on the matching behavior you need. If languages are stored in separate fields, configure each field for its own content.
+
+For a field containing documents in several languages, or several languages within one document, evaluate a small set of relevant analyzers. For example, `["english", "korean"]` is a candidate for English and Korean content, not an automatic language router. Every selected analyzer processes the same field value. Analyzers do not translate text, so combining them does not make a query in one language find translations in another.
+
+## Configure your field
+
+Use lowercase names from the supported list and select each analyzer at most once. Omit `analyzers` for `["standard"]`, or provide at least one analyzer for a searchable text field; an empty list does not use the default.
+
+This `indexConfigs` fragment selects English analysis for `content`:
+
+```json
+{
+  "content": {
+    "type": "text",
+    "analyzers": ["english"]
+  }
+}
+```
+
+Query the configured field using the usual search API. This query fragment searches for `book`; with the configuration above, `books` in the indexed text can also match:
+
+```json
+{
+  "queryString": {
+    "query": "book",
+    "defaultField": "content",
+    "skipSyntax": true
+  }
+}
+```
+
+`skipSyntax: true` disables query syntax parsing; it does not disable text analysis. See [Query string search](/guides/search/query-string) for the complete search request.
+
+### Create a collection with REST
+
+This complete request creates a collection using `english`. Replace the analyzer list with the names you selected for your data. Set the connection values from your project, as described in the [API reference](/reference/api/introduction).
+
+```bash
+BASE_URL="YOUR_BASE_URL"
+PROJECT_NAME="YOUR_PROJECT_NAME"
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
+curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "collectionName": "articles",
+    "indexConfigs": {
+      "content": { "type": "text", "analyzers": ["english"] }
+    }
+  }'
+```
+
+After creating the collection, [upsert documents](/guides/documents/upsert-data) with a `content` field and search using [query string search](/guides/search/query-string). See [Create a collection](/guides/collections/create-a-collection) for other collection options and readiness handling.
+
+## Combining analyzers
+
+To evaluate English and Korean analysis on the same field, use this `indexConfigs` fragment:
+
+```json
+{
+  "content": {
+    "type": "text",
+    "analyzers": ["english", "korean"]
+  }
+}
+```
+
+Every selected analyzer indexes the same field independently. This configuration applies both analyzers to every value; it does not select one based on the document or query language, and the second analyzer is not a fallback. Ordinary searches consider terms from both analyses, and a document can match either one.
+
+Additional analyzers add indexing work and indexed terms. They can increase storage and query work, and matches through multiple analyses can change relevance scores. Adding more analyzers does not guarantee better relevance or faster searches.
+
+Start with the smallest set that meets your requirements. Compare missed relevant documents, unwanted matches, ranking, index size, indexing throughput, and query latency on representative data before expanding the set. Include queries for each language and mixed-language content you need to support.
+
 ## Chinese: words or character pairs
+
+Chinese illustrates a choice between word segmentation and character-pair matching.
 
 `chinese` uses Lucene's SmartChinese analyzer, which uses a dictionary and statistical segmentation for Simplified Chinese. `cjk` forms overlapping pairs of adjacent CJK characters without using a word dictionary. These approaches have different matching behavior; neither is the best choice for every dataset.
 
@@ -46,6 +132,8 @@ These examples use ordinary unquoted searches with optional terms, including `qu
 
 Choose `chinese` when preserving Chinese word units suits your queries. Evaluate `cjk` when matching character sequences inside compound words, names, or unfamiliar terms is important. CJK pairs can also cross word boundaries, so broader matching may retrieve documents that are not relevant to the intended query.
 
+Set `analyzers` to `["chinese"]` or `["cjk"]` to evaluate each approach separately. To evaluate both on the same field, use `["chinese", "cjk"]`. Both run on every value; CJK is not a fallback for words Chinese segmentation misses. Compare the extra matches and costs before combining them.
+
 ### Traditional Chinese and short queries
 
 `cjk` can tokenize Traditional Chinese without a Simplified Chinese word dictionary. For example, `軟體工程師` produces `軟體`, `體工`, `工程`, and `程師`.
@@ -56,77 +144,11 @@ Neither `chinese` nor `cjk` automatically converts between Simplified and Tradit
 
 For the underlying analysis behavior, see Lucene's [SmartChinese analyzer](https://lucene.apache.org/core/10_4_0/analysis/smartcn/org/apache/lucene/analysis/cn/smart/SmartChineseAnalyzer.html) and [CJK bigram filter](https://lucene.apache.org/core/10_4_0/analysis/common/org/apache/lucene/analysis/cjk/CJKBigramFilter.html).
 
-## Configure your field
-
-Use one analyzer when it meets your search needs. This `indexConfigs` example selects Chinese word segmentation:
-
-```json
-{
-  "content": {
-    "type": "text",
-    "analyzers": ["chinese"]
-  }
-}
-```
-
-To evaluate both approaches on the same field, use:
-
-```json
-{
-  "content": {
-    "type": "text",
-    "analyzers": ["chinese", "cjk"]
-  }
-}
-```
-
-Query the configured field using the usual search API. For example, this query fragment searches for `大学`:
-
-```json
-{
-  "queryString": {
-    "query": "大学",
-    "defaultField": "content",
-    "skipSyntax": true
-  }
-}
-```
-
-### Create a collection with REST
-
-This complete request creates a collection using `chinese`. Set the connection values from your project, as described in the [API reference](/reference/api/introduction).
-
-```bash
-BASE_URL="YOUR_BASE_URL"
-PROJECT_NAME="YOUR_PROJECT_NAME"
-LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
-
-curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
-  -H "content-type: application/json" \
-  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
-  -d '{
-    "collectionName": "chinese-articles",
-    "indexConfigs": {
-      "content": { "type": "text", "analyzers": ["chinese"] }
-    }
-  }'
-```
-
-After creating the collection, [upsert documents](/guides/documents/upsert-data) with a `content` field and search using [query string search](/guides/search/query-string). See [Create a collection](/guides/collections/create-a-collection) for other collection options and readiness handling.
-
 ## SDK compatibility
 
 Check that your SDK version accepts the analyzer names you select. The analyzer models in [Python 0.9.0](https://github.com/lambdadb/lambdadb-python-client/blob/v0.9.0/src/lambdadb/models/indexconfigs_union.py) and [TypeScript 0.5.1](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.5.1/src/models/indexconfigsunion.ts) accept only `standard`, `english`, `korean`, and `japanese`. Their data versioning support does not imply support for additional analyzer names.
 
-To configure names such as `chinese` or `cjk`, use a version whose analyzer model includes them, or send the REST request above directly. Existing SDK examples that select the original four analyzers remain valid.
-
-## Combining analyzers
-
-Every selected analyzer indexes the same field independently. Selecting `["chinese", "cjk"]` does not run CJK only when Chinese segmentation fails. Ordinary searches consider terms from both analyses, and a document can match either one.
-
-Additional analyzers add indexing work and indexed terms. They can increase storage and query work, and matches through multiple analyses can change relevance scores. Adding more analyzers does not guarantee better relevance or faster searches.
-
-Start with the smallest set that meets your requirements. Compare missed relevant documents, unwanted matches, ranking, index size, indexing throughput, and query latency on representative data before enabling both. For Korean or Japanese content, compare with the dedicated `korean` or `japanese` analyzer rather than assuming CJK pairs replace language-specific analysis.
+To configure additional names such as `spanish`, `chinese`, or `cjk`, use a version whose analyzer model includes them, or use the REST request above with your chosen analyzer list. Existing SDK examples that select the original four analyzers remain valid.
 
 ## Changing an existing field
 
