@@ -62,11 +62,13 @@ At most 5 keyword fields can be requested. Counts are exact across the selected 
 
 If the population exceeds 10,000 distinct (field, value) buckets or 262,144 UTF-8 bytes of distinct values across requested fields, the request fails with HTTP 400 instead of returning partial counts. The same value in two fields counts twice. Narrow the query or request fewer fields; reducing a facet's return `size` does not reduce the number of values that must be counted.
 
+Separate memory admission limits protect aggregation work and distributed response merging. A request whose estimated memory exceeds its budget returns HTTP 400; request fewer fields or select fewer partitions. This estimate also depends on indexed values outside the matching population, so a narrower query alone may not resolve it. If concurrent facet requests have temporarily exhausted a budget, the request returns HTTP 429; retry with backoff. No partial counts are returned on either failure.
+
 Facets visit all matching documents, so broad queries may cost more than retrieving a small number of top documents. Queries without facets do not perform this additional aggregation.
 
 ## Index requirements
 
-Both single-value and array keyword fields use a new index format. Existing indexes, mixed old/new segments, and old Tags are not supported by this feature build.
+General keyword fields, both single values and arrays, use a new index format. The top-level document `id` remains a single string and retains its existing format; arrays are not allowed for `id`. This exception does not make existing keyword indexes compatible. Existing indexes, mixed old/new segments, and old Tags are not supported by this feature build.
 
 To use existing data:
 
