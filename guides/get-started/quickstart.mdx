@@ -49,26 +49,26 @@ To replace a key, create a new one, update your application's credentials, and v
 
 ## 🚀 Step 2: Install the SDK
 
-Install one of the stable SDK versions used by these examples. See [SDK support](/reference/sdk/introduction#data-versioning-support) for the language-specific guides.
+Install one of the stable SDK versions used by these examples. See [SDK support](/reference/sdk/introduction#supported-sdk-versions) for the language-specific guides.
 
 <CodeGroup>
 
 ```bash Python
-pip install lambdadb==0.9.0
+pip install lambdadb==0.10.0
 ```
 
 ```bash TypeScript
-npm install @functional-systems/lambdadb@0.5.1
+npm install @functional-systems/lambdadb@0.6.0
 ```
 
 ```bash Go
-go get github.com/lambdadb/go-lambdadb@v0.4.0
+go get github.com/lambdadb/go-lambdadb@v0.5.0
 ```
 
 </CodeGroup>
 
 <Tip>
-    For Python, we recommend using a virtual environment to keep your dependencies organized and avoid conflicts between projects.
+    Python SDK 0.10.0 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Python 3.9 users should stay on `lambdadb==0.9.0` until upgrading Python. Go SDK 0.5.0 requires Go 1.22 or later.
 </Tip>
 
 ## 📚 Step 3: Create a collection
