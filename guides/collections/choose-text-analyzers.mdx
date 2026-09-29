@@ -39,7 +39,7 @@ For a field containing documents in several languages, or several languages with
 
 ## Configure your field
 
-Use lowercase names from the supported list and select each analyzer at most once. Omit `analyzers` for `["standard"]`, or provide at least one analyzer for a searchable text field; an empty list does not use the default.
+Use lowercase names from the supported list. The server rejects duplicate analyzer names with HTTP 400, including case variants such as `["english", "English"]`. Omit `analyzers` for `["standard"]`, or provide at least one analyzer for a searchable text field; an empty list does not use the default.
 
 This `indexConfigs` fragment selects English analysis for `content`:
 

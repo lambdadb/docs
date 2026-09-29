@@ -216,9 +216,9 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
 ```typescript TypeScript
 const collection = client.collection(collectionName);
 const docs = [
-  { id: "doc1", text: "Serverless computing does not mean no servers are involved...", keyword: "serverless", vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
-  { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications...", keyword: "cloud", vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1] },
-  { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers...", keyword: ["serverless", "infrastructure"], vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] },
+  { id: "doc1", text: "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", keyword: "serverless", vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
+  { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", keyword: "cloud", vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1] },
+  { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", keyword: ["serverless", "infrastructure"], vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] },
 ];
 const upsertResult = await collection.docs.upsert({ docs });
 console.log(upsertResult);
@@ -226,9 +226,9 @@ console.log(upsertResult);
 ```go Go
 coll := client.Collection(collectionName)
 docs := []map[string]interface{}{
-  {"id": "doc1", "text": "Serverless computing does not mean no servers...", "keyword": "serverless", "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
-  {"id": "doc2", "text": "Instead, it refers to a cloud computing model...", "keyword": "cloud", "vector": []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1}},
-  {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision...", "keyword": []string{"serverless", "infrastructure"}, "vector": []float64{0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2}},
+  {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
+  {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1}},
+  {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": []string{"serverless", "infrastructure"}, "vector": []float64{0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2}},
 }
 upsertResult, err := coll.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{Docs: docs})
 if err != nil { log.Fatal(err) }
@@ -283,7 +283,7 @@ _ = meta
 
 ## 🔍 Step 5: Full-text search
 
-Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". This demonstrates LambdaDB's powerful query capabilities:
+Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". The text clause is required, and the keyword filter restricts results without contributing to the score:
 
 <CodeGroup>
 ```python Python
@@ -293,8 +293,8 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         size=10,
         query={
             "bool": [
-                {"queryString": {"query": "I hate managing servers", "defaultField": "text"}},
-                {"queryString": {"query": "keyword:serverless"}, "occur": "must"},
+                {"queryString": {"query": "I hate managing servers", "defaultField": "text"}, "occur": "must"},
+                {"queryString": {"query": "keyword:serverless"}, "occur": "filter"},
             ]
         },
         consistent_read=True,
@@ -314,8 +314,8 @@ const fullTextResult = await collection.query({
   size: 10,
   query: {
     bool: [
-      { queryString: { query: "I hate managing servers", defaultField: "text" } },
-      { queryString: { query: "keyword:serverless" }, occur: "must" },
+      { queryString: { query: "I hate managing servers", defaultField: "text" }, occur: "must" },
+      { queryString: { query: "keyword:serverless" }, occur: "filter" },
     ],
   },
   consistentRead: true,
@@ -334,8 +334,8 @@ fullTextResult, err := coll.Query(ctx, lambdadb.QueryInput{
   Size: lambdadb.Int64(10),
   Query: map[string]interface{}{
     "bool": []interface{}{
-      map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
-      map[string]interface{}{"queryString": map[string]interface{}{"query": "keyword:serverless"}, "occur": "must"},
+      map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}, "occur": "must"},
+      map[string]interface{}{"queryString": map[string]interface{}{"query": "keyword:serverless"}, "occur": "filter"},
     },
   },
   ConsistentRead: lambdadb.Bool(true),
@@ -355,27 +355,7 @@ for _, r := range fullTextResult.Docs {
 ```
 </CodeGroup>
 
-Response:
-
-<CodeGroup>
-```python Python
-🔍 Search Results:
-doc3  | 0.83  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.80  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-```
-```typescript TypeScript
-🔍 Search Results:
-doc3  | 0.83  | ['serverless', 'infrastructure'] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.80  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-```
-```go Go
-🔍 Search Results:
-doc3  | 0.83  | [serverless infrastructure] | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.80  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-```
-</CodeGroup>
-
-Why these results? doc3 scored highest because it directly mentions "manage servers", while doc1 matched on "server management" and "serverless computing".
+After the writes are visible, `doc1` and `doc3` satisfy the keyword filter and contain matching text terms. `doc2` is excluded by the filter. Inspect the scores returned by your request; their exact values and ordering are not fixed by this example.
 
 ## 🔍 Step 6: Hybrid search
 
@@ -442,28 +422,7 @@ for _, r := range hybridResult.Docs {
 ```
 </CodeGroup>
 
-Response:
-
-<CodeGroup>
-```python Python
-🔄 Hybrid Search Results:
-doc3  | 0.66  | serverless,infrastructure | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.62  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-doc2  | 0.33  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
-```
-```typescript TypeScript
-🔄 Hybrid Search Results:
-doc3  | 0.66  | serverless,infrastructure | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.62  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-doc2  | 0.33  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
-```
-```go Go
-🔄 Hybrid Search Results:
-doc3  | 0.66  | serverless,infrastructure | The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.
-doc1  | 0.62  | serverless      | Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.
-doc2  | 0.33  | cloud           | Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.
-```
-</CodeGroup>
+The result items have the same shape as the full-text results. This query has no keyword filter, so `doc2` can also appear. The sample vectors only demonstrate the request format; they are not embeddings of the document text and do not demonstrate semantic relevance. Exact scores and ordering depend on the data and query.
 
 **Score normalization options:**
 

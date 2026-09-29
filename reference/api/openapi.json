@@ -273,7 +273,8 @@
                 },
                 "analyzers": {
                   "type": "array",
-                  "description": "Text analyzers to apply to this field. Use the lowercase names listed below and avoid duplicates. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
+                  "uniqueItems": true,
+                  "description": "Text analyzers to apply to this field. Use the lowercase names listed below. Duplicate names, including case variants, are rejected with HTTP 400. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
                   "items": {
                     "type": "string",
                     "enum": [
@@ -2059,7 +2060,8 @@
                   "type": "object",
                   "properties": {
                     "total": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Number of documents returned in this page, including documents provided through docsUrl. Not the total collection size."
                     },
                     "docs": {
                       "type": "array",
@@ -2356,7 +2358,8 @@
                   "type": "object",
                   "properties": {
                     "total": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Number of documents returned in this page, including documents provided through docsUrl. Not the total collection size."
                     },
                     "docs": {
                       "type": "array",
@@ -3989,7 +3992,7 @@
                     },
                     "maxScore": {
                       "type": "number",
-                      "description": "Maximum score."
+                      "description": "Highest score among returned documents. Omitted when no returned document has a computed score."
                     },
                     "total": {
                       "type": "integer",
@@ -4007,7 +4010,7 @@
                           },
                           "score": {
                             "type": "number",
-                            "description": "Document similarity score."
+                            "description": "Document similarity score. Omitted when the query does not compute a score."
                           },
                           "doc": {
                             "type": "object",

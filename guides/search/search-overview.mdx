@@ -62,11 +62,13 @@ Query results are returned in the following format:
 | Field    | Description                                          | Type      |
 | -------- | ---------------------------------------------------- | --------- |
 | took     | Milliseconds it took LambdaDB to execute the request | long      |
-| maxScore | Highest returned document `score`                    | float     |
-| total    | The total number of matching documents               | long      |
+| maxScore | Highest returned document `score`; omitted when no score is computed                    | float     |
+| total    | Number of documents returned, not the count of all matches               | long      |
 | docs     | Contains returned documents and metadata             | object[]  |
 | isDocsInline | Whether `docs` is included inline in the REST response | boolean |
 | docsUrl | Presigned download URL when `isDocsInline` is `false` | string |
+
+`total` counts the returned documents even when they are delivered through `docsUrl`; it is not a count of every document matching the query. A document's `score` can be omitted when the query does not compute one.
 
 Large results may be returned through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
 
