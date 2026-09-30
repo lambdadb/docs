@@ -9,14 +9,14 @@ Use `lambdadb` for project-scoped collection management, JSONL imports, queries,
 
 ## Install
 
-The stable release covered by this guide is `0.1.0`. Choose one installation method and check `command -v lambdadb` before switching package managers.
+The stable release covered by this guide is `0.1.1`. Choose one installation method and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
     Requires Node.js **22.14.0 or later** and npm.
 
     ```bash
-    npm install --global @functional-systems/lambdadb-cli@0.1.0
+    npm install --global @functional-systems/lambdadb-cli@0.1.1
     lambdadb --version
     lambdadb --help
     ```
@@ -42,7 +42,7 @@ The stable release covered by this guide is `0.1.0`. Choose one installation met
     lambdadb --help
     ```
 
-    The public tap installs the stable CLI and its Node 24 runtime. No separate Node/npm setup is needed.
+    The public tap provides CLI `0.1.1` with its Node 24 runtime. No separate Node/npm setup is needed.
 
     ```bash
     brew update
@@ -81,6 +81,8 @@ lambdadb doctor
 `configure` saves only the endpoint, project, and name of the key environment variable; it makes no service call. `doctor` checks authentication and collection-list access. Success does not prove write permission or search readiness.
 
 ## Create a collection and import JSONL
+
+CLI 0.1.1 supports all 16 [text analyzers](/guides/collections/choose-text-analyzers). Upgrade the CLI itself to use the expanded set.
 
 Choose a new collection name in your development project. Run these examples in a scratch directory. Create an index configuration file containing the field-to-index map, without an `indexConfigs` wrapper:
 
@@ -141,12 +143,14 @@ lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --c
 
 For query, set `"consistentRead": true` in the request file. These reads require a direct branch ref, exclude pending bulk imports, and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
+CLI 0.1.1 also accepts `facets` and an omitted `query` for match-all requests. Facets require a supporting server and newly built keyword indexes; existing collections are not migrated automatically. See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.1) for compatibility details.
+
 ### Select collections and refs
 
 - Endpoint and project come from configuration, environment, or flags. `--collection` is required for collection-specific operations.
 - Import requires `--branch NAME`. Query and fetch require `--ref branch:NAME`, `--ref tag:NAME`, or `--ref alias:NAME`; the CLI does not silently select `main`.
 - Tags and aliases must already exist. The CLI does not create or manage refs. Branches and aliases can move between calls.
-- If a query file contains `ref`, it must match `--ref`. Query `size` is 1–100, and fetch accepts up to 100 IDs.
+- If a query file contains `ref`, it must match `--ref`. Query `size` is 1–100 for document results; `size: 0` requires nonempty `facets` for counts only. Fetch accepts up to 100 IDs.
 
 List collections with `lambdadb collections list --json`. One page is returned by default; use `--page-token` with the returned `nextPageToken`, or `--all` to fetch all pages within the network budget.
 

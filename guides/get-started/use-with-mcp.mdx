@@ -37,22 +37,22 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The stable npm package is `@functional-systems/lambdadb-mcp@0.1.0`. This guide pins that published version. No source checkout or build is required.
+The stable npm package is `@functional-systems/lambdadb-mcp@0.1.1`. This guide pins that published version. No source checkout or build is required.
 
 ```bash
 node --version
-npm view @functional-systems/lambdadb-mcp@0.1.0 version engines
+npm view @functional-systems/lambdadb-mcp@0.1.1 version engines
 ```
 
 With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-npx --yes @functional-systems/lambdadb-mcp@0.1.0
+npx --yes @functional-systems/lambdadb-mcp@0.1.1
 ```
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.0` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.1` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
 
 ### Environment variables
 
@@ -74,7 +74,7 @@ For **Claude Desktop**, open **Settings → Developer → Edit Config** and merg
   "mcpServers": {
     "lambdadb": {
       "command": "npx",
-      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.0"],
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.1"],
       "env": {
         "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
@@ -120,6 +120,8 @@ For example, pass these arguments to `lambdadb_query_collection` for the sample 
 }
 ```
 
+MCP 0.1.1 also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require a supporting server and newly built keyword indexes; existing collections are not migrated automatically. See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.1) for compatibility details.
+
 ## Optional: Enable write tools
 
 The LambdaDB MCP server can also expose write operations such as:
@@ -127,6 +129,8 @@ The LambdaDB MCP server can also expose write operations such as:
 - `lambdadb_create_collection`
 - `lambdadb_upsert_docs`
 - `lambdadb_delete_docs`
+
+MCP 0.1.1 accepts all 16 [text analyzers](/guides/collections/choose-text-analyzers) when creating collections. Update the MCP package and restart the server to use them.
 
 Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 
@@ -170,7 +174,7 @@ If the server cannot start:
 For development, use a release tag and Node.js 22.14.0 or later:
 
 ```bash
-git clone --branch v0.1.0 https://github.com/lambdadb/lambdadb-mcp
+git clone --branch v0.1.1 https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
 npm ci
 npm run build

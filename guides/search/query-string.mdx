@@ -6,6 +6,8 @@ description: Search LambdaDB documents with Apache Lucene query string syntax, i
 LambdaDB supports a simple string query that uses the [Lucene Query Syntax](https://lucene.apache.org/core/10_4_0/queryparser/org/apache/lucene/queryparser/flexible/standard/StandardQueryParser.html) to search documents.
 This gives `queryString` access to expressive lexical search features such as terms, phrases, wildcards, boolean operators, range operators, proximity search, regular expressions, fuzzy term matching, term boosting, minimum-should-match constraints, interval functions, and special character escaping.
 
+On `text` fields, ordinary search terms are processed using the field's configured [text analyzers](/guides/collections/choose-text-analyzers). Setting `skipSyntax: true` bypasses query syntax parsing but still applies text analysis. The exact query string `*:*` is a special match-all request even when `skipSyntax` is `true`.
+
 ## Supported syntax highlights
 
 | Feature | Example | Use it to |
@@ -29,7 +31,7 @@ This gives `queryString` access to expressive lexical search features such as te
 |:-------------|:-----------------------------------------|:---------|:---------|:--------|
 | query        | Query string                             | string   | ✓        |         |
 | defaultField | Default field name to apply query        | string   |          |         |
-| skipSyntax   | Skip syntax check for special characters | boolean  |          | false   |
+| skipSyntax   | Process the input without parsing query syntax (except the `*:*` match-all request) | boolean  |          | false   |
 
 <Note>
   

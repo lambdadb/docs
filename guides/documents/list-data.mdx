@@ -127,7 +127,7 @@ Tokens record a search position, not a snapshot pin. A branch may advance or an 
 
 </CodeGroup>
 
-The response includes the total count, the current page of documents, and an optional token for the next page:
+The response includes `total` (the number of documents returned in this page, including any delivered through `docsUrl`), the current page of documents, and an optional token for the next page. `total` is not the collection size:
 
 ```json
 {

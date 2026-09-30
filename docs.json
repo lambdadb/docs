@@ -60,6 +60,7 @@
             "pages": [
               "guides/collections/collection-overview",
               "guides/collections/index-types",
+              "guides/collections/choose-text-analyzers",
               "guides/collections/create-a-collection",
               "guides/collections/managed-embeddings",
               "guides/collections/manage-collections"
