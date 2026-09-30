@@ -49,7 +49,7 @@ LambdaDB supports four analyzers for tokenization: `standard` (default), `korean
 
 ## keyword
 
-`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Use keyword indexes for sorting and exact-value filters. The documented query API does not provide aggregation operations.
+`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Use keyword indexes for sorting, exact-value filters, and [keyword facets](/guides/search/facets). Facets and array sorting require the new keyword index format described in the facet guide.
 
 <Note>
 
@@ -57,7 +57,7 @@ LambdaDB does not index any string longer than 4096 characters.
 
 </Note>
 
-You can also store multiple keyword values as an array for fields like tags or categories.
+You can also store multiple keyword values as an array for fields like tags or categories. Each distinct indexed value contributes once per document to a facet. [Array sorting](/guides/search/sort#keyword-array-sorting) uses the smallest value for ascending order and the largest for descending order.
 
 <CodeGroup>
 

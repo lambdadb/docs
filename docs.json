@@ -97,6 +97,7 @@
                 ]
               },
               "guides/search/sort",
+              "guides/search/facets",
               "guides/search/limits"
             ]
           },
