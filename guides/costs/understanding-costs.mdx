@@ -73,7 +73,11 @@ Inference usage is measured in **LIU** (LambdaDB Inference Unit) and billed at *
 
 LambdaDB converts provider/model token usage into LIU using LambdaDB's internal rate card. For example, different models can have different LIU-per-token conversion rates. Usage is aggregated over the billing period before it is converted to the integer LIU quantity used for billing.
 
-Current managed embedding rates:
+If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero managed model usage is not dropped.
+
+The model rates below do not establish feature or accounting availability in a target deployment; confirm deployment support separately. See [Managed embeddings](/guides/collections/managed-embeddings) and [Managed reranking](/guides/search/managed-reranking) for feature setup and behavior.
+
+### Managed embedding rates
 
 | Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
 |:---------|:------|--------------------:|---------------------:|---------------------------------:|
@@ -90,12 +94,6 @@ Current managed embedding rates:
 At the $1.05 per 1M LIU rate, one million Jev input tokens equal 42,000 LIU, or **$0.0441** before plan allowances and integer-LIU rounding. Output tokens add zero LIU. Pricing is based on measured token usage, not provider request count.
 
 A successful reranking stage with complete valid usage records the sum of input/output tokens across its batches. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. Query read usage and any managed query-embedding usage remain separate from reranking inference usage.
-
-These model rates do not establish feature or accounting availability in a target deployment; confirm deployment support separately.
-
-If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero managed model usage is not dropped.
-
-See also [Managed embeddings](/guides/collections/managed-embeddings) and [Managed reranking](/guides/search/managed-reranking).
 
 ## Billing cycle
 
