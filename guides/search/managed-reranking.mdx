@@ -19,6 +19,14 @@ The examples assume an `articles` collection with stored scalar string fields `t
 
 <CloudConnectionDetails />
 
+Replace the placeholders with your project's connection details and export them in your shell:
+
+```bash
+export LAMBDADB_BASE_URL="YOUR_REGION_BASE_URL"
+export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
+export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
+```
+
 Save this body as `rerank-query.json`. Omitting `criteria` uses the default ten-level relevance criteria; omitting `candidateSize` uses `max(50, size)`.
 
 ```json
