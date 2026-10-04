@@ -120,7 +120,7 @@ For example, pass these arguments to `lambdadb_query_collection` for the sample 
 }
 ```
 
-MCP 0.1.2 also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require a supporting server and newly built keyword indexes; existing collections are not migrated automatically. See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) for compatibility details.
+MCP 0.1.2 also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) for compatibility details.
 
 ### Managed reranking
 
@@ -141,7 +141,7 @@ MCP 0.1.2 accepts optional `rerank` on `lambdadb_query_collection`. For the samp
 }
 ```
 
-LambdaDB manages the provider credentials. Omitting `rerank` or passing null keeps existing search behavior. Applied results preserve the final `score`, envelope `retrievalScore`, server order, and top-level rerank metadata, including `docsUrl` downloads. Check `rerank.status` before interpreting scores; fallback uses original search scores and exposes no partial reranking scores. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, and failure/query restrictions. Reranking is available through the read tool and does not require enabling write tools; the target server must support the model.
+LambdaDB manages the provider credentials. Omitting `rerank` or passing null keeps existing search behavior. Applied results preserve the final `score`, envelope `retrievalScore`, server order, and top-level rerank metadata, including `docsUrl` downloads. Check `rerank.status` before interpreting scores; fallback uses original search scores and exposes no partial reranking scores. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, and failure/query restrictions. Reranking is available through the read tool and does not require enabling write tools.
 
 ## Optional: Enable write tools
 
@@ -151,7 +151,7 @@ The LambdaDB MCP server can also expose write operations such as:
 - `lambdadb_upsert_docs`
 - `lambdadb_delete_docs`
 
-MCP 0.1.2 accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections. Update the MCP package itself and restart the server; SDK publication does not update installed MCP servers. The target server must also support the selected names.
+MCP 0.1.2 accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections. Update the MCP package itself and restart the server; SDK publication does not update installed MCP servers.
 
 Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 

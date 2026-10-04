@@ -274,7 +274,7 @@
                 "analyzers": {
                   "type": "array",
                   "uniqueItems": true,
-                  "description": "Fixed analyzer presets for text fields; custom pipelines and analyzer options are not supported. The keyword analyzer does not change a text field into a keyword field. All 49 preset names require a compatible server deployment and client. See the Choose text analyzers guide for published SDK and tool versions. Use the lowercase names listed below. Duplicate names, including case variants, are rejected with HTTP 400. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
+                  "description": "Fixed analyzer presets for text fields; custom pipelines and analyzer options are not supported. The keyword analyzer does not change a text field into a keyword field. All 49 preset names are supported. See the Choose text analyzers guide for compatible SDK and tool versions. Use the lowercase names listed below. Duplicate names, including case variants, are rejected with HTTP 400. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
                   "items": {
                     "type": "string",
                     "enum": [
@@ -1050,7 +1050,7 @@
           "object",
           "null"
         ],
-        "description": "Optional managed reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. Requires a supporting server deployment. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
+        "description": "Optional managed reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
         "properties": {
           "provider": {
             "type": "string",

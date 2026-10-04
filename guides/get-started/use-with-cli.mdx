@@ -82,7 +82,7 @@ lambdadb doctor
 
 ## Create a collection and import JSONL
 
-CLI 0.1.2 supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Upgrade the CLI itself; SDK publication does not update installed CLIs. Selected presets still require a supporting server deployment.
+CLI 0.1.2 supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Upgrade the CLI itself; SDK publication does not update installed CLIs.
 
 Choose a new collection name in your development project. Run these examples in a scratch directory. Create an index configuration file containing the field-to-index map, without an `indexConfigs` wrapper:
 
@@ -143,7 +143,7 @@ lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --c
 
 For query, set `"consistentRead": true` in the request file. These reads require a direct branch ref, exclude pending bulk imports, and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
-CLI 0.1.2 also accepts `facets` and an omitted `query` for match-all requests. Facets require a supporting server and newly built keyword indexes; existing collections are not migrated automatically. See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) for compatibility details.
+CLI 0.1.2 also accepts `facets` and an omitted `query` for match-all requests. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) for compatibility details.
 
 ### Managed reranking
 
@@ -166,7 +166,7 @@ CLI 0.1.2 accepts the query-level `rerank` object through the same JSON request 
 lambdadb query --collection cli-demo-docs --ref branch:main --file rerank-query.json --json
 ```
 
-Read `data.rerank.status` in the CLI JSON envelope. On `applied` results, `data.docs` contains final evaluation `score` and original `retrievalScore` alongside each `doc`. Fallback retains search scores and server order with `scoredCount: 0`; it does not expose partial evaluation scores. The CLI preserves numeric zero and precision, including downloaded results, and does not sort again. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, eligible `returnOriginal` failures, and query/sort/facet restrictions. Model availability requires a supporting server deployment.
+Read `data.rerank.status` in the CLI JSON envelope. On `applied` results, `data.docs` contains final evaluation `score` and original `retrievalScore` alongside each `doc`. Fallback retains search scores and server order with `scoredCount: 0`; it does not expose partial evaluation scores. The CLI preserves numeric zero and precision, including downloaded results, and does not sort again. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, eligible `returnOriginal` failures, and query/sort/facet restrictions.
 
 ### Select collections and refs
 

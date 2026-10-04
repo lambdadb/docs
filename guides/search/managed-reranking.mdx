@@ -9,9 +9,7 @@ Managed reranking evaluates retrieved candidates against a query and orders them
 
 Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and managed embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a Jev API key.
 
-<Warning>
-Managed reranking requires support in your target deployment and client version. Confirm availability for your project before use. The REST examples below avoid dependencies on SDK request models.
-</Warning>
+Use a [compatible client version](#client-compatibility-and-usage) when reranking through an SDK, CLI, or MCP server. The REST examples below can be used directly without an SDK.
 
 ## Request reranking
 
@@ -340,6 +338,6 @@ These published releases support optional query-level reranking, final/retrieval
 | LambdaDB CLI | [0.1.2](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) | [Query JSON files](/guides/get-started/use-with-cli#managed-reranking) |
 | LambdaDB MCP server | [0.1.2](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) | [Query tool](/guides/get-started/use-with-mcp#managed-reranking) |
 
-Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. Publication confirms client support, while model availability still depends on your target server deployment. Migration CLI 0.1.7 does not rerank its verification searches.
+Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. Migration CLI 0.1.7 does not rerank its verification searches.
 
-Reranking uses server-managed inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Managed reranking rates](/guides/costs/understanding-costs#managed-reranking-rates) for the approved token-to-LIU rates and cost example. Customer accounting availability in your target deployment requires separate confirmation.
+Reranking uses server-managed inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Managed reranking rates](/guides/costs/understanding-costs#managed-reranking-rates) for token-to-LIU rates and a cost example.

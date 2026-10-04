@@ -162,7 +162,7 @@ Migration CLI 0.1.7 accepts and forwards all 49 [fixed presets](/guides/collecti
 
 Custom or unsupported source settings produce warnings and `unsupported:<source-name>` markers. These generated mappings fail validation until you choose an explicit supported target preset. Field `search_analyzer`, `search_quote_analyzer`, and index `default_search` settings are reported but not translated. Review warnings during inventory, migration, and dry-run before accepting matching behavior.
 
-Manual mappings preserve names exactly, including case, order, duplicates, and explicit empty arrays. Omitted/null `analyzers` uses the server default; `[]` remains empty. Use supported lowercase names and let validation report invalid names rather than relying on silent normalization or deduplication. Client support still requires a compatible target server deployment.
+Manual mappings preserve names exactly, including case, order, duplicates, and explicit empty arrays. Omitted/null `analyzers` uses the server default; `[]` remains empty. Use supported lowercase names and let validation report invalid names rather than relying on silent normalization or deduplication.
 
 LambdaDB exposes fixed presets, not Elasticsearch analyzer configuration objects. Do not silently discard source options such as custom stopwords, patterns, token filters, synonyms, or normalizers and treat the result as equivalent. Resolve unsupported settings explicitly before migration, then compare representative search results. The `keyword` analyzer is a preset for a `text` field, distinct from a `keyword` field type. `nepali`, `tamil`, and `telugu` are Lucene extensions, not common Elasticsearch/OpenSearch analyzer names.
 
