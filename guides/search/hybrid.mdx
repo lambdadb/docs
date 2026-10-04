@@ -15,7 +15,7 @@ LambdaDB supports three rescoring methods to combine results from different quer
 
 <Info>
 
-  Regardless of the rescoring method used, the final combined score is always normalized to a value between 0 and 1.
+  Hybrid fusion scores are in [0,1], but they are not relevance probabilities. The highest returned score is not necessarily 1.
 
 </Info>
 
@@ -30,6 +30,20 @@ With [managed reranking](/guides/search/managed-reranking), fusion runs first. A
 | rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
 | mm     | Min-Max normalization scaling                         | Yes           |
 | l2     | L2 normalization of each retrieval path's scores       | Yes           |
+
+### How scores are combined
+
+Fusion uses the candidates retrieved by each of the two query paths. A document missing from one path contributes zero from that path. Changing candidate depth can change scores and ordering, so compare retrieval settings as well as the fusion method when evaluating results.
+
+| Method | Calculation |
+|:-------|:------------|
+| `rrf` | Add `1 / (60 + rank)` from each path, then divide by `2 / 61`. Ranks start at 1; equal retrieval scores share a rank, and the next distinct score uses its position in the list. The rank constant 60 is fixed and is unrelated to `knn.k`. |
+| `mm` | Normalize each path's scores with `(score - min) / (max - min)`, then add the normalized values multiplied by each path's `boost`. A path with one candidate or effectively equal scores assigns each candidate a normalized value of 1. |
+| `l2` | Normalize each path's scores with `score / sqrt(sum(score[j] * score[j]))`, then add the normalized values multiplied by each path's `boost`. An all-zero path contributes zero. |
+
+For example, L2 normalization changes path scores `[3, 4]` to `[0.6, 0.8]`. If a document has normalized scores `0.8` and `0.4` on the two paths and boosts `0.7` and `0.3`, its fused score is `0.7 * 0.8 + 0.3 * 0.4 = 0.68`. Omitting both boosts gives each path a weight of `0.5`.
+
+These boosts are retrieval-fusion weights. They do not change the fixed or custom criteria values used by managed reranking, which evaluates the merged candidates afterward.
 
 ### Query object parameters
 
