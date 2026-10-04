@@ -100,6 +100,29 @@ Reranking requires a scoring retrieval query. Query-less, match-all requests wit
 
 [Facets](/guides/search/facets) keep their existing query restrictions: reranking does not enable facets on vector, sparse vector, or hybrid queries. For supported lexical queries, facet counts cover the full matching population and survive reranking or fallback; they are not recomputed from the final documents. `size: 0` remains available for facet-only requests without reranking.
 
+## Default criteria and scoring
+
+Omitting `criteria` or setting it to `null` selects `default-relevance-v1`. The model evaluates each candidate's selected text against `queryText` using these ten descriptions, ordered from lowest to highest relevance:
+
+| Level | Description | Fixed scoring value |
+|:------|:------------|--------------------:|
+| 1 | Nothing here helps with the requested information; any apparent relationship is accidental. | 0.05 |
+| 2 | A few words resemble the request, but the underlying purpose is different. | 0.20 |
+| 3 | The general subject area fits, while the particular information sought is absent. | 0.30 |
+| 4 | There is a slight connection to the requested topic, with little useful substance. | 0.40 |
+| 5 | Useful related material is present, but applying it to this request needs substantial additional reasoning. | 0.50 |
+| 6 | The right information is partly present, with substantial requirements still unanswered. | 0.60 |
+| 7 | The central requirement is addressed, except for one significant missing detail or interpretive step. | 0.70 |
+| 8 | The main requirements are met; only a small inference or unstated detail remains. | 0.80 |
+| 9 | The passage can be used directly and meets the requirements apart from an inconsequential omission. | 0.90 |
+| 10 | Every requirement is explicitly fulfilled; this is the uniquely strongest candidate for the request. | 1.00 |
+
+LambdaDB computes the final score as a weighted mean of the model's distribution across these levels: `score = sum(p[i] * v[i]) / sum(p[i])`, where `p[i]` is the model's probability mass for level `i` and `v[i]` is that level's fixed scoring value. For example, equal mass on levels 8 and 9 produces `(0.5 * 0.80 + 0.5 * 0.90) / (0.5 + 0.5) = 0.85`. A candidate can therefore receive an intermediate score rather than one of the ten listed values.
+
+The default score range is **0.05–1**, within the API's overall [0,1] domain. LambdaDB does not shift the default minimum to zero, multiply the result by model confidence, or blend it with the retrieval score. This weighted evaluation value is the returned `score` used for sorting; the original search or fusion score remains in `retrievalScore`. The model's level distribution is not included in the query response, and the final score is not a calibrated probability of relevance.
+
+These scoring values are fixed for the default criteria version, not caller-configurable weights. Supplying the same descriptions explicitly as custom criteria selects custom scoring values and can produce different scores.
+
 ## Use custom criteria
 
 Supply descriptions in order from lowest to highest relevance. Each must be nonblank and distinct, with at most 2 KiB UTF-8 per description and 8 KiB total. Text is preserved exactly; choosing meaningful descriptions and their order is your responsibility.
@@ -138,7 +161,7 @@ This three-level example replaces the default criteria for this request:
 }
 ```
 
-For custom criteria with N levels, the server assigns uniformly spaced level values from 0 to 1 (`i / (N - 1)`) and computes the evaluation score from the model's level distribution. Two levels use `[0, 1]`; three use `[0, 0.5, 1]`. The default ten-level criteria use their own fixed values, so explicitly supplying the default descriptions as custom criteria does not reproduce the default scoring contract.
+For custom criteria with N levels, the server assigns uniformly spaced level values from 0 to 1 (`i / (N - 1)`, with `i` starting at zero) and applies the same weighted-mean formula described above. Two levels use `[0, 1]`; three use `[0, 0.5, 1]`, so custom scores can reach zero. The default ten-level criteria use their own fixed values, so explicitly supplying the default descriptions as custom criteria does not reproduce the default scoring contract.
 
 There are no caller-supplied `weights` or `threshold` options. `criteriaVersion: "custom"` identifies custom criteria, not a content hash or unique version. Retain the request descriptions when comparing or reproducing evaluations.
 
