@@ -15,12 +15,15 @@ LambdaDB supports several search methods:
 
 If you use managed embedding vector fields, see [Managed embeddings](/guides/collections/managed-embeddings) for the current supported providers and models.
 
+To evaluate and reorder retrieved candidates with a server-managed model, add query-level [managed reranking](/guides/search/managed-reranking). This is separate from vector retrieval and hybrid fusion.
+
 Common parameters for the request body of a query are as follows:
 
 | Parameter      | Description                                                  | Type    | Required | Default |
 |:-------------- |:-------------------------------------------------------------|:------- |:-------- |:------- |
 | size           | The number of results to return (1–100, or 0 when at least one facet is requested). Omitted or `null` uses the default. | integer or null | | 10 |
 | query          | Query object (details in the [subsections](/guides/search/query-string)). Omit or use `null` to match all documents in the selected read scope. | object or null | | All documents |
+| rerank | Optional managed reranking after candidate merge; requires a scoring query and positive `size`, and cannot be combined with `sort`. Omitted or `null` preserves existing search behavior. | object or null | | |
 | facets         | Counts by keyword field value (see [Keyword facets](/guides/search/facets)). Supported with `queryString`, `bool` combinations, or no query. | object | | |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
@@ -63,13 +66,14 @@ Query results are returned in the following format:
 | Field    | Description                                          | Type      |
 | -------- | ---------------------------------------------------- | --------- |
 | took     | Milliseconds it took LambdaDB to execute the request | long      |
-| maxScore | Highest returned document `score`; omitted when no score is computed                    | float     |
+| maxScore | Highest final returned document `score`; omitted for empty results or when no score is computed | number     |
 | total    | Number of documents returned, not the count of all matches               | long      |
+| rerank | Optional reranking status, model, counts, and stage timing | object |
 | docs     | Contains returned documents and metadata             | object[]  |
 | isDocsInline | Whether `docs` is included inline in the REST response | boolean |
 | docsUrl | Presigned download URL when `isDocsInline` is `false` | string |
 
-`total` counts the returned documents even when they are delivered through `docsUrl`; it is not a count of every document matching the query. A document's `score` can be omitted when the query does not compute one.
+`total` counts the returned documents even when they are delivered through `docsUrl`; it is not a count of every document matching the query. A document's `score` can be omitted when the query does not compute one. Applied reranking uses `score` for the final evaluation value in [0,1] and adds the original search score as `retrievalScore` alongside `doc`. Fallback preserves search scores and omits `retrievalScore`. Check `rerank.status` before interpreting scores; evaluation scores are not relevance probabilities. See [Reranking responses](/guides/search/managed-reranking#read-the-response).
 
 Large results may be returned through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
 

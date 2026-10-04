@@ -1,0 +1,337 @@
+---
+title: Managed reranking
+description: Evaluate retrieved documents with a server-managed model using default or custom criteria, and interpret final scores and fallback results.
+---
+
+import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
+
+Managed reranking evaluates retrieved candidates against a query and orders them by the resulting score before returning the final `size` documents. It runs after global merge and deduplication, so it can be used with lexical, vector, sparse vector, or hybrid scoring queries.
+
+Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and managed embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a Jev API key.
+
+<Warning>
+Managed reranking requires support in your target deployment and client version. Confirm availability for your project before use. The REST examples below avoid dependencies on SDK request models.
+</Warning>
+
+## Request reranking
+
+The examples assume an `articles` collection with stored scalar string fields `title` and `body`, indexed as `text` or `keyword`; `body` must be a `text` index for the lexical query shown. Reranking evaluates both fields even though the response projection returns only `id` and `title`.
+
+<CloudConnectionDetails />
+
+Save this body as `rerank-query.json`. Omitting `criteria` uses the default ten-level relevance criteria; omitting `candidateSize` uses `max(50, size)`.
+
+```json
+{
+  "size": 2,
+  "query": {
+    "queryString": {
+      "query": "restore collection",
+      "defaultField": "body"
+    }
+  },
+  "fields": {
+    "include": [
+      "id",
+      "title"
+    ]
+  },
+  "rerank": {
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "queryText": "How do I restore a previous collection version?",
+    "fields": [
+      "title",
+      "body"
+    ]
+  }
+}
+```
+
+Send it using your LambdaDB project credentials:
+
+```bash
+curl --request POST \
+  --url "${LAMBDADB_BASE_URL}/projects/${LAMBDADB_PROJECT_NAME}/collections/articles/query" \
+  --header "Content-Type: application/json" \
+  --header "x-api-key: ${LAMBDADB_PROJECT_API_KEY}" \
+  --data-binary @rerank-query.json
+```
+
+### Request parameters
+
+| Parameter | Contract |
+|:----------|:---------|
+| `provider` | Required: `typesafe` |
+| `model` | Required: `jev-1.13.0`; not inferred from an embedding model |
+| `queryText` | Required nonblank evaluation query, including for raw-vector or hybrid retrieval; at most 8 KiB UTF-8 |
+| `fields` | Required ordered list of 1–8 unique stored scalar string paths with `text` or `keyword` index configs; nested paths use dots |
+| `candidateSize` | Optional/null: `max(50, size)`; must satisfy `size <= candidateSize <= 100` |
+| `onFailure` | Optional/null: `error`; alternatively `returnOriginal` for eligible provider-stage failures |
+| `criteria` | Optional/null: default relevance criteria; otherwise 2–10 distinct nonblank descriptions ordered from lowest to highest relevance |
+
+Each candidate must contain nonblank text in at least one selected field. Missing or null individual values contribute no text. Arrays, objects, non-string selected values, or candidates with no nonblank selected text are validation errors; they are not silently dropped or handled by provider fallback.
+
+Only the named fields enter reranker input. Top-level `fields` controls the public response projection and can exclude fields used for reranking. Rendered candidate text is limited to 16 KiB UTF-8 per candidate. Query text, all rendered candidates, and custom descriptions together are limited to 256 KiB. Inputs are rejected rather than silently truncated; model context limits also apply.
+
+### Candidate counts
+
+These three controls serve different purposes:
+
+| Control | Meaning |
+|:--------|:--------|
+| `size` | Final number of documents returned; must be positive with reranking |
+| `knn.k` | Candidates requested from that particular dense-vector retrieval leg |
+| `rerank.candidateSize` | Upper bound on the merged, deduplicated rerank pool before the final `size` limit |
+
+For example, a vector-only query with `size: 10`, `knn.k: 20`, and `candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
+
+The pool can contain fewer than `candidateSize` documents. `candidateCount` reports the actual pool size, not a guaranteed count or the final response size.
+
+### Query restrictions
+
+Reranking requires a scoring retrieval query. Query-less, match-all requests without a query, and filter-only requests cannot use it. Explicit `sort`, including an empty list, cannot be combined with reranking.
+
+[Facets](/guides/search/facets) keep their existing query restrictions: reranking does not enable facets on vector, sparse vector, or hybrid queries. For supported lexical queries, facet counts cover the full matching population and survive reranking or fallback; they are not recomputed from the final documents. `size: 0` remains available for facet-only requests without reranking.
+
+## Use custom criteria
+
+Supply descriptions in order from lowest to highest relevance. Each must be nonblank and distinct, with at most 2 KiB UTF-8 per description and 8 KiB total. Text is preserved exactly; choosing meaningful descriptions and their order is your responsibility.
+
+This three-level example replaces the default criteria for this request:
+
+```json
+{
+  "size": 2,
+  "query": {
+    "queryString": {
+      "query": "restore collection",
+      "defaultField": "body"
+    }
+  },
+  "fields": {
+    "include": [
+      "id",
+      "title"
+    ]
+  },
+  "rerank": {
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "queryText": "How do I restore a previous collection version?",
+    "fields": [
+      "title",
+      "body"
+    ],
+    "criteria": [
+      "Does not explain how to restore a collection version.",
+      "Explains part of the restore process but leaves essential steps unclear.",
+      "Provides the steps needed to restore the requested collection version."
+    ]
+  }
+}
+```
+
+For custom criteria with N levels, the server assigns uniformly spaced level values from 0 to 1 (`i / (N - 1)`) and computes the evaluation score from the model's level distribution. Two levels use `[0, 1]`; three use `[0, 0.5, 1]`. The default ten-level criteria use their own fixed values, so explicitly supplying the default descriptions as custom criteria does not reproduce the default scoring contract.
+
+There are no caller-supplied `weights` or `threshold` options. `criteriaVersion: "custom"` identifies custom criteria, not a content hash or unique version. Retain the request descriptions when comparing or reproducing evaluations.
+
+## Read the response
+
+The following response is illustrative, not a quality or latency guarantee:
+
+```json
+{
+  "took": 195,
+  "maxScore": 0.80000002,
+  "total": 2,
+  "docs": [
+    {
+      "collection": "articles",
+      "score": 0.80000002,
+      "retrievalScore": 3.2,
+      "doc": {
+        "id": "restore-guide",
+        "title": "Restore a collection version"
+      }
+    },
+    {
+      "collection": "articles",
+      "score": 0.3,
+      "retrievalScore": 4.1,
+      "doc": {
+        "id": "overview",
+        "title": "Collection overview"
+      }
+    }
+  ],
+  "isDocsInline": true,
+  "rerank": {
+    "status": "applied",
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "candidateCount": 2,
+    "scoredCount": 2,
+    "took": 180,
+    "criteriaVersion": "default-relevance-v1"
+  }
+}
+```
+
+On `applied` results, each document envelope's `score` is the actual final sorting value, in [0,1]. It is an evaluation score, not a calibrated relevance probability. The original retrieval or hybrid-fusion score is `retrievalScore`, alongside `score` and `doc`; it is not placed inside the stored document.
+
+Results are ordered by descending final score. Exact ties preserve original candidate order. Low scores, including numeric zero, do not remove documents. Preserve score precision when storing or displaying results; do not round and then sort again. Different criteria or models can assign different meanings to the same numeric value, and retrieval scores are not directly comparable to reranking scores.
+
+`maxScore` is the maximum final returned `score`; it is omitted for empty results. Zero remains a valid numeric score and maximum. `total` is the number of returned documents, not the corpus match count. Top-level `took` covers the complete query, including reranking.
+
+### Reranking metadata
+
+| Field | Presence and meaning |
+|:------|:---------------------|
+| `status` | Always present when reranking was requested: `applied`, `skipped`, or `fallback` |
+| `provider`, `model` | Requested provider and model |
+| `resolvedModel` | Optional resolved identity when reported by the provider |
+| `candidateCount` | Actual unique candidates before final `size` limiting |
+| `scoredCount` | Equals `candidateCount` when applied; zero when skipped or fallback |
+| `took` | Rerank stage milliseconds after hydration, through preparation and ordering or failure handling |
+| `criteriaVersion` | Only on applied results: `default-relevance-v1` for omitted/null criteria, or `custom` |
+| `reason` | `noCandidates` when skipped; a bounded provider failure code when fallback |
+
+Without reranking, both top-level `rerank` and envelope `retrievalScore` are omitted. `rerankScore` and `rubricVersion` are not response fields.
+
+For custom criteria, zero is a valid result. The custom example can return:
+
+```json
+{
+  "took": 195,
+  "maxScore": 1,
+  "total": 2,
+  "docs": [
+    {
+      "collection": "articles",
+      "score": 1,
+      "retrievalScore": 3.2,
+      "doc": {
+        "id": "restore-guide",
+        "title": "Restore a collection version"
+      }
+    },
+    {
+      "collection": "articles",
+      "score": 0,
+      "retrievalScore": 4.1,
+      "doc": {
+        "id": "overview",
+        "title": "Collection overview"
+      }
+    }
+  ],
+  "isDocsInline": true,
+  "rerank": {
+    "status": "applied",
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "candidateCount": 2,
+    "scoredCount": 2,
+    "took": 180,
+    "criteriaVersion": "custom"
+  }
+}
+```
+
+### Empty results
+
+With no candidates, the server skips provider calls and returns `skipped/noCandidates` with both counts zero. Validation still runs before this shortcut. `maxScore`, `retrievalScore`, and `criteriaVersion` are omitted:
+
+```json
+{
+  "took": 3,
+  "total": 0,
+  "docs": [],
+  "isDocsInline": true,
+  "rerank": {
+    "status": "skipped",
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "candidateCount": 0,
+    "scoredCount": 0,
+    "took": 0,
+    "reason": "noCandidates"
+  }
+}
+```
+
+### Large results
+
+When `isDocsInline` is `false`, download the envelopes from `docsUrl` as described in [Large results](/guides/search/limits#large-results). Applied results retain both `score` and `retrievalScore` in the downloaded envelopes. Reranking metadata stays in the top-level response; an empty inline `docs` array does not mean the rerank pool was empty.
+
+## Handle failures
+
+The default `onFailure: "error"` fails the request on provider-stage errors. Eligible timeouts return HTTP 408; other eligible provider-stage failures return HTTP 503. No partial reranking scores are returned.
+
+Set `onFailure: "returnOriginal"` to return the first `size` documents from the retained pre-rerank pool when the provider times out, rate-limits, becomes unavailable, rejects credentials, or returns malformed/incomplete scores. The server keeps original search scores, omits `retrievalScore` and `criteriaVersion`, and reports `scoredCount: 0`. It never mixes partial reranking scores with search scores.
+
+An illustrative timeout fallback:
+
+```json
+{
+  "took": 2010,
+  "maxScore": 4.1,
+  "total": 2,
+  "docs": [
+    {
+      "collection": "articles",
+      "score": 4.1,
+      "doc": {
+        "id": "overview",
+        "title": "Collection overview"
+      }
+    },
+    {
+      "collection": "articles",
+      "score": 3.2,
+      "doc": {
+        "id": "restore-guide",
+        "title": "Restore a collection version"
+      }
+    }
+  ],
+  "isDocsInline": true,
+  "rerank": {
+    "status": "fallback",
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "candidateCount": 2,
+    "scoredCount": 0,
+    "took": 2000,
+    "reason": "timeout"
+  }
+}
+```
+
+For hybrid retrieval, fallback preserves the order of the expanded fused pool. It need not match a separate query run without reranking at a smaller candidate depth.
+
+These errors do **not** become fallback results, even with `returnOriginal`:
+
+- Invalid input, selected text, criteria, input limits, or disabled model configuration.
+- Retrieval, hydration, read-version routing, authorization, or inference quota errors.
+- Provider-call admission capacity errors, which return HTTP 429.
+- Caller cancellation or an exhausted overall query deadline; fallback does not extend the request deadline.
+
+Fallback reason codes are `timeout`, `rateLimit`, `unavailable`, `invalidResponse`, or `credentials`. They expose no provider credentials or request payloads.
+
+## Client compatibility and usage
+
+These published releases support optional query-level reranking, final/retrieval score envelopes, stage metadata, and downloaded results:
+
+| Client or tool | Release | Usage guide |
+|:---------------|:--------|:------------|
+| Python SDK | [0.11.0](https://pypi.org/project/lambdadb/0.11.0/) | [Python reranking](https://github.com/lambdadb/lambdadb-python-client/blob/v0.11.0/docs/managed-reranking.md) |
+| JavaScript/TypeScript SDK | [0.7.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.7.0) | [TypeScript reranking](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.7.0/docs/managed-reranking.md) |
+| Go SDK | [0.6.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.6.0) | [Go reranking](https://github.com/lambdadb/go-lambdadb/blob/v0.6.0/docs/managed-reranking.md) |
+| LambdaDB CLI | [0.1.2](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) | [Query JSON files](/guides/get-started/use-with-cli#managed-reranking) |
+| LambdaDB MCP server | [0.1.2](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) | [Query tool](/guides/get-started/use-with-mcp#managed-reranking) |
+
+Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. Publication confirms client support, while model availability still depends on your target server deployment. Migration CLI 0.1.7 does not rerank its verification searches.
+
+Reranking uses server-managed inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Managed reranking rates](/guides/costs/understanding-costs#managed-reranking-rates) for the approved token-to-LIU rates and cost example. Customer accounting availability in your target deployment requires separate confirmation.

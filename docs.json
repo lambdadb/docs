@@ -97,6 +97,7 @@
                   "guides/search/hybrid"
                 ]
               },
+              "guides/search/managed-reranking",
               "guides/search/sort",
               "guides/search/facets",
               "guides/search/limits"

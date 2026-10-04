@@ -446,6 +446,8 @@ complete_index_config = {
 
 ## Supported analyzers
 
+LambdaDB defines 49 fixed presets for `text` fields. Published [SDK and tool releases](/guides/collections/choose-text-analyzers#sdk-compatibility) accept all 49 names; your target server deployment must also support the selected presets.
+
 | Analyzer | Description |
 |:---------|:------------|
 | `standard` | Default general-purpose Unicode text analysis |
@@ -464,6 +466,41 @@ complete_index_config = {
 | `russian` | Russian |
 | `spanish` | Spanish |
 | `turkish` | Turkish |
+| `armenian` | Armenian |
+| `basque` | Basque |
+| `bengali` | Bengali |
+| `brazilian` | Brazilian Portuguese |
+| `bulgarian` | Bulgarian |
+| `catalan` | Catalan |
+| `czech` | Czech |
+| `danish` | Danish |
+| `dutch` | Dutch |
+| `estonian` | Estonian |
+| `finnish` | Finnish |
+| `galician` | Galician |
+| `greek` | Greek |
+| `hungarian` | Hungarian |
+| `irish` | Irish |
+| `latvian` | Latvian |
+| `lithuanian` | Lithuanian |
+| `norwegian` | Norwegian |
+| `persian` | Persian |
+| `romanian` | Romanian |
+| `serbian` | Serbian |
+| `sorani` | Sorani Kurdish |
+| `swedish` | Swedish |
+| `thai` | Thai |
+| `simple` | Splits at non-letter characters and lowercases terms |
+| `whitespace` | Splits at whitespace; preserves case |
+| `stop` | Letter tokenization and lowercasing with the default English stopword set |
+| `keyword` | One token for the entire value; preserves case and whitespace; remains a text field |
+| `pattern` | Splits at Java `\W+` separators and lowercases; no stopwords or Unicode-character-class option |
+| `fingerprint` | Lowercases, folds ASCII, sorts and deduplicates terms into one space-separated token; discards output over 255 UTF-16 code units |
+| `nepali` | Nepali (Lucene extension) |
+| `tamil` | Tamil (Lucene extension) |
+| `telugu` | Telugu (Lucene extension) |
+
+All names select fixed presets through `analyzers`; custom pipelines, tokenizers, filters, stopword lists, and analyzer options are not configurable. The `keyword` analyzer on a `text` field does not provide the sorting or facet behavior of a `keyword` field type. `nepali`, `tamil`, and `telugu` are Lucene extensions, not shared Elasticsearch/OpenSearch analyzer support.
 
 Use the lowercase names above. Duplicate analyzer names, including case variants, are rejected with HTTP 400. Omit `analyzers` for the default, or select at least one analyzer; an empty list does not use the default. See [Choose text analyzers](/guides/collections/choose-text-analyzers) before combining analyzers or migrating an existing field.
 

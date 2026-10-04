@@ -21,6 +21,8 @@ Start with the languages in your documents and queries, then decide which word f
 | Traditional Chinese or CJK character-pair matching | Evaluate `cjk` and its [matching limitations](#traditional-chinese-and-short-queries) |
 | Multiple languages in the same field | Evaluate the relevant analyzers together; see [Combining analyzers](#combining-analyzers) |
 
+Only fixed presets are exposed: select names in `analyzers`, without custom pipelines or analyzer options. The `keyword` analyzer preserves the entire value as one token on a `text` field; it does not change the field into a `keyword` index.
+
 Use the [supported analyzer reference](/guides/collections/index-types#supported-analyzers) for the complete list. For identifiers or values that must match exactly, use a [keyword index](/guides/collections/index-types#keyword).
 
 ### Standard or language-specific analysis
@@ -146,19 +148,20 @@ For the underlying analysis behavior, see Lucene's [SmartChinese analyzer](https
 
 ## SDK compatibility
 
-These published releases support all 16 analyzer names in the [supported analyzer reference](/guides/collections/index-types#supported-analyzers):
+The published releases below accept all 49 fixed names in the [supported analyzer reference](/guides/collections/index-types#supported-analyzers), including the 33 additions to the earlier 16-name set:
 
-| Client or tool | Release with expanded analyzer support |
-|:---------------|:---------------------------------------|
-| Python SDK | [0.10.0](https://pypi.org/project/lambdadb/0.10.0/) |
-| JavaScript/TypeScript SDK | [0.6.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.6.0) |
-| Go SDK | [0.5.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.5.0) |
-| LambdaDB CLI | [0.1.1](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.1) |
-| LambdaDB MCP server | [0.1.1](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.1) |
+| Client or tool | Release supporting all 49 presets |
+|:---------------|:----------------------------------|
+| Python SDK | [0.11.0](https://pypi.org/project/lambdadb/0.11.0/) |
+| JavaScript/TypeScript SDK | [0.7.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.7.0) |
+| Go SDK | [0.6.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.6.0) |
+| LambdaDB CLI | [0.1.2](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) |
+| LambdaDB MCP server | [0.1.2](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) |
+| Migration CLI | [0.1.7](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7) |
 
-Upgrade the client or tool you use to the listed release or a later compatible version. Updating an application's SDK does not update a separately installed CLI or MCP server; follow the [CLI installation](/guides/get-started/use-with-cli#install) or [MCP setup](/guides/get-started/use-with-mcp#step-2-choose-the-published-package) instructions. MCP collection creation also requires [write tools](/guides/get-started/use-with-mcp#optional-enable-write-tools) to be enabled.
+Update the specific client or tool you use. Updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI. Follow the [CLI installation](/guides/get-started/use-with-cli#install), [MCP setup](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI installation](/guides/migrations/overview#install-the-cli) instructions. MCP collection creation also requires [write tools](/guides/get-started/use-with-mcp#optional-enable-write-tools) to be enabled.
 
-Python SDK 0.10.0 requires Python 3.10–3.13. Python 0.9.0 and TypeScript 0.5.1 accept only `standard`, `english`, `korean`, and `japanese` in their analyzer models. If you cannot upgrade yet, use the REST request above with your chosen analyzer list. Both SDK and REST requests require server support for the selected analyzers.
+Python SDK 0.11.0 requires Python 3.10–3.13. Python 0.10.0, TypeScript 0.6.0, Go 0.5.0, CLI 0.1.1, and MCP 0.1.1 support the earlier 16 names. Python 0.9.0 and TypeScript 0.5.1 accept only `standard`, `english`, `korean`, and `japanese` in their analyzer models. If you cannot upgrade yet, use the REST request above with your chosen analyzer list. Both SDK and REST requests require server support for the selected analyzers; client publication does not establish availability in every deployment.
 
 ## Changing an existing field
 
