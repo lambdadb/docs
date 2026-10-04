@@ -28,7 +28,7 @@ Common parameters for the request body of a query are as follows:
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
-| sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)) | object[] | | |
+| sort | Specifies the sorting criteria for the results (details in the [subsection](/guides/search/sort)); omitted or `null` means no explicit sort | object[] or null | | |
 | partitionFilter | Select physical partitions by values of the configured partition field; unselected partitions are not searched. See [Partition selection](#select-partitions-to-search). | object |  | All partitions |
 | ref | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }` | object | | `main` branch |
 
@@ -190,6 +190,4 @@ The response will look like this:
 }
 ```
 
-Matched documents are ordered by similarity from most similar to least similar by default.
-Similarity is expressed as a `score`, and it is calculated based on the `BM25 algorithm` for full-text search
-and the configured `similarity metric` for vector search.
+Without explicit sorting or applied reranking, scored results are ordered by descending retrieval score: BM25 for full-text search, the configured similarity metric for vector search, or the selected fusion method for hybrid search. Applied reranking orders candidates by their final evaluation `score` and preserves the retrieval score in `retrievalScore`.

@@ -19,6 +19,8 @@ LambdaDB supports three rescoring methods to combine results from different quer
 
 </Info>
 
+With [managed reranking](/guides/search/managed-reranking), fusion runs first. Applied reranking returns its evaluation value as `score` and the fused value as `retrievalScore`. Fallback retains the fused scores and order from the expanded candidate pool.
+
 ## Parameters
 
 ### Rescoring methods

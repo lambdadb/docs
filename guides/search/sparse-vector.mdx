@@ -21,6 +21,8 @@ You must provide precalculated token-weight pairs as your query vectors, where e
 
 ## Examples
 
+The examples are query objects. Place them under the request body's top-level `query`, alongside `size` and other [search options](/guides/search/search-overview). Sparse retrieval has no `knn.k` parameter; see [reranking candidate counts](/guides/search/managed-reranking#candidate-counts) when adding managed reranking.
+
 ### Token-based sparse vector query
 
 ```json

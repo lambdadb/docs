@@ -35,13 +35,15 @@ Do not send request bodies on management `GET` or `DELETE` routes.
 | :----- | :------------------- |
 | `400` | Invalid input, ref selector, target, or retained history. An existing dangling alias also returns this status. Correct the request before retrying. |
 | `401` | Authentication failed. Check the project API key and endpoint. |
+| `403` | Project inference quota exceeded. Managed reranking's `returnOriginal` policy does not bypass this limit. |
 | `404` | Collection, selected ref, or requested target does not exist. Refresh dependent state. Repeating a DELETE after deletion can return this status. |
+| `408` | Managed reranking provider timeout with the default `error` policy. No partial reranking results are returned. |
 | `409` | Name collision, conditional catalog conflict, or deletion of a branch/tag referenced by an alias. For a referenced target, delete or retarget all referencing aliases before retrying deletion; otherwise refresh the resource state before deciding whether to retry. |
 | `413` | Request exceeds the Gateway transport limit. Reduce the request size or use bulk upsert when supported. |
-| `429` | Request throttled, a consistent read's pending payload exceeds its limit, or concurrent facet requests temporarily exhaust a memory budget. Back off and retain the server message. Honor `Retry-After` when present; not every response includes it. |
+| `429` | Request throttled, a consistent read's pending payload exceeds its limit, concurrent facet requests temporarily exhaust a memory budget, or reranking provider-call admission capacity is exhausted. Back off and retain the server message. Honor `Retry-After` when present; not every response includes it. |
 | `500` | Internal server error. Retain error context for troubleshooting. |
 | `502` | Unexpected downstream failure. A write's outcome may be uncertain. |
-| `503` | Transient catalog or storage dependency failure. Use bounded retries where the operation permits. |
+| `503` | Catalog, storage, or managed reranking provider failure. Use bounded retries where the operation permits. Reranking's `returnOriginal` policy covers only eligible provider-stage failures; see [failure handling](/guides/search/managed-reranking#handle-failures). |
 | `504` | Gateway deadline exceeded. A write may already have been applied; verify the outcome before retrying. |
 
 Mapped errors return a JSON `message`; internal catalog error names are not a public structured `code` field. An unsuccessful or timed-out write response does not always mean that no mutation occurred. Check the resulting state before repeating a mutation whose outcome is uncertain.

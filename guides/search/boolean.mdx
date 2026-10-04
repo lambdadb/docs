@@ -11,7 +11,7 @@ When used within a bool query array, each object can contain:
 
 | Parameter | Description                    | Type   | Required | Default |
 |:----------|:-------------------------------|:-------|:---------|:--------|
-| query     | Query string object            | object | ✓        |         |
+| `queryString`, `knn`, `sparseVector`, or `bool` | One query-type key directly on the clause; do not add a `query` wrapper | object or array | ✓ | |
 | occur     | Boolean occurrence type        | string |          | should  |
 | boost     | Score multiplier for relevance | float  |          | 1.0     |
 
@@ -34,6 +34,8 @@ while values that are greater than 1.0 will give more importance to the scores r
 
 ## Examples
 
+The examples are query objects. Place them under the request body's top-level `query`, alongside `size` and other [search options](/guides/search/search-overview). A filter-only boolean query cannot use [managed reranking](/guides/search/managed-reranking#query-restrictions).
+
 ### Boolean query with occur
 
 ```json
@@ -55,7 +57,7 @@ while values that are greater than 1.0 will give more importance to the scores r
 }
 ```
 
-This query will return top documents that are both of type `NODE` and have the highest score value.
+The `filter` requires `node_type:NODE`. The optional `should` clause boosts matching `content:LambdaDB` documents; it does not require every returned document to contain that term. Use `occur: "must"` for that clause if both conditions must match.
 
 
 ### Boolean query with boost

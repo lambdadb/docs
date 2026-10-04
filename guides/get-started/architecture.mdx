@@ -29,4 +29,6 @@ When the Writer function receives a request to upsert, update, or delete records
 
 When a query is received, the Router resolves the requested ref and then invokes Executor functions based on the number of virtual shards assigned to the collection. A strongly consistent read is available only when the request directly selects a branch; the Router includes eligible buffered writes, excluding pending bulk imports. If that pending payload exceeds the consistent-read limit, the request returns `429`. Each executor scans its assigned shard data and returns top candidates. The Router merges and deduplicates candidates, includes buffered results when required, and returns the final result set.
 
+When requested, [managed reranking](/guides/search/managed-reranking) evaluates globally merged, deduplicated candidates before the final `size` limit. Its model and criteria are selected per query, with provider credentials managed by LambdaDB.
+
 On a partitioned collection, `partitionFilter` restricts the search to selected physical partitions; unselected partitions are not searched. Without it, all partitions remain in the search scope. Internal sharding distributes the work within that scope rather than selecting the application's tenant, session, or repository data.
