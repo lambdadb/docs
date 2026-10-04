@@ -15,12 +15,14 @@ For PostgreSQL applications, see [Search with PostgreSQL and LambdaDB](/guides/m
 
 | Source | Status | Notes |
 |:-------|:-------|:------|
-| Qdrant | Supported in CLI `v0.1.6` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Pinecone Serverless | Supported in CLI `v0.1.6` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Elasticsearch | Supported in CLI `v0.1.6` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
+| Qdrant | Supported in CLI `v0.1.7` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Pinecone Serverless | Supported in CLI `v0.1.7` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Elasticsearch | Supported in CLI `v0.1.7` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
 | OpenSearch | Planned | Use the same CLI workflow once OpenSearch support is available. |
 | Chroma | Planned | Use the same CLI workflow once Chroma support is available. |
 | Weaviate | Planned | Use the same CLI workflow once Weaviate support is available. |
+
+Version 0.1.7 validates and forwards all 49 [fixed analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Elasticsearch inventory preserves supported field analyzers and index defaults, and flags custom or unsupported settings for explicit review. Verification searches retain their dense/sparse behavior and do not rerank. See [Elasticsearch analyzer mappings](/guides/migrations/elasticsearch/migrate-from-elasticsearch#text-analyzer-presets).
 
 ## Migration workflow
 
@@ -34,7 +36,7 @@ For PostgreSQL applications, see [Search with PostgreSQL and LambdaDB](/guides/m
 
 ## Install the CLI
 
-The current stable release is **v0.1.6**. The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
+The current stable release is [**v0.1.7**](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7). The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
 
 <Tabs>
   <Tab title="Homebrew">
@@ -59,15 +61,15 @@ The current stable release is **v0.1.6**. The executable is `lambdadb-migration`
     brew uninstall lambdadb/tap/lambdadb-migration
     ```
 
-    The tap currently provides `0.1.6`. Future GitHub releases may reach the tap later, after the formula is updated.
+    The tap currently provides `0.1.7`. Future GitHub releases may reach the tap later, after the formula is updated.
   </Tab>
   <Tab title="Standalone installer">
     Download the installer to a scratch directory and inspect it before running. This example pins both the installer and the binary release:
 
     ```bash
-    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.6/install.sh
+    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.7/install.sh
     less install.sh
-    sh install.sh --version v0.1.6 --install-dir "$HOME/.local/bin"
+    sh install.sh --version v0.1.7 --install-dir "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     lambdadb-migration --version
     lambdadb-migration --help
@@ -91,7 +93,7 @@ The current stable release is **v0.1.6**. The executable is `lambdadb-migration`
   </Tab>
 </Tabs>
 
-Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Public Homebrew installation has been verified on macOS arm64 and Linux amd64; macOS amd64 and Linux arm64 archives have checksum and architecture-header verification only. See [installation evidence](https://github.com/lambdadb/homebrew-tap/blob/main/MIGRATION.md#publication-and-validation-evidence).
+Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Choose the archive matching your operating system and architecture when downloading a binary directly from the [release page](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7).
 
 Before switching installation methods, inspect `type -a lambdadb-migration` and identify which binary is on PATH. Remove only the old installation using its original method. Do not force-overwrite a Homebrew symlink or run the standalone installer against a Homebrew-managed path. Uninstalling the binary does not remove mappings, checkpoints, or credentials.
 

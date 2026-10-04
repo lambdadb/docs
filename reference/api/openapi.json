@@ -274,7 +274,7 @@
                 "analyzers": {
                   "type": "array",
                   "uniqueItems": true,
-                  "description": "Text analyzers to apply to this field. Use the lowercase names listed below. Duplicate names, including case variants, are rejected with HTTP 400. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
+                  "description": "Fixed analyzer presets for text fields; custom pipelines and analyzer options are not supported. The keyword analyzer does not change a text field into a keyword field. All 49 preset names are supported. See the Choose text analyzers guide for compatible SDK and tool versions. Use the lowercase names listed below. Duplicate names, including case variants, are rejected with HTTP 400. Defaults to [\"standard\"] when omitted. Each selected analyzer indexes the field separately; language detection is not automatic. An empty array does not use the default. See the Choose text analyzers guide for language selection, configuration examples, and the tradeoffs of combining analyzers.",
                   "items": {
                     "type": "string",
                     "enum": [
@@ -293,7 +293,40 @@
                       "portuguese",
                       "russian",
                       "spanish",
-                      "turkish"
+                      "turkish",
+                      "armenian",
+                      "basque",
+                      "bengali",
+                      "brazilian",
+                      "bulgarian",
+                      "catalan",
+                      "czech",
+                      "danish",
+                      "dutch",
+                      "estonian",
+                      "finnish",
+                      "galician",
+                      "greek",
+                      "hungarian",
+                      "irish",
+                      "latvian",
+                      "lithuanian",
+                      "norwegian",
+                      "persian",
+                      "romanian",
+                      "serbian",
+                      "sorani",
+                      "swedish",
+                      "thai",
+                      "simple",
+                      "whitespace",
+                      "stop",
+                      "keyword",
+                      "pattern",
+                      "fingerprint",
+                      "nepali",
+                      "tamil",
+                      "telugu"
                     ]
                   },
                   "default": [
@@ -1011,6 +1044,258 @@
             }
           }
         }
+      },
+      "RerankConfig": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "description": "Optional managed reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "typesafe"
+            ],
+            "description": "Required managed reranking provider."
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "jev-1.13.0"
+            ],
+            "description": "Required reranking model; independent of the collection embedding model."
+          },
+          "queryText": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "description": "Required nonblank evaluation query, including for raw-vector or hybrid retrieval. At most 8 KiB UTF-8; never inferred from retrieval legs."
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            },
+            "description": "Ordered, unique stored scalar string paths, using dotted paths for nested fields. Paths must have text or keyword index configs; arrays, objects, and non-string values are invalid. Missing/null values are skipped, but every candidate must have at least one nonblank selected value. Only these fields enter model input; top-level fields controls the response projection. Rendered candidate text is limited to 16 KiB UTF-8, and query plus all rendered candidates plus custom criteria to 256 KiB."
+          },
+          "candidateSize": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Upper bound on the globally merged and deduplicated rerank pool. Omitted or null defaults to max(50, size). Must satisfy size <= candidateSize <= 100. Does not modify any knn.k and does not guarantee this many candidates."
+          },
+          "onFailure": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "error",
+              "returnOriginal",
+              null
+            ],
+            "default": "error",
+            "description": "Omitted or null uses error. Provider timeout, rate limit, unavailable service, credential rejection, or invalid/incomplete scores follow this policy for the whole stage. returnOriginal keeps pre-rerank candidate order and search scores. Input/configuration, retrieval/hydration, authorization, quota, admission, and overall cancellation/deadline errors do not become fallback results."
+          },
+          "criteria": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "minItems": 2,
+            "maxItems": 10,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": ".*\\S.*"
+            },
+            "description": "Distinct nonblank descriptions ordered from lowest to highest relevance. Omitted/null uses default-relevance-v1. Each description is limited to 2 KiB and the full list to 8 KiB UTF-8. Text is preserved exactly. Custom levels use uniformly spaced scores from 0 to 1; explicitly sending the default descriptions still selects custom scoring. Weights and thresholds are not supported."
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "queryText",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "RerankResponse": {
+        "type": "object",
+        "description": "Present only when rerank was requested. Whole-stage metadata remains inline even when documents are downloaded through docsUrl.",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "skipped",
+              "fallback"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "typesafe"
+            ],
+            "description": "Requested provider."
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "jev-1.13.0"
+            ],
+            "description": "Requested model."
+          },
+          "resolvedModel": {
+            "type": "string",
+            "description": "Resolved model identity, when reported by the provider. Omitted otherwise."
+          },
+          "candidateCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Actual unique candidates in the rerank stage before final size limiting, not the returned-document count."
+          },
+          "scoredCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Equals candidateCount on applied results; zero for skipped/fallback. Partial scores are never exposed."
+          },
+          "took": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Rerank stage milliseconds after candidate hydration, including preparation and ordering or failure handling; not the complete request duration."
+          },
+          "criteriaVersion": {
+            "type": "string",
+            "enum": [
+              "default-relevance-v1",
+              "custom"
+            ],
+            "description": "Only on applied results: default-relevance-v1 for omitted/null criteria, custom for caller-supplied descriptions. custom is not a hash or unique content version."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "noCandidates",
+              "timeout",
+              "rateLimit",
+              "unavailable",
+              "invalidResponse",
+              "credentials"
+            ],
+            "description": "Only for skipped/fallback. skipped uses noCandidates; fallback uses a bounded provider failure reason."
+          }
+        },
+        "required": [
+          "status",
+          "provider",
+          "model",
+          "candidateCount",
+          "scoredCount",
+          "took"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "skipped"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "reason": {
+                  "const": "noCandidates"
+                },
+                "candidateCount": {
+                  "const": 0
+                },
+                "scoredCount": {
+                  "const": 0
+                }
+              },
+              "not": {
+                "required": [
+                  "criteriaVersion"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "fallback"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "reason": {
+                  "enum": [
+                    "timeout",
+                    "rateLimit",
+                    "unavailable",
+                    "invalidResponse",
+                    "credentials"
+                  ]
+                },
+                "scoredCount": {
+                  "const": 0
+                }
+              },
+              "not": {
+                "required": [
+                  "criteriaVersion"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "applied"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "reason"
+                ]
+              },
+              "properties": {
+                "candidateCount": {
+                  "minimum": 1
+                },
+                "scoredCount": {
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        ]
       }
     }
   },
@@ -3911,7 +4196,7 @@
           "collections"
         ],
         "operationId": "queryCollection",
-        "description": "Search a collection with a query and return the most similar documents.",
+        "description": "Search a collection with a query and return the most similar documents. Optionally rerank globally merged candidates with a server-managed model before the final size limit. Rerank is configured per query; omitted/null preserves existing behavior. See the Managed reranking guide for candidate depth, score meaning, and failure policy.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3937,7 +4222,7 @@
                     "minimum": 0,
                     "maximum": 100,
                     "default": 10,
-                    "description": "Number of documents to return, from 0 to 100. Defaults to 10 when omitted or null. Zero requires at least one facet; facet counts cover all matching documents regardless of this size."
+                    "description": "Number of documents to return, from 0 to 100. Defaults to 10 when omitted or null. Zero requires at least one facet; facet counts cover all matching documents regardless of this size. Rerank requires a positive size; this remains the final returned-document limit, distinct from candidateSize and each knn.k."
                   },
                   "query": {
                     "type": [
@@ -3954,8 +4239,11 @@
                     "$ref": "#/components/schemas/IncludeVectors"
                   },
                   "sort": {
-                    "type": "array",
-                    "description": "List of field name, sort direction pairs.",
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "description": "List of field name, sort direction pairs. Omitted or null means no explicit sort. A non-null sort list, including an empty list, cannot be combined with rerank.",
                     "items": {
                       "type": "object",
                       "additionalProperties": true
@@ -3984,6 +4272,9 @@
                       "$ref": "#/components/schemas/FacetRequest"
                     },
                     "description": "Exact document counts by indexed keyword value. Keys are keyword field names, including dotted paths. Applies all query and partition filters and the selected ref. Requires a collection created with facet support. Existing collections retain their previous read/write behavior and return 400 for facet requests; reindex into a new collection to use facets. At most 10,000 distinct (field, value) buckets and 262,144 UTF-8 value bytes across requested fields; exceeding either bound returns 400 instead of partial counts. Separate memory admission limits return 400 when one request exceeds its estimated budget, or 429 when concurrent requests temporarily exhaust a budget. Request fewer fields or partitions for memory-limit errors; retry temporary 429 errors with backoff."
+                  },
+                  "rerank": {
+                    "$ref": "#/components/schemas/RerankConfig"
                   }
                 },
                 "additionalProperties": false,
@@ -4031,6 +4322,39 @@
                         }
                       }
                     }
+                  },
+                  {
+                    "if": {
+                      "required": [
+                        "rerank"
+                      ],
+                      "properties": {
+                        "rerank": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "query"
+                      ],
+                      "properties": {
+                        "size": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1
+                        },
+                        "query": {
+                          "type": "object",
+                          "description": "Must contain a scoring retrieval query; filter-only queries are rejected by the server."
+                        },
+                        "sort": {
+                          "type": "null"
+                        }
+                      }
+                    }
                   }
                 ]
               },
@@ -4069,6 +4393,65 @@
                       }
                     }
                   }
+                },
+                "managedReranking": {
+                  "summary": "Managed reranking with default criteria and candidateSize=max(50, size)",
+                  "value": {
+                    "size": 2,
+                    "query": {
+                      "queryString": {
+                        "query": "restore collection",
+                        "defaultField": "body"
+                      }
+                    },
+                    "fields": {
+                      "include": [
+                        "id",
+                        "title"
+                      ]
+                    },
+                    "rerank": {
+                      "provider": "typesafe",
+                      "model": "jev-1.13.0",
+                      "queryText": "How do I restore a previous collection version?",
+                      "fields": [
+                        "title",
+                        "body"
+                      ]
+                    }
+                  }
+                },
+                "customReranking": {
+                  "summary": "Managed reranking with three ordered custom descriptions",
+                  "value": {
+                    "size": 2,
+                    "query": {
+                      "queryString": {
+                        "query": "restore collection",
+                        "defaultField": "body"
+                      }
+                    },
+                    "fields": {
+                      "include": [
+                        "id",
+                        "title"
+                      ]
+                    },
+                    "rerank": {
+                      "provider": "typesafe",
+                      "model": "jev-1.13.0",
+                      "queryText": "How do I restore a previous collection version?",
+                      "fields": [
+                        "title",
+                        "body"
+                      ],
+                      "criteria": [
+                        "Does not explain how to restore a collection version.",
+                        "Explains part of the restore process but leaves essential steps unclear.",
+                        "Provides the steps needed to restore the requested collection version."
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -4084,11 +4467,11 @@
                   "properties": {
                     "took": {
                       "type": "integer",
-                      "description": "Elapsed time in milliseconds."
+                      "description": "Complete request elapsed time in milliseconds, including reranking when requested."
                     },
                     "maxScore": {
                       "type": "number",
-                      "description": "Highest score among returned documents. Omitted when no returned document has a computed score."
+                      "description": "Maximum final score among returned documents. Applied reranking uses the final evaluation scores; fallback keeps search scores. Omitted for empty results or when no score is computed. Numeric zero is a valid maximum."
                     },
                     "total": {
                       "type": "integer",
@@ -4106,11 +4489,15 @@
                           },
                           "score": {
                             "type": "number",
-                            "description": "Document similarity score. Omitted when the query does not compute a score."
+                            "description": "Final sorting score. Applied reranking returns a double-precision evaluation score in [0,1], not a relevance probability. Without reranking or on fallback, this remains the original retrieval/fusion score and is not constrained to [0,1]. Omitted when the query does not compute a score. Numeric zero is valid; retain precision."
                           },
                           "doc": {
                             "type": "object",
                             "additionalProperties": true
+                          },
+                          "retrievalScore": {
+                            "type": "number",
+                            "description": "Original retrieval/fusion score, present only when reranking was applied. A sibling of score and doc, not a field inside doc. Omitted for legacy, skipped, and fallback results; preserve original precision."
                           }
                         },
                         "required": [
@@ -4125,7 +4512,7 @@
                     },
                     "docsUrl": {
                       "type": "string",
-                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field."
+                      "description": "Presigned download URL when isDocsInline is false. GET the complete URL without forwarding the LambdaDB API key. Returns a JSON array of result items, not an object with a docs field. Applied reranking preserves score and retrievalScore in each downloaded envelope; rerank metadata stays in the top-level response."
                     },
                     "facets": {
                       "type": "object",
@@ -4133,6 +4520,9 @@
                         "$ref": "#/components/schemas/FacetResult"
                       },
                       "description": "Present when facets were requested, including empty buckets for fields without matching values. Remains inline when documents are served through docsUrl. total remains the number of returned documents, not the facet population."
+                    },
+                    "rerank": {
+                      "$ref": "#/components/schemas/RerankResponse"
                     }
                   },
                   "required": [
@@ -4140,6 +4530,84 @@
                     "total",
                     "docs",
                     "isDocsInline"
+                  ],
+                  "allOf": [
+                    {
+                      "if": {
+                        "required": [
+                          "rerank"
+                        ],
+                        "properties": {
+                          "rerank": {
+                            "required": [
+                              "status"
+                            ],
+                            "properties": {
+                              "status": {
+                                "const": "applied"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "maxScore": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "docs": {
+                            "items": {
+                              "required": [
+                                "score",
+                                "retrievalScore"
+                              ],
+                              "properties": {
+                                "score": {
+                                  "minimum": 0,
+                                  "maximum": 1
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "if": {
+                        "required": [
+                          "rerank"
+                        ],
+                        "properties": {
+                          "rerank": {
+                            "required": [
+                              "status"
+                            ],
+                            "properties": {
+                              "status": {
+                                "enum": [
+                                  "skipped",
+                                  "fallback"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "docs": {
+                            "items": {
+                              "not": {
+                                "required": [
+                                  "retrievalScore"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
                   ]
                 },
                 "examples": {
@@ -4177,13 +4645,143 @@
                       ],
                       "isDocsInline": true
                     }
+                  },
+                  "managedReranking": {
+                    "summary": "Applied reranking preserves original search scores",
+                    "value": {
+                      "took": 195,
+                      "maxScore": 0.80000002,
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "articles",
+                          "score": 0.80000002,
+                          "retrievalScore": 3.2,
+                          "doc": {
+                            "id": "restore-guide",
+                            "title": "Restore a collection version"
+                          }
+                        },
+                        {
+                          "collection": "articles",
+                          "score": 0.3,
+                          "retrievalScore": 4.1,
+                          "doc": {
+                            "id": "overview",
+                            "title": "Collection overview"
+                          }
+                        }
+                      ],
+                      "isDocsInline": true,
+                      "rerank": {
+                        "status": "applied",
+                        "provider": "typesafe",
+                        "model": "jev-1.13.0",
+                        "candidateCount": 2,
+                        "scoredCount": 2,
+                        "took": 180,
+                        "criteriaVersion": "default-relevance-v1"
+                      }
+                    }
+                  },
+                  "customReranking": {
+                    "summary": "Custom evaluation includes a valid zero score",
+                    "value": {
+                      "took": 195,
+                      "maxScore": 1,
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "articles",
+                          "score": 1,
+                          "retrievalScore": 3.2,
+                          "doc": {
+                            "id": "restore-guide",
+                            "title": "Restore a collection version"
+                          }
+                        },
+                        {
+                          "collection": "articles",
+                          "score": 0,
+                          "retrievalScore": 4.1,
+                          "doc": {
+                            "id": "overview",
+                            "title": "Collection overview"
+                          }
+                        }
+                      ],
+                      "isDocsInline": true,
+                      "rerank": {
+                        "status": "applied",
+                        "provider": "typesafe",
+                        "model": "jev-1.13.0",
+                        "candidateCount": 2,
+                        "scoredCount": 2,
+                        "took": 180,
+                        "criteriaVersion": "custom"
+                      }
+                    }
+                  },
+                  "emptyReranking": {
+                    "summary": "No candidates; provider not called",
+                    "value": {
+                      "took": 3,
+                      "total": 0,
+                      "docs": [],
+                      "isDocsInline": true,
+                      "rerank": {
+                        "status": "skipped",
+                        "provider": "typesafe",
+                        "model": "jev-1.13.0",
+                        "candidateCount": 0,
+                        "scoredCount": 0,
+                        "took": 0,
+                        "reason": "noCandidates"
+                      }
+                    }
+                  },
+                  "rerankFallback": {
+                    "summary": "Whole-stage timeout fallback with unchanged search scores",
+                    "value": {
+                      "took": 2010,
+                      "maxScore": 4.1,
+                      "total": 2,
+                      "docs": [
+                        {
+                          "collection": "articles",
+                          "score": 4.1,
+                          "doc": {
+                            "id": "overview",
+                            "title": "Collection overview"
+                          }
+                        },
+                        {
+                          "collection": "articles",
+                          "score": 3.2,
+                          "doc": {
+                            "id": "restore-guide",
+                            "title": "Restore a collection version"
+                          }
+                        }
+                      ],
+                      "isDocsInline": true,
+                      "rerank": {
+                        "status": "fallback",
+                        "provider": "typesafe",
+                        "model": "jev-1.13.0",
+                        "candidateCount": 2,
+                        "scoredCount": 0,
+                        "took": 2000,
+                        "reason": "timeout"
+                      }
+                    }
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request, including invalid rerank provider/model, fields, criteria, size/candidateSize, sort combination, or query-less/filter-only reranking. Validation and disabled-model errors do not use returnOriginal.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4240,7 +4838,7 @@
             "$ref": "#/components/responses/PayloadTooLarge"
           },
           "429": {
-            "description": "Too many requests, the pending-write payload exceeds the consistent-read limit, or concurrent facet requests temporarily exhaust a memory budget.",
+            "description": "Too many requests, the pending-write payload exceeds the consistent-read limit, or concurrent facet requests temporarily exhaust a memory budget. Rerank provider-call admission limits also return 429 and do not use returnOriginal.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4291,6 +4889,42 @@
           },
           "504": {
             "$ref": "#/components/responses/GatewayTimeout"
+          },
+          "408": {
+            "description": "Rerank provider timeout with the default error policy. No partial results are returned. Overall query deadline and cancellation are separate errors, not fallback opportunities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Project inference quota exceeded. Rerank returnOriginal does not bypass inference quota errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            }
           }
         },
         "summary": "Query a Collection"

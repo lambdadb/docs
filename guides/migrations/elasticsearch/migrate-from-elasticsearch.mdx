@@ -9,7 +9,7 @@ Use the LambdaDB Migration CLI to migrate an Elasticsearch index into LambdaDB. 
 
 <Note>
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.6` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.7` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
 
 </Note>
 
@@ -24,7 +24,7 @@ Elasticsearch stores records as JSON documents inside indexes. Search behavior i
 | Index | Collection | Migrate one Elasticsearch index into one LambdaDB collection. |
 | `_id` | Document `id` | Copy Elasticsearch `_id` as a LambdaDB string document ID. |
 | `_source` fields | Document fields | Copy fields returned in `_source`. Fields removed from `_source`, or indexes with `_source` disabled, cannot be reconstructed by the default migration path. Nested objects are flattened into dot-path payload fields, then normalized for LambdaDB field names through the generated mapping. |
-| `text` field | `text` index | Generate a LambdaDB text index for searchable full-text fields. Review analyzer choices before cutover because Elasticsearch analyzers are not copied automatically. |
+| `text` field | `text` index | Generate a LambdaDB text index for searchable full-text fields. Preserve supported built-in field analyzers and index defaults. Custom or unsupported analyzer settings require explicit review; separate search analyzers are not translated. |
 | `keyword`, `constant_keyword`, `wildcard` | `keyword` index | Generate LambdaDB keyword indexes for exact filters, IDs, categories, tags, and sort keys. |
 | Numeric fields | `long` or `double` index | Map integer-like fields to `long` and floating-point fields to `double`. |
 | `date`, `date_nanos` | `datetime` index | Generate a LambdaDB datetime index. Review source values before writing because the CLI does not rewrite date formats. |
@@ -59,7 +59,7 @@ export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
 export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
 ```
 
-You can also pass Elasticsearch basic auth credentials with `--elasticsearch.username` and `--elasticsearch.password`.
+You can also pass Elasticsearch basic auth credentials with `--elasticsearch.username` and `--elasticsearch.password`. Version 0.1.7 requires read access to both `/_mapping` and `/_settings`; unreadable settings fail inventory instead of silently assuming `standard`.
 
 ## Step 2: Generate inventory and mapping
 
@@ -144,6 +144,27 @@ If you want to fetch vector fields explicitly instead of relying on mapping disc
 ```bash
 --elasticsearch.vector-fields embedding,title_embedding
 ```
+
+### Text analyzer presets
+
+For a source analyzer whose built-in name and default settings match a LambdaDB preset, explicitly set that name on the target `text` field. For example, the `english` default preset can be selected in the editable mapping:
+
+```yaml
+mapping:
+  payload:
+    indexConfigs:
+      title:
+        type: text
+        analyzers: [english]
+```
+
+Migration CLI 0.1.7 accepts and forwards all 49 [fixed presets](/guides/collections/index-types#supported-analyzers). Inventory preserves supported built-in field analyzers and resolves index defaults or named aliases that contain only a built-in `type`. Without a configured default, it leaves `analyzers` omitted so the target uses `["standard"]`; an explicit source `analyzer: default` also resolves to `standard`.
+
+Custom or unsupported source settings produce warnings and `unsupported:<source-name>` markers. These generated mappings fail validation until you choose an explicit supported target preset. Field `search_analyzer`, `search_quote_analyzer`, and index `default_search` settings are reported but not translated. Review warnings during inventory, migration, and dry-run before accepting matching behavior.
+
+Manual mappings preserve names exactly, including case, order, duplicates, and explicit empty arrays. Omitted/null `analyzers` uses the server default; `[]` remains empty. Use supported lowercase names and let validation report invalid names rather than relying on silent normalization or deduplication.
+
+LambdaDB exposes fixed presets, not Elasticsearch analyzer configuration objects. Do not silently discard source options such as custom stopwords, patterns, token filters, synonyms, or normalizers and treat the result as equivalent. Resolve unsupported settings explicitly before migration, then compare representative search results. The `keyword` analyzer is a preset for a `text` field, distinct from a `keyword` field type. `nepali`, `tamil`, and `telugu` are Lucene extensions, not common Elasticsearch/OpenSearch analyzer names.
 
 ## Step 4: Run a dry run
 

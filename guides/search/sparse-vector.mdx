@@ -19,7 +19,17 @@ You must provide precalculated token-weight pairs as your query vectors, where e
 | field       | The name of the vector field to search against | string | ✓        |
 | queryVector | Query vector as token-weight pairs             | object | ✓        |
 
+## Scoring and limits
+
+Sparse retrieval uses linear scoring over shared terms: each matching term contributes the stored document weight multiplied by the query weight, and the contributions are added. Terms present in only one vector contribute nothing. This is separate from BM25 text scoring and dense-vector cosine similarity; sparse weights do not need to sum to one or have unit length.
+
+Query vectors may contain at most 4,096 term-weight entries, with weights in the range 0–64. Keys must use the same token or index representation as the stored vectors; numeric index keys are strings in JSON. LambdaDB does not generate these vectors or translate between vocabularies. See [Query limits](/guides/search/limits).
+
+The returned retrieval `score` is not a relevance probability and is not constrained to [0,1]. Hybrid fusion normalizes the retrieval scores, while applied managed reranking replaces the final `score` and retains the sparse or fused value in `retrievalScore`.
+
 ## Examples
+
+The examples are query objects. Place them under the request body's top-level `query`, alongside `size` and other [search options](/guides/search/search-overview). Sparse retrieval has no `knn.k` parameter; see [reranking candidate counts](/guides/search/managed-reranking#candidate-counts) when adding managed reranking.
 
 ### Token-based sparse vector query
 

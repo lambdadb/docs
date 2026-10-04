@@ -248,13 +248,13 @@ This hypothetical sizing example illustrates billing, not measured capacity or a
 | Cost component | Calculation | Illustrative monthly charge |
 |:---------------|:------------|:----------------------------|
 | Fixed fees for all 100,000 collections | No per-collection fixed fee | $0 |
-| Stored data across all collections | 100,000 × 10 MB = 1,000 GB; 1,000 × $0.33 | $330 |
-| Queries to the 1,000 active collections | 1,000 × 100 × 30 = 3,000,000 requests; 3,000,000 × 1 GB = 3 PB; 3 × $5 | $15 |
-| Storage and read subtotal | $330 + $15 | **$345** |
+| Stored data across all collections | 100,000 × 10 MB = 1,000 GB; 1,000 × \$0.33 | \$330 |
+| Queries to the 1,000 active collections | 1,000 × 100 × 30 = 3,000,000 requests; 3,000,000 × 1 GB = 3 PB; 3 × \$5 | \$15 |
+| Storage and read subtotal | \$330 + \$15 | **\$345** |
 
 The inactive collections contribute 990 GB of the stored data, but no read usage or fixed collection fee. If all collections become inactive while the same data is retained, read usage falls to zero and the illustrated storage charge remains $330. Removing the data is a different lifecycle decision from simply not querying it.
 
-Rates were checked against [public pricing](https://lambdadb.ai/pricing) on September 18, 2026. Returned query data and retention storage for deleted data are [temporarily free](/guides/costs/understanding-costs#data-returned-and-retention-storage); the published rates after the promotion are $0.05/GB returned and $0.10/GB-month of retention storage, with advance notice before billing starts. Include those meters when forecasting beyond the promotion. Initial loading, subsequent writes, PostgreSQL, synchronization infrastructure, and network-provider charges are outside this subtotal.
+See [public pricing](https://lambdadb.ai/pricing) for usage rates. Returned query data and retention storage for deleted data are [temporarily free](/guides/costs/understanding-costs#data-returned-and-retention-storage); the published rates after the promotion are \$0.05/GB returned and \$0.10/GB-month of retention storage, with advance notice before billing starts. Include those meters when forecasting beyond the promotion. Initial loading, subsequent writes, PostgreSQL, synchronization infrastructure, and network-provider charges are outside this subtotal.
 
 Before switching production traffic, validate the mapping and representative queries, exercise update and delete propagation, and run shadow searches through the application. Keep a tested route back to PostgreSQL search until correctness, quality, latency, and total cost meet your requirements. These checks establish the benefit for your workload; there is no universal row-count threshold for moving search out of PostgreSQL.
 

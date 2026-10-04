@@ -8,8 +8,14 @@ description: Review LambdaDB query constraints, large-result downloads, executio
 | Max `size` value    | 100    |
 | Max execution time  | 30s    |
 | Max boolean clauses | 4,096  |
-| Max non-zero values for sparse vector query | 4,096  |
+| Max term-weight entries for sparse vector query | 4,096  |
 | Value range for sparse vector query | 0-64  |
+
+## Reranking limits
+
+[Managed reranking](/guides/search/managed-reranking#request-parameters) requires a positive `size`, 1–8 unique stored scalar text paths, and `size <= candidateSize <= 100`. Omitted or null `candidateSize` uses `max(50, size)`.
+
+Custom criteria contain 2–10 distinct nonblank descriptions, limited to 2 KiB UTF-8 each and 8 KiB total. Query text is limited to 8 KiB, rendered text to 16 KiB per candidate, and combined query/candidate/criteria input to 256 KiB. Inputs over these limits are rejected rather than truncated. Model context limits also apply; see the guide for query restrictions and failure handling.
 
 ## Facet limits
 

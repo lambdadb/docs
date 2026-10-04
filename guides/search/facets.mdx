@@ -6,7 +6,7 @@ description: Count matching documents by keyword value to build category, brand,
 Facets return document counts for values in `keyword` fields, including arrays and nested fields addressed by dotted paths. Use them to show filter choices such as category or brand counts alongside search results.
 
 <Warning>
-Facets and keyword array sorting require a server and SDK build containing this feature and the new keyword index format. This guide does not establish availability in an existing deployment. Review the [index requirements](#index-requirements) before using existing data.
+Facets and keyword array sorting require the new keyword index format. Review the [index requirements](#index-requirements) before using existing data.
 </Warning>
 
 ## Request facets
@@ -54,6 +54,8 @@ This **facet-only** request uses `"size": 0` to return no documents. Set `size` 
 
 Use facets with `queryString`, `bool` combinations of supported queries, or no query. Vector, sparse vector, and hybrid queries are rejected when facets are requested. Numeric or date range facets, nested bucket aggregations, and excluding a facet's own filter are not supported.
 
+Adding [managed reranking](/guides/search/managed-reranking) preserves these restrictions. For supported scoring lexical queries with positive `size`, counts still cover all matches and are unchanged by reranking or fallback; they are not counts of the reranked candidate pool. Facet-only `size: 0` requests cannot rerank.
+
 The existing `partitionFilter`, `ref`, and `consistentRead` rules apply. Counts use the selected Branch, Tag, or Alias and the same pending-write visibility as document results. `consistentRead: true` requires a direct Branch read (or the default main Branch when `ref` is omitted); Tags and Aliases reject it. Facets do not introduce a stronger global snapshot guarantee.
 
 ## Limits and cost
@@ -74,7 +76,7 @@ Existing collections retain their previous indexing and query behavior, includin
 
 No reindexing is required to keep using existing functionality. To use facets or keyword array sorting with existing data:
 
-1. Use a deployment containing the facet implementation and matching SDK support, or call the REST API directly.
+1. Use an SDK version that supports facets, or call the REST API directly.
 2. Create a new collection with the required keyword fields.
 3. Reinsert the complete source documents and wait for indexing to finish.
 4. Verify the counts and [array sorting](/guides/search/sort#keyword-array-sorting), then switch application reads to the new collection.

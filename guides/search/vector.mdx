@@ -12,11 +12,12 @@ A vector query finds the k nearest vectors to a query vector or query text, as m
 | field         | The name of the vector field to search against      | string   | ✓        |
 | queryVector   | Query vector for unmanaged vector fields            | float[]  | Conditionally required |
 | queryText     | Query text for managed embedding vector fields      | string   | Conditionally required |
-| k             | Number of nearest neighbors to return as top `docs` | integer  | ✓        |
+| k             | Number of candidates requested from this vector retrieval leg; top-level `size` limits final returned documents | integer  | ✓        |
 | filter        | Query to filter the documents that can match        | object   |          |
 
 Provide exactly one of `queryVector` or `queryText`.
 
+The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [managed reranking](/guides/search/managed-reranking#candidate-counts), `candidateSize` limits the merged rerank pool and does not automatically increase `k`.
 
 ## Examples
 
