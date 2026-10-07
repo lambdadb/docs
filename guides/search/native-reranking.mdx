@@ -90,7 +90,7 @@ These three controls serve different purposes:
 |:--------|:--------|
 | `size` | Final number of documents returned; must be positive with reranking |
 | `knn.k` | Candidates requested from that particular dense-vector retrieval leg |
-| `rerank.candidateSize` | Upper bound on the merged, deduplicated rerank pool before the final `size` limit |
+| `rerank.candidateSize` | Retrieval planning depth and upper bound on the merged, deduplicated rerank pool before the final `size` limit; defaults to `max(50, size)`, with `size <= candidateSize <= 100` |
 
 For example, a vector-only query with `size: 10`, `knn.k: 20`, and `rerank.candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
 

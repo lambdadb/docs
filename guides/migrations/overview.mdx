@@ -121,7 +121,7 @@ A completed checkpoint skips re-reading and uploading documents on rerun. Use `-
 
 ## Generate embeddings from migrated text
 
-Migration CLI 0.1.8 supports explicit [native embedding configuration](/guides/collections/native-embeddings) under `payload.indexConfigs`. Add a separate generated field to your reviewed JSON or YAML mapping:
+Migration CLI 0.1.8 supports explicit [native embedding configuration](/guides/collections/native-embeddings) under `payload.indexConfigs`. Merge the following settings into the `payload` section of your generated JSON or YAML mapping, preserving its other source, target, and vector settings. This example renames source text `source_body` to `body` and adds a separate generated vector field:
 
 ```yaml
 payload:
