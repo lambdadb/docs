@@ -54,7 +54,7 @@ This **facet-only** request uses `"size": 0` to return no documents. Set `size` 
 
 Use facets with `queryString`, `bool` combinations of supported queries, or no query. Vector, sparse vector, and hybrid queries are rejected when facets are requested. Numeric or date range facets, nested bucket aggregations, and excluding a facet's own filter are not supported.
 
-Adding [managed reranking](/guides/search/managed-reranking) preserves these restrictions. For supported scoring lexical queries with positive `size`, counts still cover all matches and are unchanged by reranking or fallback; they are not counts of the reranked candidate pool. Facet-only `size: 0` requests cannot rerank.
+Adding [native reranking](/guides/search/native-reranking) preserves these restrictions. For supported scoring lexical queries with positive `size`, counts still cover all matches and are unchanged by reranking or fallback; they are not counts of the reranked candidate pool. Facet-only `size: 0` requests cannot rerank.
 
 The existing `partitionFilter`, `ref`, and `consistentRead` rules apply. Counts use the selected Branch, Tag, or Alias and the same pending-write visibility as document results. `consistentRead: true` requires a direct Branch read (or the default main Branch when `ref` is omitted); Tags and Aliases reject it. Facets do not introduce a stronger global snapshot guarantee.
 

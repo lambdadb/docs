@@ -1,17 +1,13 @@
 ---
 title: Hybrid query
-description: Combine vector and lexical search in LambdaDB for better relevance. Choose from RRF, Min-Max, or L2 norm rescoring to normalize hybrid results.
+description: Combine vector and lexical search with RRF, Min-Max, L2 norm, or experimental Bayesian fusion, with explicit candidate budgets and optional reranking.
 ---
 
 A hybrid query combines vector search with lexical search to achieve better relevance by leveraging both semantic similarity and keyword matching.
 
 Full-text search and vector search use different scoring mechanisms: text relevance depends on term and document frequency, while vector relevance scores derive from the configured similarity metric. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
 
-LambdaDB supports three rescoring methods to combine results from different query types: `rrf` (Reciprocal Rank Fusion), `mm` (min-max), and `l2` (l2_norm).
-
-- **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods.
-- **MinMax** normalization scales scores to a 0-1 range before combining.
-- **L2 norm** divides each retrieval path's scores by their L2 norm (the square root of the sum of squared scores) before combining them.
+LambdaDB supports `rrf` (Reciprocal Rank Fusion), `mm` (min-max), `l2` (L2 norm), and opt-in experimental `bayesian` fusion to combine results from different query types.
 
 <Info>
 
@@ -19,7 +15,7 @@ LambdaDB supports three rescoring methods to combine results from different quer
 
 </Info>
 
-With [managed reranking](/guides/search/managed-reranking), fusion runs first. Applied reranking returns its evaluation value as `score` and the fused value as `retrievalScore`. Fallback retains the fused scores and order from the expanded candidate pool.
+With [native reranking](/guides/search/native-reranking), fusion runs first. Applied reranking returns its evaluation value as `score` and the fused value as `retrievalScore`. Fallback retains the fused scores and order from the expanded candidate pool.
 
 ## Parameters
 
@@ -30,6 +26,7 @@ With [managed reranking](/guides/search/managed-reranking), fusion runs first. A
 | rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
 | mm     | Min-Max normalization scaling                         | Yes           |
 | l2     | L2 normalization of each retrieval path's scores       | Yes           |
+| bayesian | Experimental score fusion with automatic calibration on retained candidates | No |
 
 ### How scores are combined
 
@@ -40,10 +37,13 @@ Fusion uses the candidates retrieved by each of the two query paths. A document 
 | `rrf` | Add `1 / (60 + rank)` from each path, then divide by `2 / 61`. Ranks start at 1; equal retrieval scores share a rank, and the next distinct score uses its position in the list. The rank constant 60 is fixed and is unrelated to `knn.k`. |
 | `mm` | Normalize each path's scores with `(score - min) / (max - min)`, then add the normalized values multiplied by each path's `boost`. A path with one candidate or effectively equal scores assigns each candidate a normalized value of 1. |
 | `l2` | Normalize each path's scores with `score / sqrt(sum(score[j] * score[j]))`, then add the normalized values multiplied by each path's `boost`. An all-zero path contributes zero. |
+| `bayesian` | Center each path's scores on its median and scale by its inverse population standard deviation to get `z`. Compute `p = sigmoid(z)`, clamped to `[1e-7, 1 - 1e-7]`, then each present document contributes `c = -ln(1 - p)`. The final score is `sigmoid((c1 + c2) / sqrt(2))`. Missing documents contribute zero; both paths remain in the denominator even if one is empty. |
 
 For example, L2 normalization changes path scores `[3, 4]` to `[0.6, 0.8]`. If a document has normalized scores `0.8` and `0.4` on the two paths and boosts `0.7` and `0.3`, its fused score is `0.7 * 0.8 + 0.3 * 0.4 = 0.68`. Omitting both boosts gives each path a weight of `0.5`.
 
-These boosts are retrieval-fusion weights. They do not change the fixed or custom criteria values used by managed reranking, which evaluates the merged candidates afterward.
+For Bayesian fusion, `sigmoid(x) = 1 / (1 + exp(-x))` and `ln` is the natural logarithm. Calibration uses each path's globally merged, retained candidates. When the population standard deviation is at most `1e-12`, the scale is 1 instead of its inverse. For example, a document at the median of both paths has `p = 0.5` on each, giving a fused score of about `0.727`. If it appears at the median of only one path, its score is about `0.620`. These are heuristic scores, not relevance probabilities. The [candidate budget](#bayesian-hybrid-query) determines which scores enter calibration.
+
+The `mm` and `l2` boosts are retrieval-fusion weights. They do not change the fixed or custom criteria values used by native reranking, which evaluates the merged candidates afterward.
 
 ### Query object parameters
 
@@ -52,7 +52,7 @@ Each object within the rescoring method array contains a query-type key directly
 | Parameter | Description                                      | Type   | Required | Default |
 |:----------|:-------------------------------------------------|:-------|:---------|:--------|
 | `queryString`, `knn`, `sparseVector`, or `bool` | One query-type key; `bool` contains an array of clauses | object or array | ✓ | |
-| boost     | Score multiplier for relevance                   | float  |          | 0.5     |
+| boost     | Score multiplier for `mm` and `l2` only            | float  |          | 0.5     |
 
 <Note>
 
@@ -73,92 +73,151 @@ Each object within the rescoring method array contains a query-type key directly
 
 ## Examples
 
+Each JSON example below is a complete [query request body](/reference/api/endpoint/document-query). Field names must match your collection schema. The raw-vector examples use illustrative three-dimensional vectors; supply vectors with the dimensions configured for your fields.
+
+### Bayesian hybrid query
+
+This complete request searches the text and native embedding vector fields from the [native embedding example](/guides/collections/native-embeddings#collection-schema):
+
+```json
+{
+  "size": 10,
+  "candidateSize": 30,
+  "query": {
+    "bayesian": [
+      { "queryString": { "query": "refund policy", "defaultField": "body" } },
+      { "knn": { "field": "bodyEmbedding", "queryText": "What is the refund policy?", "k": 30 } }
+    ]
+  }
+}
+```
+
+Use exactly two unboosted subqueries. Bayesian fusion is top-level only: nested Bayesian, RRF, Min-Max, or L2 fusion is unsupported. Explicit `boost`, including `1`, is rejected on either child and its Boolean descendants. Facets are unsupported with hybrid queries.
+
+| Setting | Without reranking | With reranking |
+|:--------|:------------------|:---------------|
+| Candidate budget | Required top-level `candidateSize`; `1 <= size <= candidateSize <= 100` | Omit top-level `candidateSize`; use `rerank.candidateSize`, which defaults to `max(50, size)` and must satisfy `1 <= size <= rerank.candidateSize <= 100` |
+| Final results | `size` | `size` |
+| Dense vector depth | Each `knn.k` remains independent | Each `knn.k` remains independent |
+
+The candidate budget controls retrieval and calibration depth for each signal; documents outside both retained lists cannot be recovered. With the same budget, query, filters, `knn.k`, and unchanged data, changing only `size` preserves the ranking prefix. Changing the candidate budget can change calibration and ranking. Scores are heuristic fusion scores, not relevance probabilities.
+
+Do not send top-level `candidateSize` with ordinary text/KNN or RRF/Min-Max/L2 requests.
+
+To rerank the Bayesian example, move the budget into `rerank.candidateSize` and specify the evaluation query and stored text fields:
+
+```json
+{
+  "size": 10,
+  "query": {
+    "bayesian": [
+      { "queryString": { "query": "refund policy", "defaultField": "body" } },
+      { "knn": { "field": "bodyEmbedding", "queryText": "What is the refund policy?", "k": 30 } }
+    ]
+  },
+  "rerank": {
+    "provider": "typesafe",
+    "model": "jev-1.13.0",
+    "queryText": "What is the refund policy?",
+    "fields": ["body"],
+    "candidateSize": 30
+  }
+}
+```
+
+Applied results expose the Bayesian score as `retrievalScore` and the final evaluation as `score`. See [Native reranking](/guides/search/native-reranking) for criteria and failure handling.
+
+Use the recommended releases in [SDK usage](/reference/sdk/introduction#supported-sdk-versions), [CLI queries](/guides/get-started/use-with-cli#bayesian-hybrid-search), or [MCP queries](/guides/get-started/use-with-mcp#bayesian-hybrid-search).
+
 ### L2-norm hybrid query
 
 ```json
 {
-  "l2": [
-    {
-      "queryString": {
-        "query": "content:LambdaDB"
-      },
-      "boost": 0.7
-    },
-    {
-      "knn": {
-        "filter": {
-          "queryString": {
-            "query": "\"https://lambdadb.ai\"",
-            "defaultField": "metadata.url"
-          }
+  "size": 5,
+  "query": {
+    "l2": [
+      {
+        "queryString": {
+          "query": "content:LambdaDB"
         },
-        "field": "text_embedding",
-        "queryVector": [0.1, 0.2, 0.3],
-        "k": 5
+        "boost": 0.7
       },
-      "boost": 0.3
-    }
-  ]
+      {
+        "knn": {
+          "filter": {
+            "queryString": {
+              "query": "\"https://lambdadb.ai\"",
+              "defaultField": "metadata.url"
+            }
+          },
+          "field": "text_embedding",
+          "queryVector": [0.1, 0.2, 0.3],
+          "k": 5
+        },
+        "boost": 0.3
+      }
+    ]
+  }
 }
 ```
 
-This example combines:
-- A `queryString` query with 0.7 boost weight.
-- A `knn` vector query with pre-filtering and 0.3 boost weight.
-- Uses L2-norm rescoring to merge the results.
+This request combines text search with pre-filtered vector search using L2 normalization and weights of 0.7 and 0.3, then returns up to five documents.
 
 ### MinMax hybrid query with sparse vector
 
 ```json
 {
-  "mm": [
-    {
-      "sparseVector": {
-        "field": "sparse_embedding",
-        "queryVector": {
-          "machine": 0.8,
-          "learning": 0.6,
-          "AI": 0.4
-        }
+  "size": 10,
+  "query": {
+    "mm": [
+      {
+        "sparseVector": {
+          "field": "sparse_embedding",
+          "queryVector": {
+            "machine": 0.8,
+            "learning": 0.6,
+            "AI": 0.4
+          }
+        },
+        "boost": 0.6
       },
-      "boost": 0.6
-    },
-    {
-      "knn": {
-        "field": "dense_embedding",
-        "queryVector": [0.1, 0.2, 0.3],
-        "k": 10
-      },
-      "boost": 0.4
-    }
-  ]
+      {
+        "knn": {
+          "field": "dense_embedding",
+          "queryVector": [0.1, 0.2, 0.3],
+          "k": 10
+        },
+        "boost": 0.4
+      }
+    ]
+  }
 }
 ```
 
-This example combines:
-- A `sparseVector` query with 0.6 boost weight.
-- A `knn` dense vector query with 0.4 boost weight.
-- Uses MinMax normalization to merge the results.
+This request combines sparse and dense vector search using Min-Max normalization and weights of 0.6 and 0.4, then returns up to ten documents.
 
 ### RRF hybrid query
 
 ```json
 {
-  "rrf": [
-    {
-      "queryString": {
-        "query": "machine learning",
-        "defaultField": "content"
+  "size": 10,
+  "query": {
+    "rrf": [
+      {
+        "queryString": {
+          "query": "machine learning",
+          "defaultField": "content"
+        }
+      },
+      {
+        "knn": {
+          "field": "content_embedding",
+          "queryVector": [0.1, 0.2, 0.3],
+          "k": 10
+        }
       }
-    },
-    {
-      "knn": {
-        "field": "content_embedding",
-        "queryVector": [0.1, 0.2, 0.3],
-        "k": 10
-      }
-    }
-  ]
+    ]
+  }
 }
 ```
 

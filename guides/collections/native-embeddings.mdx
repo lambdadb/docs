@@ -1,0 +1,119 @@
+---
+title: Native embeddings
+description: Configure native embedding vector fields in LambdaDB, including supported providers, supported models, dimension rules, and query behavior.
+---
+
+Native embeddings let LambdaDB generate vector values from a source text field and store them in a `vector` field.
+
+Choose the provider and model in the field's `embedding` configuration. LambdaDB handles:
+
+- provider credentials
+- vector generation during document writes
+- query embedding generation for vector search
+
+Native embedding generation consumes **inference usage**. Inference usage is measured in LIU (LambdaDB Inference Unit). See [Understanding costs](/guides/costs/understanding-costs#inference-usage).
+
+## Supported providers
+
+LambdaDB currently supports the following embedding provider:
+
+| Provider | Status |
+|:---------|:-------|
+| `openai` | Supported |
+
+## Supported models
+
+The following OpenAI embedding models are currently supported for native embedding vector fields.
+
+| Model | Default dimensions | Dimensions parameter | Similarity |
+|:------|:-------------------|:---------------------|:-----------|
+| `text-embedding-3-small` | `1536` | Optional, from `1` to `1536` | `cosine` |
+| `text-embedding-3-large` | `3072` | Optional, from `1` to `3072` | `cosine` |
+| `text-embedding-ada-002` | `1536` | Fixed at `1536` | `cosine` |
+
+## Collection schema
+
+Define a vector field with an `embedding` block to let LambdaDB generate its vectors. This native configuration does not require the legacy `managedEmbedding` flag.
+
+```json
+{
+  "indexConfigs": {
+    "body": {
+      "type": "text",
+      "analyzers": ["english"]
+    },
+    "bodyEmbedding": {
+      "type": "vector",
+      "embedding": {
+        "provider": "openai",
+        "model": "text-embedding-3-small",
+        "sourceField": "body"
+      }
+    }
+  }
+}
+```
+
+## Schema rules
+
+Use the recommended [SDK versions](/reference/sdk/introduction#supported-sdk-versions), [CLI](/guides/get-started/use-with-cli#install), [MCP server](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI](/guides/migrations/overview#generate-embeddings-from-migrated-text) for native configuration.
+
+Legacy `managedEmbedding: true` with `embedding` remains supported and is required by older servers. Collection responses still include the normalized `managedEmbedding: true` flag. Omitting the flag when resubmitting an enabled field does not disable embeddings or migrate stored schemas; explicit `managedEmbedding: false` with `embedding` is invalid. Without either `embedding` or the flag, the field uses caller-provided vectors.
+
+- `embedding.provider` is required
+- `embedding.model` is required
+- `embedding.sourceField` is required
+- `embedding.sourceField` must reference a `text` field in the same collection
+- native embedding vector fields must not use top-level `dimensions`
+- native embedding vector fields must not use top-level `similarity`
+- set optional `dimensions` and `similarity` inside `embedding`; omitted values use the model defaults
+- LambdaDB resolves and stores the effective `embedding.dimensions` and `embedding.similarity`
+
+## Write behavior
+
+For native embedding vector fields, send the source text field and let LambdaDB generate the vector value.
+
+Do not send direct vector values for native embedding fields in:
+
+- [upsert](/guides/documents/upsert-data)
+- [update](/guides/documents/update-data)
+
+Example upsert payload:
+
+```json
+{
+  "docs": [
+    {
+      "id": "doc-1",
+      "body": "Refunds are available within 7 days of purchase."
+    }
+  ]
+}
+```
+
+## Query behavior
+
+For native embedding vector fields, use `knn.queryText` instead of `knn.queryVector`.
+
+```json
+{
+  "query": {
+    "knn": {
+      "field": "bodyEmbedding",
+      "queryText": "refund policy",
+      "k": 10
+    }
+  }
+}
+```
+
+For full query examples, see [Vector query](/guides/search/vector).
+
+## Bulk upsert
+
+`bulk upsert` is not supported for collections that contain native embedding vector fields.
+
+Use the regular document write flow instead:
+
+- [Upsert data](/guides/documents/upsert-data)
+- [Update data](/guides/documents/update-data)

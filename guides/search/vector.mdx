@@ -10,14 +10,14 @@ A vector query finds the k nearest vectors to a query vector or query text, as m
 | Parameter     | Description                                         | Type     | Required |
 |:------------- |:--------------------------------------------------- |:-------  |:-------- |
 | field         | The name of the vector field to search against      | string   | ✓        |
-| queryVector   | Query vector for unmanaged vector fields            | float[]  | Conditionally required |
-| queryText     | Query text for managed embedding vector fields      | string   | Conditionally required |
+| queryVector   | Query vector for vector fields with caller-provided values            | float[]  | Conditionally required |
+| queryText     | Query text for native embedding vector fields      | string   | Conditionally required |
 | k             | Number of candidates requested from this vector retrieval leg; top-level `size` limits final returned documents | integer  | ✓        |
 | filter        | Query to filter the documents that can match        | object   |          |
 
 Provide exactly one of `queryVector` or `queryText`.
 
-The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [managed reranking](/guides/search/managed-reranking#candidate-counts), `candidateSize` limits the merged rerank pool and does not automatically increase `k`.
+The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [native reranking](/guides/search/native-reranking#candidate-counts), `rerank.candidateSize` limits the merged rerank pool and does not automatically increase `k`.
 
 ## Examples
 
@@ -44,11 +44,13 @@ The JSON examples below are query objects: place them under the request body's `
 }
 ```
 
-### Managed embedding vector query
+<a id="managed-embedding-vector-query" />
 
-Use `queryText` when the target field is a managed embedding vector field.
+### Native embedding vector query
 
-Supported providers and models are listed in [Managed embeddings](/guides/collections/managed-embeddings).
+Use `queryText` when the target field is a native embedding vector field.
+
+Supported providers and models are listed in [Native embeddings](/guides/collections/native-embeddings).
 
 ```json
 {
@@ -141,6 +143,6 @@ An example vector query with a filter for better performance and relevance:
 
 <Note>
 
-For managed embedding vector fields, `queryVector` is not supported. Query the field with `knn.queryText`, and let LambdaDB generate the query embedding with the field's configured embedding model.
+For native embedding vector fields, `queryVector` is not supported. Query the field with `knn.queryText`, and let LambdaDB generate the query embedding with the field's configured embedding model.
 
 </Note>

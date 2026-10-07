@@ -25,9 +25,9 @@ def validator(schema):
     return Draft202012Validator({"components": SPEC["components"], **schema})
 
 
-class ManagedRerankingContractTest(unittest.TestCase):
+class NativeRerankingContractTest(unittest.TestCase):
     def setUp(self):
-        self.request = copy.deepcopy(REQUEST["examples"]["managedReranking"]["value"])
+        self.request = copy.deepcopy(REQUEST["examples"]["nativeReranking"]["value"])
         self.response = copy.deepcopy(RESPONSE["examples"]["customReranking"]["value"])
         self.requests = validator(REQUEST["schema"])
         self.responses = validator(RESPONSE["schema"])
@@ -48,18 +48,18 @@ class ManagedRerankingContractTest(unittest.TestCase):
                     self.assertEqual(
                         body["rerank"]["candidateCount"], body["rerank"]["scoredCount"]
                     )
-        guide = (ROOT / "guides/search/managed-reranking.mdx").read_text()
+        guide = (ROOT / "guides/search/native-reranking.mdx").read_text()
         blocks = [
             json.loads(value)
             for value in re.findall(r"```json\n(.*?)\n```", guide, re.DOTALL)
         ]
         expected = [
             REQUEST["examples"][name]["value"]
-            for name in ("managedReranking", "customReranking")
+            for name in ("nativeReranking", "customReranking")
         ] + [
             RESPONSE["examples"][name]["value"]
             for name in (
-                "managedReranking",
+                "nativeReranking",
                 "customReranking",
                 "emptyReranking",
                 "rerankFallback",

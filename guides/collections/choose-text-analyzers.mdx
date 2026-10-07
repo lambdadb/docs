@@ -148,20 +148,20 @@ For the underlying analysis behavior, see Lucene's [SmartChinese analyzer](https
 
 ## SDK compatibility
 
-The published releases below accept all 49 fixed names in the [supported analyzer reference](/guides/collections/index-types#supported-analyzers), including the 33 additions to the earlier 16-name set:
+These recommended stable releases accept all 49 fixed names in the [supported analyzer reference](/guides/collections/index-types#supported-analyzers), including the 33 additions to the earlier 16-name set:
 
-| Client or tool | Release supporting all 49 presets |
+| Client or tool | Recommended release |
 |:---------------|:----------------------------------|
-| Python SDK | [0.11.0](https://pypi.org/project/lambdadb/0.11.0/) |
-| JavaScript/TypeScript SDK | [0.7.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.7.0) |
-| Go SDK | [0.6.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.6.0) |
-| LambdaDB CLI | [0.1.2](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) |
-| LambdaDB MCP server | [0.1.2](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) |
-| Migration CLI | [0.1.7](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7) |
+| Python SDK | [0.12.1](https://pypi.org/project/lambdadb/0.12.1/) |
+| JavaScript/TypeScript SDK | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) |
+| Go SDK | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) |
+| LambdaDB CLI | [0.1.4](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) |
+| LambdaDB MCP server | [0.1.4](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) |
+| Migration CLI | [0.1.8](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.8) |
 
-Update the specific client or tool you use. Updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI. Follow the [CLI installation](/guides/get-started/use-with-cli#install), [MCP setup](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI installation](/guides/migrations/overview#install-the-cli) instructions. MCP collection creation also requires [write tools](/guides/get-started/use-with-mcp#optional-enable-write-tools) to be enabled.
+For current SDK versions, see [Supported SDK versions](/reference/sdk/introduction#supported-sdk-versions). Update the specific client or tool you use. Updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI. Follow the [CLI installation](/guides/get-started/use-with-cli#install), [MCP setup](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI installation](/guides/migrations/overview#install-the-cli) instructions. MCP collection creation also requires [write tools](/guides/get-started/use-with-mcp#optional-enable-write-tools) to be enabled.
 
-Python SDK 0.11.0 requires Python 3.10–3.13. Python 0.10.0, TypeScript 0.6.0, Go 0.5.0, CLI 0.1.1, and MCP 0.1.1 support the earlier 16 names. Python 0.9.0 and TypeScript 0.5.1 accept only `standard`, `english`, `korean`, and `japanese` in their analyzer models. If you cannot upgrade yet, use the REST request above with your chosen analyzer list.
+Older SDKs may reject newer analyzer names. Upgrade to a recommended release or use the REST request above with your chosen analyzer list. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
 
 ## Changing an existing field
 
