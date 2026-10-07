@@ -1,13 +1,13 @@
 ---
 title: Hybrid query
-description: Combine vector and lexical search with RRF, Min-Max, L2 norm, or experimental Bayesian fusion, with explicit candidate budgets and optional reranking.
+description: Combine vector and lexical search with RRF, Min-Max, L2 norm, or Bayesian fusion, with explicit candidate budgets and optional reranking.
 ---
 
 A hybrid query combines vector search with lexical search to achieve better relevance by leveraging both semantic similarity and keyword matching.
 
 Full-text search and vector search use different scoring mechanisms: text relevance depends on term and document frequency, while vector relevance scores derive from the configured similarity metric. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
 
-LambdaDB supports `rrf` (Reciprocal Rank Fusion), `mm` (min-max), `l2` (L2 norm), and opt-in experimental `bayesian` fusion to combine results from different query types.
+LambdaDB supports `rrf` (Reciprocal Rank Fusion), `mm` (min-max), `l2` (L2 norm), and `bayesian` fusion to combine results from different query types. Bayesian fusion is available to all users.
 
 <Info>
 
@@ -26,7 +26,7 @@ With [native reranking](/guides/search/native-reranking), fusion runs first. App
 | rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
 | mm     | Min-Max normalization scaling                         | Yes           |
 | l2     | L2 normalization of each retrieval path's scores       | Yes           |
-| bayesian | Experimental score fusion with automatic calibration on retained candidates | No |
+| bayesian | Score fusion with automatic calibration on retained candidates | No |
 
 ### How scores are combined
 

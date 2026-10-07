@@ -33,7 +33,7 @@ The following OpenAI embedding models are currently supported for native embeddi
 
 ## Collection schema
 
-Define a vector field with an `embedding` block to let LambdaDB generate its vectors. This native configuration does not require the legacy `managedEmbedding` flag.
+Define a vector field with an `embedding` block to let LambdaDB generate its vectors.
 
 ```json
 {
@@ -57,8 +57,6 @@ Define a vector field with an `embedding` block to let LambdaDB generate its vec
 ## Schema rules
 
 Use the recommended [SDK versions](/reference/sdk/introduction#supported-sdk-versions), [CLI](/guides/get-started/use-with-cli#install), [MCP server](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI](/guides/migrations/overview#generate-embeddings-from-migrated-text) for native configuration.
-
-Legacy `managedEmbedding: true` with `embedding` remains supported and is required by older servers. Collection responses still include the normalized `managedEmbedding: true` flag. Omitting the flag when resubmitting an enabled field does not disable embeddings or migrate stored schemas; explicit `managedEmbedding: false` with `embedding` is invalid. Without either `embedding` or the flag, the field uses caller-provided vectors.
 
 - `embedding.provider` is required
 - `embedding.model` is required

@@ -5,10 +5,6 @@ description: Count matching documents by keyword value to build category, brand,
 
 Facets return document counts for values in `keyword` fields, including arrays and nested fields addressed by dotted paths. Use them to show filter choices such as category or brand counts alongside search results.
 
-<Warning>
-Facets and keyword array sorting require the new keyword index format. Review the [index requirements](#index-requirements) before using existing data.
-</Warning>
-
 ## Request facets
 
 Add `facets` to the [query request](/reference/api/endpoint/document-query). Each key is an indexed keyword field name. Set its `size` to the maximum number of buckets to return (default 10, range 1–100).
@@ -70,15 +66,16 @@ Facets visit all matching documents, so broad queries may cost more than retriev
 
 ## Index requirements
 
-Collections created with facet support use a new index format for general keyword fields, both single values and arrays. The top-level document `id` remains a single string and retains its existing format; arrays are not allowed for `id`.
+Configure each facet field as a [keyword index](/guides/collections/index-types#keyword). Keyword fields accept single values or arrays. The top-level document `id` is always a single string; arrays are not allowed for `id`.
 
-Existing collections retain their previous indexing and query behavior, including writes, scalar keyword sorting, and reads through existing Tags and Aliases. Facet requests on these collections or refs return HTTP 400 with a reindexing message. Keyword arrays keep their previous sorting behavior (no indexed sort value) until the data is rebuilt in a new collection.
+## Client compatibility
 
-No reindexing is required to keep using existing functionality. To use facets or keyword array sorting with existing data:
+The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `facets` in query requests and preserve facet results when documents are downloaded through `docsUrl`:
 
-1. Use an SDK version that supports facets, or call the REST API directly.
-2. Create a new collection with the required keyword fields.
-3. Reinsert the complete source documents and wait for indexing to finish.
-4. Verify the counts and [array sorting](/guides/search/sort#keyword-array-sorting), then switch application reads to the new collection.
+| SDK | Usage guide |
+|:----|:------------|
+| Python | [Keyword facets](https://github.com/lambdadb/lambdadb-python-client/blob/v0.12.1/docs/keyword-facets.md) |
+| TypeScript | [Keyword facets](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/keyword-facets.md) |
+| Go | [Keyword facets](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/keyword-facets.md) |
 
-Updating some or all documents, adding schema fields, or merging old segments does not change a collection's index format. Branches forked from existing data retain that format. Old immutable Tags retain the old format; create new Tags from the rebuilt data when needed. Automatic or in-place index migration is outside this feature's scope.
+The [CLI](/guides/get-started/use-with-cli) accepts facets in query JSON files, and the [MCP server](/guides/get-started/use-with-mcp) accepts them through `lambdadb_query_collection`.

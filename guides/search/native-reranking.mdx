@@ -365,6 +365,6 @@ These recommended stable releases support optional query-level reranking, final/
 | LambdaDB CLI | [0.1.4](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) | [Query JSON files](/guides/get-started/use-with-cli#native-reranking) |
 | LambdaDB MCP server | [0.1.4](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) | [Query tool](/guides/get-started/use-with-mcp#native-reranking) |
 
-For current SDK versions, see [Supported SDK versions](/reference/sdk/introduction#supported-sdk-versions). Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. The Migration CLI does not rerank its verification searches.
+For current SDK versions, see [Supported SDK versions](/reference/sdk/introduction#supported-sdk-versions). Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. The Migration CLI does not rerank its verification searches.
 
 Reranking uses native inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Native reranking rates](/guides/costs/understanding-costs#native-reranking-rates) for token-to-LIU rates and a cost example.

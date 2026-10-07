@@ -3,7 +3,7 @@ title: "Roadmap & Changelog"
 description: "Explore upcoming LambdaDB features and major product releases."
 ---
 
-Last updated: October 7, 2026
+Last updated: October 8, 2026
 
 ## Up Next
 
@@ -17,7 +17,7 @@ Last updated: October 7, 2026
 ### October 2026
 
 - The [MCP server](/guides/get-started/use-with-mcp#step-2-choose-the-published-package) now limits its stdio receive buffer to 10 MiB and closes the connection on overflow; split large tool inputs into smaller calls.
-- Added opt-in experimental [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) with explicit candidate budgets and optional reranking through the API, SDKs, CLI, and MCP server.
+- Added [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) with explicit candidate budgets and optional reranking through the API, SDKs, CLI, and MCP server.
 - Simplified [native embedding configuration](/guides/collections/native-embeddings#collection-schema) to accept an `embedding` block without the legacy flag, with SDK, CLI, MCP, and [Migration CLI mapping support](/guides/migrations/overview#generate-embeddings-from-migrated-text).
 - Added query-level [native reranking](/guides/search/native-reranking) with default or custom relevance criteria and final/search score metadata, available through the API, SDKs, CLI, and MCP server.
 - Expanded support to all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers), including [Elasticsearch analyzer and index-default mapping](/guides/migrations/elasticsearch/migrate-from-elasticsearch#text-analyzer-presets) in the Migration CLI; source credentials now need read access to both mappings and settings.
