@@ -94,7 +94,7 @@ Review the exact PostgreSQL version, installed extensions, index definitions, an
 |:---------------------------|:---------------|:----------------------------|
 | Built-in full-text search with `tsvector`, `tsquery`, and `ts_rank` or `ts_rank_cd` | Original text and metadata | Index source text as `text` and rewrite queries with `queryString`. Review tokenization, stemming, stop words, phrase behavior, and ranking. LambdaDB uses BM25 for text relevance; PostgreSQL ranking functions are not score-compatible. |
 | [pg_search](https://github.com/paradedb/paradedb), [pg_textsearch](https://github.com/timescale/pg_textsearch), or [VectorChord-BM25](https://github.com/supervc-stack/VectorChord-bm25) | Original text and filter fields | Map to text and scalar indexes. Review each extension's operators, analyzers, score ordering, and any highlighting or aggregation dependencies separately. Existing index files and scoring behavior are not imported. |
-| [pgvector](https://github.com/pgvector/pgvector) dense vectors | Existing embedding values | Use an unmanaged `vector` field with matching dimensions and an appropriate similarity metric. Rewrite SQL retrieval as `knn`; validate ranking and score thresholds. |
+| [pgvector](https://github.com/pgvector/pgvector) dense vectors | Existing embedding values | Use a `vector` field for caller-provided vectors with matching dimensions and an appropriate similarity metric. Rewrite SQL retrieval as `knn`; validate ranking and score thresholds. |
 | [pgvectorscale](https://github.com/timescale/pgvectorscale) or [VectorChord](https://github.com/supervc-stack/VectorChord) | Existing pgvector embedding values | Review data and query semantics as above. Source index algorithms, compression settings, and tuning parameters do not transfer to LambdaDB. |
 | SQL combining text and vector results | Source text, embeddings, and filters | Reconstruct the ranking with [hybrid queries](/guides/search/hybrid). Review fusion rules, candidate counts, and filters on both retrieval paths. |
 | SQL filters, JOINs, RLS, and transactional reads | Required scalar fields and application authorization rules | Map supported predicates to indexed fields and filters. Keep remaining relational work in PostgreSQL. Ingestion and API calls do not create a shared transaction snapshot. |
@@ -243,7 +243,7 @@ This hypothetical sizing example illustrates billing, not measured capacity or a
 - 100,000 session collections, each occupying an average of 10 MB of billed physical storage for the month.
 - The same 1,000 collections receive 100 queries per day each; the other 99,000 receive no requests.
 - Every query targets one collection, its read-usage size is below 1 GB, and `consistentRead` is false. Each query therefore uses the 1 GB read minimum.
-- There are no writes, deletes, rebuilds, managed embedding calls, or additional fetch/list requests during this example month.
+- There are no writes, deletes, rebuilds, native embedding calls, or additional fetch/list requests during this example month.
 
 | Cost component | Calculation | Illustrative monthly charge |
 |:---------------|:------------|:----------------------------|

@@ -42,7 +42,7 @@ Pinecone's current API reference is versioned as `2026-04`. If you call Pinecone
 
 ## Step 1: Install the CLI
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.7` using Homebrew or the standalone installer.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer.
 
 Check the Pinecone command:
 
@@ -339,7 +339,7 @@ results = coll.query(
 )
 ```
 
-If you use LambdaDB managed embeddings instead of migrated vector values, send query text:
+If you use LambdaDB native embeddings instead of migrated vector values, send query text:
 
 ```python Python
 results = coll.query(
@@ -471,9 +471,9 @@ Use field types intentionally:
 - **Namespaces**: Run one migration per namespace. If the namespace itself matters in LambdaDB, use separate target collections or add namespace metadata in Pinecone before migration.
 - **Metadata indexes**: Pinecone metadata index settings are not introspected. Add LambdaDB `payload.indexConfigs` manually for fields used in filters or sorting.
 - **Field names**: LambdaDB field names cannot contain dots. Dotted Pinecone metadata keys are normalized during migration, such as `metadata.url` to `metadata_url`.
-- **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use LambdaDB managed embeddings when you want LambdaDB to generate embeddings from source text after migration.
+- **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use LambdaDB native embeddings when you want LambdaDB to generate embeddings from source text after migration.
 - **Hybrid shape**: Pinecone supports multiple hybrid patterns. Validate whether your workload uses a single dense index with `sparse_values`, separate dense and sparse indexes, or a document-schema index before choosing the target LambdaDB schema.
-- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with managed embeddings.
+- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with native embeddings.
 - **Consistency**: Pinecone is eventually consistent for freshly written data. LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches; use query overlap checks before cutover.
 
 ## Next steps

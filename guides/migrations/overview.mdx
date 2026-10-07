@@ -15,14 +15,14 @@ For PostgreSQL applications, see [Search with PostgreSQL and LambdaDB](/guides/m
 
 | Source | Status | Notes |
 |:-------|:-------|:------|
-| Qdrant | Supported in CLI `v0.1.7` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Pinecone Serverless | Supported in CLI `v0.1.7` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
-| Elasticsearch | Supported in CLI `v0.1.7` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
+| Qdrant | Supported in CLI `v0.1.8` | Dense vectors, named dense vectors, sparse vectors, payload indexes, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Pinecone Serverless | Supported in CLI `v0.1.8` | Dense indexes, sparse indexes, namespaces, ID-prefix scoped migrations, metadata payloads, local checkpoints, validation reports, and dense/sparse-vector query overlap checks. |
+| Elasticsearch | Supported in CLI `v0.1.8` | Index mappings, scalar/text fields, dense vectors, PIT/search_after reads, local checkpoints, and validation reports. Query-overlap validation is not implemented for Elasticsearch yet. |
 | OpenSearch | Planned | Use the same CLI workflow once OpenSearch support is available. |
 | Chroma | Planned | Use the same CLI workflow once Chroma support is available. |
 | Weaviate | Planned | Use the same CLI workflow once Weaviate support is available. |
 
-Version 0.1.7 validates and forwards all 49 [fixed analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Elasticsearch inventory preserves supported field analyzers and index defaults, and flags custom or unsupported settings for explicit review. Verification searches retain their dense/sparse behavior and do not rerank. See [Elasticsearch analyzer mappings](/guides/migrations/elasticsearch/migrate-from-elasticsearch#text-analyzer-presets).
+Version 0.1.8 validates and forwards all 49 [fixed analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Elasticsearch inventory preserves supported field analyzers and index defaults, and flags custom or unsupported settings for explicit review. Verification searches retain their dense/sparse behavior and do not rerank. See [Elasticsearch analyzer mappings](/guides/migrations/elasticsearch/migrate-from-elasticsearch#text-analyzer-presets).
 
 ## Migration workflow
 
@@ -36,7 +36,7 @@ Version 0.1.7 validates and forwards all 49 [fixed analyzer presets](/guides/col
 
 ## Install the CLI
 
-The current stable release is [**v0.1.7**](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7). The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
+The current stable release is [**v0.1.8**](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.8). The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
 
 <Tabs>
   <Tab title="Homebrew">
@@ -61,15 +61,15 @@ The current stable release is [**v0.1.7**](https://github.com/lambdadb/lambdadb-
     brew uninstall lambdadb/tap/lambdadb-migration
     ```
 
-    The tap currently provides `0.1.7`. Future GitHub releases may reach the tap later, after the formula is updated.
+    The tap currently provides `0.1.8`. Future GitHub releases may reach the tap later, after the formula is updated.
   </Tab>
   <Tab title="Standalone installer">
     Download the installer to a scratch directory and inspect it before running. This example pins both the installer and the binary release:
 
     ```bash
-    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.7/install.sh
+    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.8/install.sh
     less install.sh
-    sh install.sh --version v0.1.7 --install-dir "$HOME/.local/bin"
+    sh install.sh --version v0.1.8 --install-dir "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     lambdadb-migration --version
     lambdadb-migration --help
@@ -93,7 +93,7 @@ The current stable release is [**v0.1.7**](https://github.com/lambdadb/lambdadb-
   </Tab>
 </Tabs>
 
-Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Choose the archive matching your operating system and architecture when downloading a binary directly from the [release page](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.7).
+Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Choose the archive matching your operating system and architecture when downloading a binary directly from the [release page](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.8).
 
 Before switching installation methods, inspect `type -a lambdadb-migration` and identify which binary is on PATH. Remove only the old installation using its original method. Do not force-overwrite a Homebrew symlink or run the standalone installer against a Homebrew-managed path. Uninstalling the binary does not remove mappings, checkpoints, or credentials.
 
@@ -118,6 +118,32 @@ Use `--migration.create-collection=false` when the LambdaDB collection already e
 The CLI stores local checkpoints under `.lambdadb-migration/checkpoints` by default. If a migration is interrupted, rerun the same command to resume from the last saved checkpoint. Use `--migration.restart` to start from the beginning.
 
 A completed checkpoint skips re-reading and uploading documents on rerun. Use `--migration.restart` to migrate new source data after a completed run. Validation-enabled runs retain sample documents in local checkpoint files so validation can be retried without uploading again; protect these files as source data. If a completed checkpoint has no saved samples, restart to collect them or use `--migration.validation-sample-size=0` for count-only validation.
+
+## Generate embeddings from migrated text
+
+Migration CLI 0.1.8 supports explicit [native embedding configuration](/guides/collections/native-embeddings) under `payload.indexConfigs`. Add a separate generated field to your reviewed JSON or YAML mapping:
+
+```yaml
+payload:
+  mode: flatten
+  rename:
+    source_body: body
+  indexConfigs:
+    body:
+      type: text
+    generated_vector:
+      type: vector
+      embedding:
+        provider: openai
+        model: text-embedding-3-small
+        sourceField: body
+```
+
+`embedding.sourceField` names the destination text field after renaming. Set `--migration.write-mode upsert`: bulk upsert is unsupported for collections with generated embedding fields. Generation consumes inference usage, including possible repeated provider calls on retries.
+
+Generated inventories continue to preserve stored vectors as ordinary vector fields. Keep those fields separate from generated vectors; a native payload index cannot replace a mapped source vector field. Existing target schemas are not updated or reconciled. Legacy `managedEmbedding: true` remains accepted; explicit false with `embedding` is invalid.
+
+Query-overlap validation continues to use stored dense/sparse vectors. It does not run Bayesian queries, rerank results, or measure generated-vector quality.
 
 ## Validation
 
@@ -151,7 +177,7 @@ For Qdrant and Pinecone vector migrations, `--migration.query-overlap` compares 
     Learn how LambdaDB collection index configurations map to migrated data.
   </Card>
   <Card title="Bulk upsert data" href="/guides/documents/bulk-upsert-data" icon="upload">
-    Understand LambdaDB bulk loading behavior for unmanaged-vector collections.
+    Understand LambdaDB bulk loading behavior for collections with caller-provided vectors.
   </Card>
   <Card title="Hybrid query" href="/guides/search/hybrid" icon="bolt">
     Rewrite dense, sparse, and lexical hybrid search after migration.

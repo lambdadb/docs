@@ -29,7 +29,7 @@ Qdrant multi-vectors and Manhattan distance collections require workload-specifi
 
 ## Step 1: Install the CLI
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.7` using Homebrew or the standalone installer.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer.
 
 Check the Qdrant command:
 
@@ -316,7 +316,7 @@ results = coll.query(
 )
 ```
 
-When using LambdaDB managed embeddings, send query text instead of a vector:
+When using LambdaDB native embeddings, send query text instead of a vector:
 
 ```python Python
 results = coll.query(
@@ -461,7 +461,7 @@ You can also combine lexical and vector relevance:
 - **IDs**: LambdaDB document IDs are strings. Numeric Qdrant IDs are converted to strings during migration.
 - **Field names**: LambdaDB field names cannot contain dots. The generated mapping renames dotted Qdrant payload keys, such as `metadata.url` to `metadata_url`.
 - **Schema**: Qdrant can store payload without deciding every searchable field up front. In LambdaDB, decide which fields need indexes before migration.
-- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with managed embeddings.
+- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with native embeddings.
 - **Sparse vectors**: Qdrant sparse vectors use separate `indices` and `values`; LambdaDB uses object key-value pairs.
 - **Multi-vectors**: Qdrant multi-vectors store matrices for late-interaction models. Plan and validate these workloads separately.
 - **Consistency**: LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches. For bulk upsert, allow time for documents to become visible after indexing completes.

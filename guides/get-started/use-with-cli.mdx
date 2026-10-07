@@ -9,14 +9,14 @@ Use `lambdadb` for project-scoped collection management, JSONL imports, queries,
 
 ## Install
 
-The stable release covered by this guide is `0.1.2`. Choose one installation method and check `command -v lambdadb` before switching package managers.
+The stable release covered by this guide is `0.1.4`. Choose one installation method and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
     Requires Node.js **22.14.0 or later** and npm.
 
     ```bash
-    npm install --global @functional-systems/lambdadb-cli@0.1.2
+    npm install --global @functional-systems/lambdadb-cli@0.1.4
     lambdadb --version
     lambdadb --help
     ```
@@ -42,7 +42,7 @@ The stable release covered by this guide is `0.1.2`. Choose one installation met
     lambdadb --help
     ```
 
-    The public tap provides CLI `0.1.2` with its Node 24 runtime. No separate Node/npm setup is needed.
+    The public tap provides CLI `0.1.4` with its Node 24 runtime. No separate Node/npm setup is needed.
 
     ```bash
     brew update
@@ -82,7 +82,9 @@ lambdadb doctor
 
 ## Create a collection and import JSONL
 
-CLI 0.1.2 supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Upgrade the CLI itself; SDK publication does not update installed CLIs.
+The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Upgrade the CLI itself; SDK publication does not update installed CLIs.
+
+For generated vectors, use the [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in the same field-to-index map. The CLI also supports `lambdadb collections update --collection NAME --index-config FILE` with that map format. Existing field-update constraints still apply; see [Configure a collection](/guides/collections/manage-collections#configure-a-collection).
 
 Choose a new collection name in your development project. Run these examples in a scratch directory. Create an index configuration file containing the field-to-index map, without an `indexConfigs` wrapper:
 
@@ -143,11 +145,13 @@ lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --c
 
 For query, set `"consistentRead": true` in the request file. These reads require a direct branch ref, exclude pending bulk imports, and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
-CLI 0.1.2 also accepts `facets` and an omitted `query` for match-all requests. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) for compatibility details.
+The CLI also accepts `facets` and an omitted `query` for match-all requests. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) for compatibility details.
 
-### Managed reranking
+<a id="managed-reranking" />
 
-CLI 0.1.2 accepts the query-level `rerank` object through the same JSON request file. No separate reranking flags or provider API key are needed. Save this as `rerank-query.json` for the sample collection above:
+### Native reranking
+
+The CLI accepts the query-level `rerank` object through the same JSON request file. No separate reranking flags or provider API key are needed. Save this as `rerank-query.json` for the sample collection above:
 
 ```json
 {
@@ -166,7 +170,17 @@ CLI 0.1.2 accepts the query-level `rerank` object through the same JSON request 
 lambdadb query --collection cli-demo-docs --ref branch:main --file rerank-query.json --json
 ```
 
-Read `data.rerank.status` in the CLI JSON envelope. On `applied` results, `data.docs` contains final evaluation `score` and original `retrievalScore` alongside each `doc`. Fallback retains search scores and server order with `scoredCount: 0`; it does not expose partial evaluation scores. The CLI preserves numeric zero and precision, including downloaded results, and does not sort again. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, eligible `returnOriginal` failures, and query/sort/facet restrictions.
+Read `data.rerank.status` in the CLI JSON envelope. On `applied` results, `data.docs` contains final evaluation `score` and original `retrievalScore` alongside each `doc`. Fallback retains search scores and server order with `scoredCount: 0`; it does not expose partial evaluation scores. The CLI preserves numeric zero and precision, including downloaded results, and does not sort again. See [Native reranking](/guides/search/native-reranking) for custom criteria, candidate depth, eligible `returnOriginal` failures, and query/sort/facet restrictions.
+
+### Bayesian hybrid search
+
+Save the complete [Bayesian request](/guides/search/hybrid#bayesian-hybrid-query) as `bayesian-query.json` and run it against a collection with the example's `body` and `bodyEmbedding` fields:
+
+```bash
+lambdadb query --collection semantic-docs --ref branch:main --file bayesian-query.json --json
+```
+
+Without reranking, supply top-level `candidateSize` with `1 <= size <= candidateSize <= 100`. With reranking, omit that field and use `rerank.candidateSize`. No separate fusion flags are needed; existing search defaults are unchanged.
 
 ### Select collections and refs
 
@@ -208,7 +222,7 @@ No command accepts the raw API key as an argument. Config files are written atom
 
 Import reports `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
 
-The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion; it is unsupported for managed embedding vector fields. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
+The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion; it is unsupported for native embedding vector fields. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
 ## Next steps
 

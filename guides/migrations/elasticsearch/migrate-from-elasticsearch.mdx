@@ -9,7 +9,7 @@ Use the LambdaDB Migration CLI to migrate an Elasticsearch index into LambdaDB. 
 
 <Note>
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.7` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
 
 </Note>
 
@@ -29,7 +29,7 @@ Elasticsearch stores records as JSON documents inside indexes. Search behavior i
 | Numeric fields | `long` or `double` index | Map integer-like fields to `long` and floating-point fields to `double`. |
 | `date`, `date_nanos` | `datetime` index | Generate a LambdaDB datetime index. Review source values before writing because the CLI does not rewrite date formats. |
 | `boolean` field | `boolean` index | Copy JSON booleans directly. |
-| `dense_vector` field | `vector` index | Generate an unmanaged LambdaDB vector field with mapped dimensions and similarity. Dense vectors are fetched explicitly with Elasticsearch search `fields`. |
+| `dense_vector` field | `vector` index | Generate a LambdaDB vector field for caller-provided vectors with mapped dimensions and similarity. Dense vectors are fetched explicitly with Elasticsearch search `fields`. |
 | `nested` field | `object` index | Store nested values as JSON payload fields and warn that nested query semantics require application-query review. |
 
 ## What still needs review
@@ -59,7 +59,7 @@ export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
 export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
 ```
 
-You can also pass Elasticsearch basic auth credentials with `--elasticsearch.username` and `--elasticsearch.password`. Version 0.1.7 requires read access to both `/_mapping` and `/_settings`; unreadable settings fail inventory instead of silently assuming `standard`.
+You can also pass Elasticsearch basic auth credentials with `--elasticsearch.username` and `--elasticsearch.password`. Inventory requires read access to both `/_mapping` and `/_settings`; unreadable settings fail inventory instead of silently assuming `standard`.
 
 ## Step 2: Generate inventory and mapping
 
@@ -158,7 +158,7 @@ mapping:
         analyzers: [english]
 ```
 
-Migration CLI 0.1.7 accepts and forwards all 49 [fixed presets](/guides/collections/index-types#supported-analyzers). Inventory preserves supported built-in field analyzers and resolves index defaults or named aliases that contain only a built-in `type`. Without a configured default, it leaves `analyzers` omitted so the target uses `["standard"]`; an explicit source `analyzer: default` also resolves to `standard`.
+The Migration CLI accepts and forwards all 49 [fixed presets](/guides/collections/index-types#supported-analyzers). Inventory preserves supported built-in field analyzers and resolves index defaults or named aliases that contain only a built-in `type`. Without a configured default, it leaves `analyzers` omitted so the target uses `["standard"]`; an explicit source `analyzer: default` also resolves to `standard`.
 
 Custom or unsupported source settings produce warnings and `unsupported:<source-name>` markers. These generated mappings fail validation until you choose an explicit supported target preset. Field `search_analyzer`, `search_quote_analyzer`, and index `default_search` settings are reported but not translated. Review warnings during inventory, migration, and dry-run before accepting matching behavior.
 

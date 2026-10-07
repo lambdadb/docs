@@ -22,19 +22,23 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## Supported SDK versions
 
-The examples use these stable releases, which include data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), and query-level [managed reranking](/guides/search/managed-reranking):
+The examples use these stable releases, which include data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [native reranking](/guides/search/native-reranking), [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), and [native embedding configuration](/guides/collections/native-embeddings#collection-schema):
 
 | SDK | Recommended release | SDK guide |
 | :-- | :------------------ | :-------- |
-| Python | [0.11.0](https://pypi.org/project/lambdadb/0.11.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.11.0/docs/sdks/versioning/README.md) |
-| JavaScript/TypeScript | [0.7.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.7.0) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.7.0/docs/data-versioning.md) |
-| Go | [0.6.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.6.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.6.0/docs/sdks/versioning/README.md) |
+| Python | [0.12.1](https://pypi.org/project/lambdadb/0.12.1/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.12.1/docs/sdks/versioning/README.md) |
+| JavaScript/TypeScript | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/data-versioning.md) |
+| Go | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/sdks/versioning/README.md) |
 
-Python SDK 0.11.0 requires Python **3.10–3.13**. If you use Python 3.9, stay on `lambdadb==0.9.0` until upgrading Python; that release does not include the additional analyzer names. Go SDK 0.6.0 requires Go **1.22 or later**.
+Python SDK 0.12.1 requires Python **3.10–3.13**. If you use Python 3.9, stay on `lambdadb==0.9.0` until upgrading Python; that release does not include the additional analyzer names. Go SDK 0.7.1 requires Go **1.22 or later**.
+
+For Bayesian queries without reranking, pass the candidate budget as Python `candidate_size`, TypeScript `candidateSize`, or Go `QueryInput.CandidateSize`. With reranking, omit that top-level field and set the budget inside `rerank`: JSON/TypeScript `candidateSize`, Python model `candidate_size`, or Go `RerankConfig.CandidateSize`. Python wire dictionaries use `"candidateSize"`. Native embedding configuration accepts `embedding` without `managedEmbedding`; legacy `managedEmbedding: true` remains supported for older servers. Existing search defaults are unchanged.
+
+TypeScript and Go provide `IndexConfigsNativeEmbeddingVector`; Go wraps this with `CreateIndexConfigsUnionNativeEmbeddingVector`. Existing legacy SDK types and helpers remain available.
 
 ## Data versioning support
 
-The minimum stable versions for collection, branch, tag, and alias APIs remain Python **0.9.0**, JavaScript/TypeScript **0.5.1**, and Go **0.4.0**. Use the recommended releases above for all 49 fixed analyzer presets and managed reranking. Older SDK request and response models may reject or omit the new fields.
+The minimum stable versions for collection, branch, tag, and alias APIs remain Python **0.9.0**, JavaScript/TypeScript **0.5.1**, and Go **0.4.0**. Use the recommended releases above for all 49 fixed analyzer presets and native reranking. Older SDK request and response models may reject or omit the new fields.
 
 Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
 

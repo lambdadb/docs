@@ -140,11 +140,13 @@ Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch m
 
 The create response is intentionally compact. Use describe or list to retrieve `indexConfigs`, document counts, and the full collection model. `201` confirms catalog creation; it does not guarantee query-serving readiness or completed indexing. Handle loading and retry states using actual operations; there is no collection-status readiness field to poll.
 
-## Create a collection with managed embeddings
+<a id="create-a-collection-with-managed-embeddings" />
 
-Managed embeddings let LambdaDB derive vector values from a source text field. Define the vector field with `managedEmbedding: true` and an `embedding` block. The source field must be a `text` field in the same collection.
+## Create a collection with native embeddings
 
-For the current provider and model matrix, see [Managed embeddings](/guides/collections/managed-embeddings).
+Native embeddings let LambdaDB derive vector values from a source text field. Define the vector field with an `embedding` block; the legacy `managedEmbedding` flag can be omitted. The source field must be a `text` field in the same collection.
+
+For supported models, SDK versions, and legacy compatibility, see [Native embeddings](/guides/collections/native-embeddings).
 
 <CodeGroup>
 
@@ -165,7 +167,6 @@ with LambdaDB(
             },
             "bodyEmbedding": {
                 "type": "vector",
-                "managedEmbedding": True,
                 "embedding": {
                     "provider": "openai",
                     "model": "text-embedding-3-small",
@@ -186,7 +187,6 @@ await client.createCollection({
     },
     bodyEmbedding: {
       type: "vector",
-      managedEmbedding: true,
       embedding: {
         provider: "openai",
         model: "text-embedding-3-small",
@@ -210,7 +210,6 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
           },
           "bodyEmbedding": {
             "type": "vector",
-            "managedEmbedding": true,
             "embedding": {
               "provider": "openai",
               "model": "text-embedding-3-small",
@@ -225,7 +224,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 <Note>
 
-  For managed embedding vector fields, do not send top-level `dimensions` or `similarity` in the field config. LambdaDB resolves and stores those values under `embedding`.
+  For native embedding vector fields, do not send top-level `dimensions` or `similarity` in the field config. LambdaDB resolves and stores those values under `embedding`.
 
 </Note>
 

@@ -218,7 +218,7 @@
       "EmbeddingConfig": {
         "title": "EmbeddingConfig",
         "type": "object",
-        "description": "Managed embedding configuration for vector fields.",
+        "description": "Native embedding configuration for vector fields.",
         "properties": {
           "provider": {
             "type": "string",
@@ -229,7 +229,7 @@
           },
           "model": {
             "type": "string",
-            "description": "Embedding model name. See /guides/collections/managed-embeddings for the current supported providers and models."
+            "description": "Embedding model name. See /guides/collections/native-embeddings for the current supported providers and models."
           },
           "sourceField": {
             "type": "string",
@@ -349,18 +349,18 @@
                 },
                 "managedEmbedding": {
                   "type": "boolean",
-                  "description": "Set to false or omit for unmanaged vector fields.",
+                  "description": "Set to false or omit for vector fields with caller-provided values.",
                   "enum": [
                     false
                   ]
                 },
                 "dimensions": {
                   "type": "integer",
-                  "description": "Vector dimensions for unmanaged vector fields."
+                  "description": "Vector dimensions for vector fields with caller-provided values."
                 },
                 "similarity": {
                   "type": "string",
-                  "description": "Vector similarity metric for unmanaged vector fields.",
+                  "description": "Vector similarity metric for vector fields with caller-provided values.",
                   "enum": [
                     "cosine",
                     "euclidean",
@@ -386,7 +386,7 @@
                 },
                 "managedEmbedding": {
                   "type": "boolean",
-                  "description": "Managed embedding vector field.",
+                  "description": "Optional legacy flag. An embedding block enables native embeddings when this flag is omitted; explicit false is invalid. Normalized collection responses retain true.",
                   "enum": [
                     true
                   ]
@@ -398,7 +398,6 @@
               "additionalProperties": false,
               "required": [
                 "type",
-                "managedEmbedding",
                 "embedding"
               ]
             },
@@ -1050,14 +1049,14 @@
           "object",
           "null"
         ],
-        "description": "Optional managed reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
+        "description": "Optional native reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
         "properties": {
           "provider": {
             "type": "string",
             "enum": [
               "typesafe"
             ],
-            "description": "Required managed reranking provider."
+            "description": "Required native reranking provider."
           },
           "model": {
             "type": "string",
@@ -2903,7 +2902,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to upsert. For managed embedding vector fields, omit the managed vector field and provide only the configured source text field."
+                    "description": "A list of documents to upsert. For native embedding vector fields, omit the generated vector field and provide only the configured source text field."
                   },
                   "branch": {
                     "type": "string",
@@ -3083,7 +3082,7 @@
           "collections.docs"
         ],
         "operationId": "getBulkUpsertDocs",
-        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with managed embedding vector fields. Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
+        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with native embedding vector fields. Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3177,10 +3176,10 @@
                   "$ref": "#/components/schemas/BadRequest"
                 },
                 "examples": {
-                  "managedEmbeddingUnsupported": {
-                    "summary": "Example response for unsupported managed embedding bulk upsert",
+                  "nativeEmbeddingUnsupported": {
+                    "summary": "Example response for unsupported native embedding bulk upsert",
                     "value": {
-                      "message": "Bulk upsert is not supported for collections with managed embedding fields"
+                      "message": "Bulk upsert is not supported for collections with native embedding fields"
                     }
                   },
                   "example": {
@@ -3290,7 +3289,7 @@
           "collections.docs"
         ],
         "operationId": "bulkUpsertDocs",
-        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with managed embedding vector fields.",
+        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with native embedding vector fields.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3366,10 +3365,10 @@
                   "$ref": "#/components/schemas/BadRequest"
                 },
                 "examples": {
-                  "managedEmbeddingUnsupported": {
-                    "summary": "Example response for unsupported managed embedding bulk upsert",
+                  "nativeEmbeddingUnsupported": {
+                    "summary": "Example response for unsupported native embedding bulk upsert",
                     "value": {
-                      "message": "Bulk upsert is not supported for collections with managed embedding fields"
+                      "message": "Bulk upsert is not supported for collections with native embedding fields"
                     }
                   },
                   "example": {
@@ -3508,7 +3507,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to update. Each document must contain 'id' field to be updated. For managed embedding vector fields, omit the managed vector field and update only the configured source text field."
+                    "description": "A list of documents to update. Each document must contain 'id' field to be updated. For native embedding vector fields, omit the generated vector field and update only the configured source text field."
                   },
                   "branch": {
                     "type": "string",
@@ -4196,7 +4195,7 @@
           "collections"
         ],
         "operationId": "queryCollection",
-        "description": "Search a collection with a query and return the most similar documents. Optionally rerank globally merged candidates with a server-managed model before the final size limit. Rerank is configured per query; omitted/null preserves existing behavior. See the Managed reranking guide for candidate depth, score meaning, and failure policy.",
+        "description": "Search a collection with a query and return the most similar documents. Optionally rerank globally merged candidates with a model provided by LambdaDB before the final size limit. Rerank is configured per query; omitted/null preserves existing behavior. See the Native reranking guide for candidate depth, score meaning, and failure policy.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4230,7 +4229,7 @@
                       "null"
                     ],
                     "additionalProperties": true,
-                    "description": "Query object. For managed embedding vector fields, use knn.queryText. For unmanaged vector fields, use knn.queryVector. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets."
+                    "description": "Query object. For native embedding vector fields, use knn.queryText. For vector fields with caller-provided values, use knn.queryVector. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -4275,6 +4274,15 @@
                   },
                   "rerank": {
                     "$ref": "#/components/schemas/RerankConfig"
+                  },
+                  "candidateSize": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Required for top-level Bayesian fusion without rerank: 1 <= size <= candidateSize <= 100. Controls retrieval and calibration depth per signal, independently of final size and each knn.k. With rerank, omit this field and use rerank.candidateSize. Other query types must omit it. Null is treated as omitted; query semantics and the cross-field size bound are validated by the server."
                   }
                 },
                 "additionalProperties": false,
@@ -4352,6 +4360,9 @@
                         },
                         "sort": {
                           "type": "null"
+                        },
+                        "candidateSize": {
+                          "type": "null"
                         }
                       }
                     }
@@ -4370,8 +4381,8 @@
                     }
                   }
                 },
-                "managedEmbeddingKnnQuery": {
-                  "summary": "Example request body for managed embedding KNN query",
+                "nativeEmbeddingKnnQuery": {
+                  "summary": "Example request body for native embedding KNN query",
                   "value": {
                     "size": 10,
                     "query": {
@@ -4394,8 +4405,8 @@
                     }
                   }
                 },
-                "managedReranking": {
-                  "summary": "Managed reranking with default criteria and candidateSize=max(50, size)",
+                "nativeReranking": {
+                  "summary": "Native reranking with default criteria and candidateSize=max(50, size)",
                   "value": {
                     "size": 2,
                     "query": {
@@ -4422,7 +4433,7 @@
                   }
                 },
                 "customReranking": {
-                  "summary": "Managed reranking with three ordered custom descriptions",
+                  "summary": "Native reranking with three ordered custom descriptions",
                   "value": {
                     "size": 2,
                     "query": {
@@ -4450,6 +4461,62 @@
                         "Explains part of the restore process but leaves essential steps unclear.",
                         "Provides the steps needed to restore the requested collection version."
                       ]
+                    }
+                  }
+                },
+                "bayesianHybrid": {
+                  "summary": "Bayesian hybrid search with an explicit candidate budget",
+                  "value": {
+                    "size": 10,
+                    "candidateSize": 30,
+                    "query": {
+                      "bayesian": [
+                        {
+                          "queryString": {
+                            "query": "refund policy",
+                            "defaultField": "body"
+                          }
+                        },
+                        {
+                          "knn": {
+                            "field": "bodyEmbedding",
+                            "queryText": "What is the refund policy?",
+                            "k": 30
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "bayesianReranking": {
+                  "summary": "Bayesian fusion followed by native reranking",
+                  "value": {
+                    "size": 10,
+                    "query": {
+                      "bayesian": [
+                        {
+                          "queryString": {
+                            "query": "refund policy",
+                            "defaultField": "body"
+                          }
+                        },
+                        {
+                          "knn": {
+                            "field": "bodyEmbedding",
+                            "queryText": "What is the refund policy?",
+                            "k": 30
+                          }
+                        }
+                      ]
+                    },
+                    "rerank": {
+                      "provider": "typesafe",
+                      "model": "jev-1.13.0",
+                      "queryText": "What is the refund policy?",
+                      "fields": [
+                        "body"
+                      ],
+                      "candidateSize": 30
                     }
                   }
                 }
@@ -4646,7 +4713,7 @@
                       "isDocsInline": true
                     }
                   },
-                  "managedReranking": {
+                  "nativeReranking": {
                     "summary": "Applied reranking preserves original search scores",
                     "value": {
                       "took": 195,

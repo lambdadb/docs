@@ -30,16 +30,16 @@ The compatibility clients map Qdrant `Dot` to LambdaDB `dot_product`, which requ
 Python support is available in `lambdadb >= 0.8.2`:
 
 ```bash
-pip install lambdadb==0.11.0
+pip install lambdadb==0.12.1
 ```
 
 TypeScript support is available in `@functional-systems/lambdadb >= 0.4.3`:
 
 ```bash
-npm install @functional-systems/lambdadb@0.7.0
+npm install @functional-systems/lambdadb@0.8.1
 ```
 
-The examples pin Python 0.11.0 and TypeScript 0.7.0; see [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions). These releases reject unsupported payload schema options instead of silently dropping them. Python preserves supported LambdaDB analyzer names in text schema mappings. The TypeScript Qdrant adapter remains type-only and rejects analyzer/tokenizer/lowercase options; use the native SDK to configure LambdaDB analyzer presets. Custom pipelines are not translated. Review existing schema objects when upgrading; removing an unsupported option is an explicit matching-behavior decision.
+The examples pin Python 0.12.1 and TypeScript 0.8.1; see [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions). These releases reject unsupported payload schema options instead of silently dropping them. Python preserves supported LambdaDB analyzer names in text schema mappings. The TypeScript Qdrant adapter remains type-only and rejects analyzer/tokenizer/lowercase options; use the native SDK to configure LambdaDB analyzer presets. Custom pipelines are not translated. Review existing schema objects when upgrading; removing an unsupported option is an explicit matching-behavior decision.
 
 ## Connection settings
 

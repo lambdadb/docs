@@ -1,17 +1,18 @@
 ---
 title: Hybrid query
-description: Combine vector and lexical search in LambdaDB for better relevance. Choose from RRF, Min-Max, or L2 norm rescoring to normalize hybrid results.
+description: Combine vector and lexical search with RRF, Min-Max, L2 norm, or experimental Bayesian fusion, with explicit candidate budgets and optional reranking.
 ---
 
 A hybrid query combines vector search with lexical search to achieve better relevance by leveraging both semantic similarity and keyword matching.
 
 Full-text search and vector search use different scoring mechanisms: text relevance depends on term and document frequency, while vector relevance scores derive from the configured similarity metric. Without proper normalization, one search method may dominate the results, leading to suboptimal ranking. Hybrid queries address this by combining and normalizing scores from both methods.
 
-LambdaDB supports three rescoring methods to combine results from different query types: `rrf` (Reciprocal Rank Fusion), `mm` (min-max), and `l2` (l2_norm).
+LambdaDB supports `rrf` (Reciprocal Rank Fusion), `mm` (min-max), `l2` (L2 norm), and opt-in experimental `bayesian` fusion to combine results from different query types.
 
 - **RRF** combines rankings by taking the reciprocal of each result's rank position, providing balanced weighting across different search methods.
 - **MinMax** normalization scales scores to a 0-1 range before combining.
 - **L2 norm** divides each retrieval path's scores by their L2 norm (the square root of the sum of squared scores) before combining them.
+- **Bayesian** calibrates each path's retained scores and combines the two signals without caller-supplied weights. Existing search defaults are unchanged.
 
 <Info>
 
@@ -19,7 +20,7 @@ LambdaDB supports three rescoring methods to combine results from different quer
 
 </Info>
 
-With [managed reranking](/guides/search/managed-reranking), fusion runs first. Applied reranking returns its evaluation value as `score` and the fused value as `retrievalScore`. Fallback retains the fused scores and order from the expanded candidate pool.
+With [native reranking](/guides/search/native-reranking), fusion runs first. Applied reranking returns its evaluation value as `score` and the fused value as `retrievalScore`. Fallback retains the fused scores and order from the expanded candidate pool.
 
 ## Parameters
 
@@ -30,10 +31,13 @@ With [managed reranking](/guides/search/managed-reranking), fusion runs first. A
 | rrf    | Reciprocal Rank Fusion - balanced ranking combination | No            |
 | mm     | Min-Max normalization scaling                         | Yes           |
 | l2     | L2 normalization of each retrieval path's scores       | Yes           |
+| bayesian | Experimental fusion calibrated on retained candidates | No |
 
 ### How scores are combined
 
 Fusion uses the candidates retrieved by each of the two query paths. A document missing from one path contributes zero from that path. Changing candidate depth can change scores and ordering, so compare retrieval settings as well as the fusion method when evaluating results.
+
+For Bayesian fusion, see the [candidate budget rules](#bayesian-hybrid-query) below; the following calculations describe RRF, Min-Max, and L2.
 
 | Method | Calculation |
 |:-------|:------------|
@@ -43,7 +47,7 @@ Fusion uses the candidates retrieved by each of the two query paths. A document 
 
 For example, L2 normalization changes path scores `[3, 4]` to `[0.6, 0.8]`. If a document has normalized scores `0.8` and `0.4` on the two paths and boosts `0.7` and `0.3`, its fused score is `0.7 * 0.8 + 0.3 * 0.4 = 0.68`. Omitting both boosts gives each path a weight of `0.5`.
 
-These boosts are retrieval-fusion weights. They do not change the fixed or custom criteria values used by managed reranking, which evaluates the merged candidates afterward.
+These boosts are retrieval-fusion weights. They do not change the fixed or custom criteria values used by native reranking, which evaluates the merged candidates afterward.
 
 ### Query object parameters
 
@@ -52,7 +56,7 @@ Each object within the rescoring method array contains a query-type key directly
 | Parameter | Description                                      | Type   | Required | Default |
 |:----------|:-------------------------------------------------|:-------|:---------|:--------|
 | `queryString`, `knn`, `sparseVector`, or `bool` | One query-type key; `bool` contains an array of clauses | object or array | ✓ | |
-| boost     | Score multiplier for relevance                   | float  |          | 0.5     |
+| boost     | Score multiplier for `mm` and `l2` only            | float  |          | 0.5     |
 
 <Note>
 
@@ -72,6 +76,37 @@ Each object within the rescoring method array contains a query-type key directly
 </Note>
 
 ## Examples
+
+### Bayesian hybrid query
+
+This complete request searches the text and native embedding vector fields from the [native embedding example](/guides/collections/native-embeddings#collection-schema):
+
+```json
+{
+  "size": 10,
+  "candidateSize": 30,
+  "query": {
+    "bayesian": [
+      { "queryString": { "query": "refund policy", "defaultField": "body" } },
+      { "knn": { "field": "bodyEmbedding", "queryText": "What is the refund policy?", "k": 30 } }
+    ]
+  }
+}
+```
+
+Use exactly two unboosted subqueries. Bayesian fusion is top-level only: nested Bayesian, RRF, Min-Max, or L2 fusion is unsupported. Explicit `boost`, including `1`, is rejected on either child and its Boolean descendants. Facets are unsupported with hybrid queries.
+
+| Setting | Without reranking | With reranking |
+|:--------|:------------------|:---------------|
+| Candidate budget | Required top-level `candidateSize`; `1 <= size <= candidateSize <= 100` | Omit top-level `candidateSize`; use `rerank.candidateSize`, which defaults to `max(50, size)` |
+| Final results | `size` | `size` |
+| Dense vector depth | Each `knn.k` remains independent | Each `knn.k` remains independent |
+
+The candidate budget controls retrieval and calibration depth for each signal; documents outside both retained lists cannot be recovered. With the same budget, query, filters, `knn.k`, and unchanged data, changing only `size` preserves the ranking prefix. Changing the candidate budget can change calibration and ranking. Scores are heuristic fusion scores, not relevance probabilities.
+
+Do not send top-level `candidateSize` with ordinary text/KNN or RRF/Min-Max/L2 requests. To rerank this example, remove top-level `candidateSize` and add a [rerank object](/guides/search/native-reranking#request-parameters); applied results expose the Bayesian score as `retrievalScore` and the final evaluation as `score`.
+
+Use the recommended releases in [SDK usage](/reference/sdk/introduction#supported-sdk-versions), [CLI queries](/guides/get-started/use-with-cli#bayesian-hybrid-search), or [MCP queries](/guides/get-started/use-with-mcp#bayesian-hybrid-search).
 
 ### L2-norm hybrid query
 

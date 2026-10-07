@@ -62,7 +62,7 @@
               "guides/collections/index-types",
               "guides/collections/choose-text-analyzers",
               "guides/collections/create-a-collection",
-              "guides/collections/managed-embeddings",
+              "guides/collections/native-embeddings",
               "guides/collections/manage-collections"
             ]
           },
@@ -97,7 +97,7 @@
                   "guides/search/hybrid"
                 ]
               },
-              "guides/search/managed-reranking",
+              "guides/search/native-reranking",
               "guides/search/sort",
               "guides/search/facets",
               "guides/search/limits"
@@ -199,5 +199,15 @@
     "playground": {
       "display": "simple"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/guides/collections/managed-embeddings",
+      "destination": "/guides/collections/native-embeddings"
+    },
+    {
+      "source": "/guides/search/managed-reranking",
+      "destination": "/guides/search/native-reranking"
+    }
+  ]
 }

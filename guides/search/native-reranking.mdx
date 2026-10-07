@@ -1,13 +1,13 @@
 ---
-title: Managed reranking
-description: Evaluate retrieved documents with a server-managed model using default or custom criteria, and interpret final scores and fallback results.
+title: Native reranking
+description: Evaluate retrieved documents with a model provided by LambdaDB using default or custom criteria, and interpret final scores and fallback results.
 ---
 
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
-Managed reranking evaluates retrieved candidates against a query and orders them by the resulting score before returning the final `size` documents. It runs after global merge and deduplication, so it can be used with lexical, vector, sparse vector, or hybrid scoring queries.
+Native reranking evaluates retrieved candidates against a query and orders them by the resulting score before returning the final `size` documents. It runs after global merge and deduplication, so it can be used with lexical, vector, sparse vector, or hybrid scoring queries.
 
-Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and managed embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a Jev API key.
+Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and native embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a Jev API key.
 
 Use a [compatible client version](#client-compatibility-and-usage) when reranking through an SDK, CLI, or MCP server. The REST examples below can be used directly without an SDK.
 
@@ -25,7 +25,7 @@ export LAMBDADB_PROJECT_NAME="YOUR_PROJECT_NAME"
 export LAMBDADB_PROJECT_API_KEY="YOUR_PROJECT_API_KEY"
 ```
 
-Save this body as `rerank-query.json`. Omitting `criteria` uses the default ten-level relevance criteria; omitting `candidateSize` uses `max(50, size)`.
+Save this body as `rerank-query.json`. Omitting `criteria` uses the default ten-level relevance criteria; omitting `rerank.candidateSize` uses `max(50, size)`.
 
 ```json
 {
@@ -66,6 +66,8 @@ curl --request POST \
 
 ### Request parameters
 
+These parameters belong inside the `rerank` object.
+
 | Parameter | Contract |
 |:----------|:---------|
 | `provider` | Required: `typesafe` |
@@ -78,7 +80,7 @@ curl --request POST \
 
 Each candidate must contain nonblank text in at least one selected field. Missing or null individual values contribute no text. Arrays, objects, non-string selected values, or candidates with no nonblank selected text are validation errors; they are not silently dropped or handled by provider fallback.
 
-Only the named fields enter reranker input. Top-level `fields` controls the public response projection and can exclude fields used for reranking. Rendered candidate text is limited to 16 KiB UTF-8 per candidate. Query text, all rendered candidates, and custom descriptions together are limited to 256 KiB. Inputs are rejected rather than silently truncated; model context limits also apply.
+Only the named fields enter native reranking input. Top-level `fields` controls the public response projection and can exclude fields used for reranking. Rendered candidate text is limited to 16 KiB UTF-8 per candidate. Query text, all rendered candidates, and custom descriptions together are limited to 256 KiB. Inputs are rejected rather than silently truncated; model context limits also apply.
 
 ### Candidate counts
 
@@ -90,9 +92,11 @@ These three controls serve different purposes:
 | `knn.k` | Candidates requested from that particular dense-vector retrieval leg |
 | `rerank.candidateSize` | Upper bound on the merged, deduplicated rerank pool before the final `size` limit |
 
-For example, a vector-only query with `size: 10`, `knn.k: 20`, and `candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
+For example, a vector-only query with `size: 10`, `knn.k: 20`, and `rerank.candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
 
 The pool can contain fewer than `candidateSize` documents. `candidateCount` reports the actual pool size, not a guaranteed count or the final response size.
+
+For [Bayesian fusion](/guides/search/hybrid#bayesian-hybrid-query) with reranking, omit top-level `candidateSize` and use `rerank.candidateSize` for the candidate budget. Top-level `candidateSize` is reserved for Bayesian retrieval without reranking.
 
 ### Query restrictions
 
@@ -351,16 +355,16 @@ Fallback reason codes are `timeout`, `rateLimit`, `unavailable`, `invalidRespons
 
 ## Client compatibility and usage
 
-These published releases support optional query-level reranking, final/retrieval score envelopes, stage metadata, and downloaded results:
+These recommended stable releases support optional query-level reranking, final/retrieval score envelopes, stage metadata, and downloaded results:
 
-| Client or tool | Release | Usage guide |
+| Client or tool | Recommended release | Usage guide |
 |:---------------|:--------|:------------|
-| Python SDK | [0.11.0](https://pypi.org/project/lambdadb/0.11.0/) | [Python reranking](https://github.com/lambdadb/lambdadb-python-client/blob/v0.11.0/docs/managed-reranking.md) |
-| JavaScript/TypeScript SDK | [0.7.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.7.0) | [TypeScript reranking](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.7.0/docs/managed-reranking.md) |
-| Go SDK | [0.6.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.6.0) | [Go reranking](https://github.com/lambdadb/go-lambdadb/blob/v0.6.0/docs/managed-reranking.md) |
-| LambdaDB CLI | [0.1.2](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.2) | [Query JSON files](/guides/get-started/use-with-cli#managed-reranking) |
-| LambdaDB MCP server | [0.1.2](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) | [Query tool](/guides/get-started/use-with-mcp#managed-reranking) |
+| Python SDK | [0.12.1](https://pypi.org/project/lambdadb/0.12.1/) | [Python reranking](https://github.com/lambdadb/lambdadb-python-client/blob/v0.12.1/docs/native-reranking.md) |
+| JavaScript/TypeScript SDK | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) | [TypeScript reranking](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/native-reranking.md) |
+| Go SDK | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) | [Go reranking](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/native-reranking.md) |
+| LambdaDB CLI | [0.1.4](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) | [Query JSON files](/guides/get-started/use-with-cli#native-reranking) |
+| LambdaDB MCP server | [0.1.4](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) | [Query tool](/guides/get-started/use-with-mcp#native-reranking) |
 
-Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. Migration CLI 0.1.7 does not rerank its verification searches.
+For current SDK versions, see [Supported SDK versions](/reference/sdk/introduction#supported-sdk-versions). Update the client or tool itself; older serializers can reject or omit the new object and response metadata. Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. The Migration CLI does not rerank its verification searches.
 
-Reranking uses server-managed inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Managed reranking rates](/guides/costs/understanding-costs#managed-reranking-rates) for token-to-LIU rates and a cost example.
+Reranking uses native inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Native reranking rates](/guides/costs/understanding-costs#native-reranking-rates) for token-to-LIU rates and a cost example.

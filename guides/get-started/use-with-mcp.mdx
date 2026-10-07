@@ -37,22 +37,24 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The stable npm package is `@functional-systems/lambdadb-mcp@0.1.2`. This guide pins that published version. No source checkout or build is required.
+The stable npm package is `@functional-systems/lambdadb-mcp@0.1.4`. This guide pins that published version. No source checkout or build is required.
 
 ```bash
 node --version
-npm view @functional-systems/lambdadb-mcp@0.1.2 version engines
+npm view @functional-systems/lambdadb-mcp@0.1.4 version engines
 ```
 
 With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-npx --yes @functional-systems/lambdadb-mcp@0.1.2
+npx --yes @functional-systems/lambdadb-mcp@0.1.4
 ```
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.2` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's API request limits.
+
+Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.4` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
 
 ### Environment variables
 
@@ -74,7 +76,7 @@ For **Claude Desktop**, open **Settings → Developer → Edit Config** and merg
   "mcpServers": {
     "lambdadb": {
       "command": "npx",
-      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.2"],
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.4"],
       "env": {
         "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
@@ -120,11 +122,13 @@ For example, pass these arguments to `lambdadb_query_collection` for the sample 
 }
 ```
 
-MCP 0.1.2 also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.2) for compatibility details.
+The MCP server also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) for compatibility details.
 
-### Managed reranking
+<a id="managed-reranking" />
 
-MCP 0.1.2 accepts optional `rerank` on `lambdadb_query_collection`. For the sample collection above, pass:
+### Native reranking
+
+The MCP server accepts optional `rerank` on `lambdadb_query_collection`. For the sample collection above, pass:
 
 ```json
 {
@@ -141,7 +145,11 @@ MCP 0.1.2 accepts optional `rerank` on `lambdadb_query_collection`. For the samp
 }
 ```
 
-LambdaDB manages the provider credentials. Omitting `rerank` or passing null keeps existing search behavior. Applied results preserve the final `score`, envelope `retrievalScore`, server order, and top-level rerank metadata, including `docsUrl` downloads. Check `rerank.status` before interpreting scores; fallback uses original search scores and exposes no partial reranking scores. See [Managed reranking](/guides/search/managed-reranking) for custom criteria, candidate depth, and failure/query restrictions. Reranking is available through the read tool and does not require enabling write tools.
+LambdaDB manages the provider credentials. Omitting `rerank` or passing null keeps existing search behavior. Applied results preserve the final `score`, envelope `retrievalScore`, server order, and top-level rerank metadata, including `docsUrl` downloads. Check `rerank.status` before interpreting scores; fallback uses original search scores and exposes no partial reranking scores. See [Native reranking](/guides/search/native-reranking) for custom criteria, candidate depth, and failure/query restrictions. Reranking is available through the read tool and does not require enabling write tools.
+
+### Bayesian hybrid search
+
+The MCP server accepts the [Bayesian request](/guides/search/hybrid#bayesian-hybrid-query) through `lambdadb_query_collection`. Add `collectionName` for a collection with the example's `body` and `bodyEmbedding` fields. Without reranking, pass top-level `candidateSize`; with reranking, omit it and use `rerank.candidateSize`. The read tool preserves result scores and rerank metadata, including downloaded results.
 
 ## Optional: Enable write tools
 
@@ -151,7 +159,9 @@ The LambdaDB MCP server can also expose write operations such as:
 - `lambdadb_upsert_docs`
 - `lambdadb_delete_docs`
 
-MCP 0.1.2 accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections. Update the MCP package itself and restart the server; SDK publication does not update installed MCP servers.
+The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections. Update the MCP package itself and restart the server; SDK publication does not update installed MCP servers.
+
+The create tool also accepts [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in `indexConfigs`, without `managedEmbedding`. Legacy `managedEmbedding: true` remains supported. The MCP server has no collection-schema update tool.
 
 Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 
@@ -195,7 +205,7 @@ If the server cannot start:
 For development, use a release tag and Node.js 22.14.0 or later:
 
 ```bash
-git clone --branch v0.1.2 https://github.com/lambdadb/lambdadb-mcp
+git clone --branch v0.1.4 https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
 npm ci
 npm run build

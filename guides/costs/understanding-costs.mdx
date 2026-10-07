@@ -67,17 +67,19 @@ Billing for these two meters starts with advance notice. Include them when estim
 
 ## Inference usage
 
-Inference usage applies when LambdaDB calls a managed model provider on your behalf, such as managed embedding generation during document writes, `knn.queryText` searches on managed embedding fields, or [managed reranking](/guides/search/managed-reranking).
+Inference usage applies when LambdaDB calls an inference provider on your behalf, such as native embedding generation during document writes, `knn.queryText` searches on native embedding fields, or [native reranking](/guides/search/native-reranking).
 
 Inference usage is measured in **LIU** (LambdaDB Inference Unit) and billed at **$1.05 per 1M LIU**.
 
 LambdaDB converts provider/model token usage into LIU using LambdaDB's internal rate card. For example, different models can have different LIU-per-token conversion rates. Usage is aggregated over the billing period before it is converted to the integer LIU quantity used for billing.
 
-If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero managed model usage is not dropped.
+If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero native inference usage is not dropped.
 
-See [Managed embeddings](/guides/collections/managed-embeddings) and [Managed reranking](/guides/search/managed-reranking) for feature setup and behavior.
+See [Native embeddings](/guides/collections/native-embeddings) and [Native reranking](/guides/search/native-reranking) for feature setup and behavior.
 
-### Managed embedding rates
+<a id="managed-embedding-rates" />
+
+### Native embedding rates
 
 | Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
 |:---------|:------|--------------------:|---------------------:|---------------------------------:|
@@ -85,7 +87,9 @@ See [Managed embeddings](/guides/collections/managed-embeddings) and [Managed re
 | `openai` | `text-embedding-3-large` | 0.13 | 0 | $0.1365 |
 | `openai` | `text-embedding-ada-002` | 0.1 | 0 | $0.105 |
 
-### Managed reranking rates
+<a id="managed-reranking-rates" />
+
+### Native reranking rates
 
 | Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
 |:---------|:------|--------------------:|---------------------:|---------------------------------:|
@@ -93,7 +97,7 @@ See [Managed embeddings](/guides/collections/managed-embeddings) and [Managed re
 
 At the \$1.05 per 1M LIU rate, one million Jev input tokens equal 42,000 LIU, or **\$0.0441** before plan allowances and integer-LIU rounding. Output tokens add zero LIU. Pricing is based on measured token usage, not provider request count.
 
-A successful reranking stage with complete valid usage records the sum of input/output tokens across its batches. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. Query read usage and any managed query-embedding usage remain separate from reranking inference usage.
+A successful reranking stage with complete valid usage records the sum of input/output tokens across its batches. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. Query read usage and any native query-embedding usage remain separate from reranking inference usage.
 
 ## Billing cycle
 

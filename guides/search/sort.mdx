@@ -19,7 +19,7 @@ Sorting can be done on the following data types:
 
 Set the request's `sort` to an array of objects mapping indexed field names to `"asc"` or `"desc"`, such as `[{"timestamp": "desc"}]`. The field name is the object key and the direction is its value; there are no literal `field` or `order` properties.
 
-Omitting `sort` or setting it to `null` means no explicit sort. [Managed reranking](/guides/search/managed-reranking) rejects any non-null `sort`, including an empty array.
+Omitting `sort` or setting it to `null` means no explicit sort. [Native reranking](/guides/search/native-reranking) rejects any non-null `sort`, including an empty array.
 
 ### Sort order options
 

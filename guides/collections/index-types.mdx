@@ -181,8 +181,8 @@ A kNN search finds the k nearest vectors to a query vector, as measured by a sim
 
 LambdaDB supports two vector field modes:
 
-- unmanaged vector fields, where you send vector values directly
-- managed embedding vector fields, where LambdaDB generates vector values from a source text field
+- vector fields with caller-provided values, where you send vector values directly
+- native embedding vector fields, where LambdaDB generates vector values from a source text field
 
 LambdaDB also supports `multi-field vector search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
 
@@ -220,11 +220,13 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 
 </CodeGroup>
 
-### Managed embedding vector fields
+<a id="managed-embedding-vector-fields" />
 
-Use `managedEmbedding: true` to let LambdaDB generate embeddings for a vector field from a source text field.
+### Native embedding vector fields
 
-For the current provider and model matrix, see [Managed embeddings](/guides/collections/managed-embeddings).
+Add an `embedding` block to let LambdaDB generate vectors from a source text field. The legacy `managedEmbedding` flag can be omitted.
+
+For supported models, SDK versions, and legacy compatibility, see [Native embeddings](/guides/collections/native-embeddings).
 
 <CodeGroup>
 
@@ -236,7 +238,6 @@ For the current provider and model matrix, see [Managed embeddings](/guides/coll
     },
     "body_embedding": {
         "type": "vector",
-        "managedEmbedding": True,
         "embedding": {
             "provider": "openai",
             "model": "text-embedding-3-small",
@@ -254,7 +255,6 @@ For the current provider and model matrix, see [Managed embeddings](/guides/coll
     },
     "body_embedding": {
         "type": "vector",
-        "managedEmbedding": true,
         "embedding": {
             "provider": "openai",
             "model": "text-embedding-3-small",
@@ -268,13 +268,13 @@ For the current provider and model matrix, see [Managed embeddings](/guides/coll
 
 <Note>
 
-For managed embedding vector fields:
+For native embedding vector fields:
 
 - `embedding.provider`, `embedding.model`, and `embedding.sourceField` are required
 - `embedding.sourceField` must point to a `text` field in the same collection
-- do not send direct vector values for the managed field in upsert or update requests
+- do not send direct vector values for the generated field in upsert or update requests
 - use `knn.queryText` for search instead of `knn.queryVector`
-- `bulk upsert` is not supported for collections that contain managed embedding fields
+- `bulk upsert` is not supported for collections that contain native embedding fields
 
 </Note>
 
