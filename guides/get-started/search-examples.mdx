@@ -28,6 +28,8 @@ pip install cohere lambdadb==0.12.1
 
 Python SDK 0.12.1 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
 
+These examples use caller-provided Cohere vectors. To have LambdaDB generate document and query embeddings, use [native embeddings](/guides/collections/native-embeddings) with a supported model. Native embedding fields require a different schema and search with `knn.queryText`, so changing only the query does not convert this collection's existing vectors.
+
 ## ⚙️ Initial setup
 
 ```python
@@ -76,11 +78,11 @@ def display_results(results, title, description=""):
 
 **💡 When to use:** This is your go-to search method when you want the most comprehensive and accurate results. Perfect for general queries where you need both keyword relevance and semantic understanding.
 
-**🔧 How it works:** Combines traditional full-text search with vector similarity using hybrid scoring strategies like Reciprocal Rank Fusion (`rrf`), L2 norm (`l2`), or Min-Max (`mm`) normalization—flexibly choosing the best fit for your use case.
+**🔧 How it works:** Combines full-text search with vector similarity using Reciprocal Rank Fusion (`rrf`), L2 norm (`l2`), Min-Max (`mm`), or Bayesian fusion (`bayesian`). The example below uses RRF.
 
 <Tip>
 
-Check out [this page](/guides/search/hybrid) for more details about hybrid query and scoring.
+See [Hybrid query](/guides/search/hybrid) for scoring details. To try Bayesian fusion in the example below, replace the `rrf` key with `bayesian` and add `candidate_size=30` to `coll.query(...)`. Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 100`; `knn.k` remains independent. Keep exactly two unboosted subqueries. Bayesian fusion calibrates scores on the retained candidates, so changing the budget can change ranking. See [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query) for complete requests and reranking options.
 
 </Tip>
 
@@ -581,8 +583,9 @@ if __name__ == "__main__":
 ### ✅ Configuration tips
 
 - **Set `skipSyntax: true`** for user inputs that may contain special characters.
+- **Choose text analyzers for your data** using the [analyzer guide](/guides/collections/choose-text-analyzers). `skipSyntax` still applies the field's configured analysis; it does not select a language or disable analysis.
 - **Use appropriate `k` values** (5-20 for most use cases).
-- **Choose RRF** for best overall search quality.
+- **Evaluate fusion methods** on representative queries. RRF combines ranks, `l2` and `mm` support weighted score fusion, and `bayesian` automatically calibrates scores on retained candidates. Compare candidate budgets as well as the fusion method.
 - **Apply filters in `knn.filter`** for semantic search within filtered results.
 
 ### 🚀 Performance optimization
@@ -593,6 +596,8 @@ if __name__ == "__main__":
 
 ## **➡️ Next step**
 
+- **Native reranking:** Add [query-level reranking](/guides/search/native-reranking) to evaluate retrieved candidates using stored text such as `title` and `text`. Check `rerank.status`; applied results expose the evaluation as `score` and the original retrieval score as `retrievalScore`.
+- **Keyword facets:** Use a separate supported lexical or match-all query to [count keyword values](/guides/search/facets). Facets cannot be added to the hybrid queries above.
 - **LambdaDB Cloud:** Sign up and manage projects in the console at [app.lambdadb.ai](https://app.lambdadb.ai).
 
 ## **🤝 Support**

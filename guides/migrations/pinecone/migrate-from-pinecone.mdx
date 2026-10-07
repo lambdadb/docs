@@ -414,6 +414,8 @@ Pinecone vector-API hybrid search can use one index with both dense and sparse v
 
 Use `rrf` when you want rank fusion without explicit boosts, or `mm`/`l2` when you want weighted score fusion.
 
+For automatic score calibration on retained candidates, use [Bayesian fusion](/guides/search/hybrid#bayesian-hybrid-query). To adapt the example, replace `mm` with `bayesian`, remove both `boost` fields, and place the expression under the request body's `query`. Without reranking, include top-level `size` and `candidateSize` with `1 <= size <= candidateSize <= 100`; with reranking, omit top-level `candidateSize` and use `rerank.candidateSize`. Keep exactly two subqueries; `knn.k` remains independent. Evaluate ranking on your workload because this changes the fusion behavior.
+
 ## Rewrite filters
 
 Pinecone metadata filters use operators such as `$eq`, `$gte`, `$in`, `$and`, and `$or`. In LambdaDB, map simple exact and range filters to `queryString`, and use `bool` when you need multiple clauses.

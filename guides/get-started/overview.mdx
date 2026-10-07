@@ -5,48 +5,30 @@ description: Learn how LambdaDB, the vector lake for AI memory, stores, searches
 
 LambdaDB is **the vector lake for AI memory**. Store, search, and version AI knowledge and memory, from small experiments to production, without managing always-on servers.
 
-Documents, vectors, and indexes live in durable object storage, while on-demand compute handles indexing and retrieval.
+Documents, vectors, and indexes live in durable object storage. [On-demand compute](/guides/get-started/architecture) handles indexing and retrieval, with [usage-based pricing](/guides/costs/understanding-costs).
 
-## 🗃️ Store and search AI knowledge and memory
+## Store your knowledge and memory
 
-<CardGroup cols={2}>
-  <Card title="Object storage" href="/guides/documents/upsert-data" icon="database">
-    Store text, embeddings, and their metadata with flexible schema support across 9 different index types.
-  </Card>
-  <Card title="Vector search" href="/guides/search/vector" icon="magnifying-glass">
-    k-NN search with cosine, euclidean, dot product, max inner product metrics.
-  </Card>
-  <Card title="Full-text search" href="/guides/search/query-string" icon="book-open">
-    Configurable text analysis for multiple languages, including Chinese, English, Korean, and Japanese.
-  </Card>
-  <Card title="Hybrid search" href="/guides/search/hybrid" icon="bolt">
-    Combines vector + lexical with score normalization (RRF, Min-Max, L2).
-  </Card>
-  <Card title="Multi-field vector search" href="/guides/search/vector#multi-field-vector-query" icon="layer-group">
-    Search across multiple vector fields simultaneously.
-  </Card>
-  <Card title="Sparse vector search" href="/guides/search/sparse-vector" icon="network-wired">
-    Efficient high-dimensional sparse vector storage and search.
-  </Card>
-</CardGroup>
+Organize source documents, embeddings, and metadata in [collections](/guides/collections/collection-overview). Choose [index types](/guides/collections/index-types) for the fields your application needs to search or filter. Supply your own vectors, or use [native embeddings](/guides/collections/native-embeddings) to generate document and query vectors from text with provider credentials managed by LambdaDB.
 
-## 🏢 Enterprise features
+## Search with the right signals
 
-### Backup & recovery
+Find relevant documents using [full-text](/guides/search/query-string), [dense vector](/guides/search/vector), or [sparse vector](/guides/search/sparse-vector) search. Combine retrieval paths with [hybrid search](/guides/search/hybrid), then optionally apply [native reranking](/guides/search/native-reranking) to evaluate the retrieved text against your question.
 
-- **Continuous backups**: Automatic collection-level backups with 30-day retention by default.
-- **Point-in-time branches**: Create a branch from a committed snapshot at or before a chosen time within the retention period.
-- **Data versioning**: Use branches for isolated writes, immutable tags for pinned snapshots, and mutable aliases for stable read names.
+Use [filters](/guides/search/boolean) to narrow matches and [keyword facets](/guides/search/facets) to show counts alongside supported lexical queries. The [search overview](/guides/search/search-overview) covers query options and links to each search method's detailed guide.
 
-### Operation & management
+## Version and recover your data
 
-- **Serverless-native architecture**: Zero infrastructure management required without paying for idle resources.
-- **Configurable rate limiting**: Project-level usage controls managed in LambdaDB Cloud.
-- **RESTful API**: Simple HTTP-based interface with comprehensive SDKs.
+Use [branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) to isolate changes, pin datasets for evaluation, and switch application reads between versions. Collections retain committed snapshots for 30 days by default, with [configurable retention](/guides/collections/create-a-collection#snapshot-retention). Create a [point-in-time branch](/guides/data-versioning/branches-tags-aliases#point-in-time-branches) from retained history to inspect or recover an earlier state.
 
 ## Get started
 
-<CardGroup cols={2}>
+Build with the [Python, TypeScript, or Go SDK](/reference/sdk/introduction), or call the [REST API](/reference/api/introduction) directly. Choose a starting point:
+
+<CardGroup cols={3}>
+  <Card title="Quickstart" href="/guides/get-started/quickstart" icon="book-open">
+    Create a collection, add documents, and run your first search with an SDK.
+  </Card>
   <Card title="Use the CLI" href="/guides/get-started/use-with-cli" icon="terminal">
     Install the CLI, import JSONL, and run your first query.
   </Card>

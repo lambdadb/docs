@@ -82,7 +82,7 @@ lambdadb doctor
 
 ## Create a collection and import JSONL
 
-The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility). Upgrade the CLI itself; SDK publication does not update installed CLIs.
+The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility).
 
 For generated vectors, use the [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in the same field-to-index map. The CLI also supports `lambdadb collections update --collection NAME --index-config FILE` with that map format. Existing field-update constraints still apply; see [Configure a collection](/guides/collections/manage-collections#configure-a-collection).
 
@@ -145,7 +145,7 @@ lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --c
 
 For query, set `"consistentRead": true` in the request file. These reads require a direct branch ref, exclude pending bulk imports, and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
-The CLI also accepts `facets` and an omitted `query` for match-all requests. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) for compatibility details.
+The CLI also accepts [keyword facets](/guides/search/facets) and an omitted `query` for match-all requests. Use `size: 0` with nonempty facets for counts without document results.
 
 <a id="managed-reranking" />
 

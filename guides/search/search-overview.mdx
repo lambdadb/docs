@@ -10,12 +10,15 @@ Search is the retrieval layer for the knowledge and memory stored in LambdaDB co
 LambdaDB supports several search methods:
 
 * Search for exact values: search for exact values or ranges of numbers, dates, IPs, or strings.
-* Full-text search: use full text queries to query unstructured textual data and find documents that best match query terms.
-* Vector search: store vectors in LambdaDB and use approximate nearest neighbor (ANN) to find vectors that are similar, supporting use cases like semantic search.
+* Full-text search: use [query strings](/guides/search/query-string) and the field's configured [text analyzers](/guides/collections/choose-text-analyzers) to match unstructured text.
+* Vector search: use [dense vector queries](/guides/search/vector) with approximate nearest neighbor (ANN) retrieval, or [sparse vector queries](/guides/search/sparse-vector) with weighted terms or dimensions.
+* Hybrid search: combine two retrieval paths with [RRF, Min-Max, L2, or Bayesian fusion](/guides/search/hybrid).
 
-If you use native embedding vector fields, see [Native embeddings](/guides/collections/native-embeddings) for the current supported providers and models.
+For dense vector fields, supply your own embeddings with `knn.queryVector`, or configure [native embeddings](/guides/collections/native-embeddings) and search with `knn.queryText` so LambdaDB generates the query vector with the field's model.
 
 To evaluate and reorder retrieved candidates with a model provided by LambdaDB, add query-level [native reranking](/guides/search/native-reranking). This is separate from vector retrieval and hybrid fusion.
+
+To count matching documents by keyword value, add [keyword facets](/guides/search/facets) to a supported lexical query or omit the query for match-all counts. Facets cannot be combined with vector, sparse vector, or hybrid queries.
 
 Common parameters for the request body of a query are as follows:
 
@@ -25,7 +28,7 @@ Common parameters for the request body of a query are as follows:
 | query          | Query object (details in the [subsections](/guides/search/query-string)). Omit or use `null` to match all documents in the selected read scope. | object or null | | All documents |
 | candidateSize | Candidate budget for [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) without reranking; require `size <= candidateSize <= 100`. Omit for other queries or when using `rerank.candidateSize`. | integer | Bayesian without reranking | |
 | rerank | Optional native reranking after candidate merge; requires a scoring query and positive `size`, and cannot be combined with `sort`. Omitted or `null` preserves existing search behavior. | object or null | | |
-| facets         | Counts by keyword field value (see [Keyword facets](/guides/search/facets)). Supported with `queryString`, `bool` combinations, or no query. | object | | |
+| facets         | Counts by keyword field value (see [Keyword facets](/guides/search/facets)). Supported with `queryString`, `bool` combinations of supported lexical queries, or no query. | object or null | | |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. | boolean |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
@@ -70,6 +73,7 @@ Query results are returned in the following format:
 | maxScore | Highest final returned document `score`; omitted for empty results or when no score is computed | number     |
 | total    | Number of documents returned, not the count of all matches               | long      |
 | rerank | Optional reranking status, model, counts, and stage timing | object |
+| facets | Requested keyword fields mapped to `buckets` containing `value` and `count`; counts cover all matches and remain inline even when documents use `docsUrl` | object |
 | docs     | Contains returned documents and metadata             | object[]  |
 | isDocsInline | Whether `docs` is included inline in the REST response | boolean |
 | docsUrl | Presigned download URL when `isDocsInline` is `false` | string |

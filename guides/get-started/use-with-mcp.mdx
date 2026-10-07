@@ -122,7 +122,7 @@ For example, pass these arguments to `lambdadb_query_collection` for the sample 
 }
 ```
 
-The MCP server also accepts `facets`, an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only. Facets require the new keyword index format; existing collections are not migrated automatically. See [facet index requirements](/guides/search/facets#index-requirements). See the [release notes](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) for compatibility details.
+The MCP server also accepts [keyword facets](/guides/search/facets), an omitted `query` for match-all, and `size: 0` with nonempty facets for counts only.
 
 <a id="managed-reranking" />
 
@@ -159,9 +159,9 @@ The LambdaDB MCP server can also expose write operations such as:
 - `lambdadb_upsert_docs`
 - `lambdadb_delete_docs`
 
-The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections. Update the MCP package itself and restart the server; SDK publication does not update installed MCP servers.
+The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections.
 
-The create tool also accepts [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in `indexConfigs`, without `managedEmbedding`. Legacy `managedEmbedding: true` remains supported. The MCP server has no collection-schema update tool.
+The create tool accepts an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema). The MCP server has no collection-schema update tool.
 
 Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
 

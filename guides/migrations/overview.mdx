@@ -141,7 +141,7 @@ payload:
 
 `embedding.sourceField` names the destination text field after renaming. Set `--migration.write-mode upsert`: bulk upsert is unsupported for collections with generated embedding fields. Generation consumes inference usage, including possible repeated provider calls on retries.
 
-Generated inventories continue to preserve stored vectors as ordinary vector fields. Keep those fields separate from generated vectors; a native payload index cannot replace a mapped source vector field. Existing target schemas are not updated or reconciled. Legacy `managedEmbedding: true` remains accepted; explicit false with `embedding` is invalid.
+Generated inventories preserve stored vectors as ordinary vector fields. Keep those fields separate from generated vectors; a native payload index cannot replace a mapped source vector field. Existing target schemas are not updated or reconciled.
 
 Query-overlap validation continues to use stored dense/sparse vectors. It does not run Bayesian queries, rerank results, or measure generated-vector quality.
 

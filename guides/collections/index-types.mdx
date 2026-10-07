@@ -49,7 +49,7 @@ Choose one or more [supported analyzers](#supported-analyzers) for each text fie
 
 ## keyword
 
-`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Use keyword indexes for sorting, exact-value filters, and [keyword facets](/guides/search/facets). Facets and array sorting require the new keyword index format described in the facet guide.
+`keyword` type is used for structured content such as IDs, email addresses, hostnames, status codes, zip codes, or tags. Use keyword indexes for sorting, exact-value filters, and [keyword facets](/guides/search/facets).
 
 <Note>
 
@@ -224,9 +224,9 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 
 ### Native embedding vector fields
 
-Add an `embedding` block to let LambdaDB generate vectors from a source text field. The legacy `managedEmbedding` flag can be omitted.
+Add an `embedding` block to let LambdaDB generate vectors from a source text field.
 
-For supported models, SDK versions, and legacy compatibility, see [Native embeddings](/guides/collections/native-embeddings).
+For supported models and configuration rules, see [Native embeddings](/guides/collections/native-embeddings).
 
 <CodeGroup>
 

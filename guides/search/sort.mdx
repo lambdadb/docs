@@ -126,5 +126,3 @@ When multiple sort fields are specified, the sorting is applied in the order the
 For `keyword` arrays, ascending order selects the smallest indexed value and descending order selects the largest. For example, `["a", "z"]` sorts using `"a"` in ascending order and `"z"` in descending order. Single values follow the same ordering. Values use Unicode code point order, without analysis, locale collation, or case folding.
 
 Documents with no indexed keyword value sort last in ascending order and first in descending order. Missing fields, null fields, empty arrays, and values excluded by the keyword length limit have no indexed sort value. Empty strings are indexed values.
-
-Array sorting requires the new keyword index format. Existing collections retain their previous sorting behavior; to enable array MIN/MAX sorting, fully reindex into a new collection. See [index requirements](/guides/search/facets#index-requirements).

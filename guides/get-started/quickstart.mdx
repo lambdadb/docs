@@ -68,14 +68,14 @@ go get github.com/lambdadb/go-lambdadb@v0.7.1
 </CodeGroup>
 
 <Tip>
-    Python SDK 0.12.1 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Python 3.9 users should stay on `lambdadb==0.9.0` until upgrading Python. Go SDK 0.7.1 requires Go 1.22 or later.
+    Python SDK 0.12.1 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Go SDK 0.7.1 requires Go 1.22 or later.
 </Tip>
 
 ## 📚 Step 3: Create a collection
 
-A collection is where you store the documents, embeddings, and metadata that make up an AI knowledge or memory dataset, and define how each field is indexed for retrieval. LambdaDB supports 9 different index types: text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
+A [collection](/guides/collections/collection-overview) is where you store the documents, embeddings, and metadata that make up an AI knowledge or memory dataset, and define how each field is indexed for retrieval. LambdaDB supports 9 different [index types](/guides/collections/index-types): text, keyword, long, double, boolean, object, datetime, dense vector, and sparse vector.
 
-Let's create a collection that combines text search with vector similarity:
+Let's [create a collection](/guides/collections/create-a-collection) that combines text search with vector similarity:
 
 Run the steps in order using one language. Python steps open a new client context for each operation and reuse `collection_name`. TypeScript steps reuse the initialized client. For Go, append the later snippets inside `main`, before its closing brace, using the imports shown in Step 3. Replace all connection placeholders before running.
 
@@ -191,15 +191,17 @@ The underlying REST response is `201 Created` and includes the default branch:
 
 **Key configuration details:**
 
-- **Text field**: This example selects English and Korean analyzers. See [Choose text analyzers](/guides/collections/choose-text-analyzers) for other options.
-- **Vector field**: 10-dimensional vectors using cosine similarity.
-- **Keyword field**: Added to support exact match filtering.
+- **Text field**: This example selects English and Korean analyzers from the 49 fixed presets. Both process every value; language is not detected automatically. [Choose text analyzers](/guides/collections/choose-text-analyzers) explains how to select and combine presets for your data.
+- **Vector field**: Illustrative 10-dimensional vectors using cosine similarity. For real embeddings, match the model's dimensions and [similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
+- **Keyword field**: Added to support [exact match filtering](/guides/search/query-string#exact-keyword-match).
+
+To have LambdaDB generate embeddings from your text, choose a [native embedding configuration](/guides/collections/native-embeddings#collection-schema) when creating the collection. That flow writes source text instead of direct vector values and searches with `knn.queryText` instead of `knn.queryVector`; LambdaDB manages provider credentials. The examples below use caller-provided vectors.
 
 `201 Created` confirms collection creation, not query-serving readiness. If a subsequent operation encounters a loading or transient error, follow [Errors and retries](/reference/api/introduction#errors-and-retries); do not recreate the collection to wait for readiness.
 
 ## 📄 Step 4: Add documents
 
-Now let's add some sample documents. Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
+Now let's [upsert some sample documents](/guides/documents/upsert-data). Each document contains text for full-text search, keywords for filtering, and vectors for similarity search:
 
 <CodeGroup>
 ```python Python
@@ -256,11 +258,11 @@ message: Upsert request is accepted
 
 **Important notes:**
 
-- **Upsert behavior**: Documents with the same ID will be replaced; new IDs create new documents.
+- **Upsert behavior**: Documents with the same ID will be replaced; new IDs create new documents. Use [partial updates](/guides/documents/update-data) to change selected fields.
 - **Auto-generated IDs**: If you don't provide an ID, one will be generated automatically.
-- **Bulk operations**: For large-scale document ingestion (5MB+), use the bulk-upsert functionality.
+- **Bulk operations**: For larger imports, see [Bulk upsert data](/guides/documents/bulk-upsert-data). Collections with native embedding fields require regular upsert or update so LambdaDB can generate vectors.
 - **Configurable consistency**: LambdaDB is eventually consistent by default, so there can be a slight delay before new or changed documents are visible to queries.
-  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying or fetching a branch directly. This overlays eligible pending writes, excluding pending bulk imports, and can return `429` if the pending payload exceeds its limit. Tag and alias reads reject this option.
+  If your application requires strong (read-after-write) consistency, set `consistentRead` (or `consistent_read` in Python) to `true` when querying or fetching a branch directly. This overlays eligible pending writes, excluding pending bulk imports, and can return `429` if the pending payload exceeds its limit. Tag and alias reads reject this option. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) for the full contract.
 
 **Check committed data:** The calls below show collection statistics. `numDocs` and `dataUpdatedAt` describe the default `main` branch's committed head; `dataUpdatedAt` may be absent before its first commit. To verify particular writes on any branch, query or fetch the expected records from that branch with `consistentRead: false`.
 
@@ -283,7 +285,7 @@ _ = meta
 
 ## 🔍 Step 5: Full-text search
 
-Let's search for documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". The text clause is required, and the keyword filter restricts results without contributing to the score:
+Let's use [query string search](/guides/search/query-string) to find documents that match "I hate managing servers" while filtering for documents tagged exactly with "serverless". In this [Boolean query](/guides/search/boolean#occur), the text clause is required, and the keyword filter restricts results without contributing to the score:
 
 <CodeGroup>
 ```python Python
@@ -357,9 +359,11 @@ for _, r := range fullTextResult.Docs {
 
 After the writes are visible, `doc1` and `doc3` satisfy the keyword filter and contain matching text terms. `doc2` is excluded by the filter. Inspect the scores returned by your request; their exact values and ordering are not fixed by this example.
 
+To show counts for values in the `keyword` field alongside these results, add [keyword facets](/guides/search/facets). Counts cover all matching documents, including the query's filters. They support this lexical query, but cannot be added to the hybrid query in Step 6.
+
 ## 🔍 Step 6: Hybrid search
 
-Now let's combine full-text search with vector similarity for more comprehensive results. This is where LambdaDB really shines:
+Now let's combine full-text search with [vector similarity](/guides/search/vector) in a [hybrid query](/guides/search/hybrid). This example uses L2 normalization to combine the two retrieval paths:
 
 <CodeGroup>
 ```python Python
@@ -424,15 +428,34 @@ for _, r := range hybridResult.Docs {
 
 The result items have the same shape as the full-text results. This query has no keyword filter, so `doc2` can also appear. The sample vectors only demonstrate the request format; they are not embeddings of the document text and do not demonstrate semantic relevance. Exact scores and ordering depend on the data and query.
 
-**Score normalization options:**
+**Hybrid fusion options:**
 
-- `rrf` (Reciprocal Rank Fusion): Great for combining rankings from different search methods
+- `rrf` (Reciprocal Rank Fusion): Combines result ranks from different search methods
 - `l2` (L2 Normalization): Normalizes scores using L2 norm
 - `mm` (Min-Max Normalization): Simple linear scaling to 0-1 range
+- `bayesian` (Bayesian Fusion): Automatically calibrates each retrieval path's scores on retained candidates before combining them
+
+### Try Bayesian hybrid search
+
+To try Bayesian fusion with the same documents, replace `l2` with `bayesian` in the examples above and add a candidate budget alongside `size` in the query call:
+
+- **Python:** `candidate_size=30`
+- **TypeScript:** `candidateSize: 30`
+- **Go:** `CandidateSize: lambdadb.Int64(30)`
+
+Without reranking, this budget is required and must satisfy `1 <= size <= candidateSize <= 100`. It controls retrieval and score calibration depth for each path; `knn.k` remains independent. Changing the budget can change scores and ranking.
+
+Keep exactly two unboosted subqueries and use `bayesian` only at the top level of `query`. The fused scores are heuristic scores, not relevance probabilities. For complete requests, constraints, and optional reranking, see [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query).
+
+### Rerank the results
+
+For a model to evaluate the retrieved documents against your question, add query-level [native reranking](/guides/search/native-reranking), using `text` as the stored field to evaluate. It works with the full-text and hybrid queries above, including caller-provided vectors. LambdaDB manages provider credentials, and reranking consumes [inference usage](/guides/costs/understanding-costs#inference-usage).
+
+When reranking is applied, `score` is the model's evaluation and `retrievalScore` preserves the original retrieval or fusion score. Check `rerank.status` before interpreting results. For Bayesian queries with reranking, move the candidate budget into `rerank.candidateSize` and omit top-level `candidateSize`; see [candidate counts](/guides/search/native-reranking#candidate-counts).
 
 ## 🧹 Step 7: Clean up
 
-When you're finished experimenting, clean up your resources:
+When you're finished experimenting, [delete the collection](/guides/collections/manage-collections#delete-a-collection) to remove the sample documents and indexes:
 
 <CodeGroup>
 ```python Python

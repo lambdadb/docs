@@ -22,7 +22,7 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## Supported SDK versions
 
-The examples use these stable releases, which include data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [native reranking](/guides/search/native-reranking), [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), and [native embedding configuration](/guides/collections/native-embeddings#collection-schema):
+The examples use these stable releases, which include data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets#client-compatibility), [native reranking](/guides/search/native-reranking), [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), and [native embedding configuration](/guides/collections/native-embeddings#collection-schema):
 
 | SDK | Recommended release | SDK guide |
 | :-- | :------------------ | :-------- |
@@ -30,7 +30,7 @@ The examples use these stable releases, which include data versioning, all 49 [t
 | JavaScript/TypeScript | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/data-versioning.md) |
 | Go | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/sdks/versioning/README.md) |
 
-Python SDK 0.12.1 requires Python **3.10–3.13**. If you use Python 3.9, stay on `lambdadb==0.9.0` until upgrading Python; that release does not include the additional analyzer names. Go SDK 0.7.1 requires Go **1.22 or later**.
+Python SDK 0.12.1 requires Python **3.10–3.13**. Go SDK 0.7.1 requires Go **1.22 or later**.
 
 ### Search and embedding configuration
 
@@ -45,13 +45,11 @@ For Bayesian queries, select the candidate budget field based on whether reranki
 
 Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 100`. With reranking, omit the top-level field; the rerank budget defaults to `max(50, size)` and must satisfy the same bounds. `knn.k` remains independent. See the [complete Bayesian requests](/guides/search/hybrid#bayesian-hybrid-query) for both forms. Existing search defaults are unchanged.
 
-Native embedding configuration accepts `embedding` without `managedEmbedding`; legacy `managedEmbedding: true` remains supported for older servers.
+Configure [native embeddings](/guides/collections/native-embeddings#collection-schema) with an `embedding` block on a vector field.
 
-TypeScript and Go provide `IndexConfigsNativeEmbeddingVector`; Go wraps this with `CreateIndexConfigsUnionNativeEmbeddingVector`. Existing legacy SDK types and helpers remain available.
+TypeScript and Go provide `IndexConfigsNativeEmbeddingVector`; Go wraps this with `CreateIndexConfigsUnionNativeEmbeddingVector`.
 
 ## Data versioning support
-
-The minimum stable versions for collection, branch, tag, and alias APIs remain Python **0.9.0**, JavaScript/TypeScript **0.5.1**, and Go **0.4.0**. Use the recommended releases above for all 49 fixed analyzer presets and native reranking. Older SDK request and response models may reject or omit the new fields.
 
 Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
 
