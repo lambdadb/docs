@@ -108,6 +108,12 @@
             "pages": [
               "guides/costs/understanding-costs"
             ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "guides/security/subprocessors"
+            ]
           }
         ]
       },
