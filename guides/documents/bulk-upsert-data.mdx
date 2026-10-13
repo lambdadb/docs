@@ -137,8 +137,13 @@ if err != nil {
 ```
 
 ```bash cURL
+BASE_URL="YOUR_BASE_URL"
+PROJECT_NAME="YOUR_PROJECT_NAME"
+COLLECTION_NAME="my_collection"
+LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
 curl -i -X GET \
-  "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert?branch=candidate" \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/bulk-upsert" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
@@ -241,6 +246,7 @@ For the manual Python upload, also install `requests` with `pip install requests
   ```
 
   ```bash cURL
+  # Reuse the connection variables from step 1; both control calls target main.
   # 1. Upload to the presigned URL from step 1
   curl --fail -X PUT "<provided_url>" \
     -H 'Content-Type: application/json' \
@@ -249,13 +255,12 @@ For the manual Python upload, also install `requests` with `pip install requests
 
   # 2. Complete bulk upsert with the objectKey from step 1
   curl -i -X POST \
-    "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/bulk-upsert" \
+    "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/bulk-upsert" \
     -H 'content-type: application/json' \
     -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     -d '{
       "objectKey": "<objectKey from step 1>",
-      "type": "application/json",
-      "branch": "candidate"
+      "type": "application/json"
     }'
   ```
 

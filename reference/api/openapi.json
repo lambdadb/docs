@@ -2902,7 +2902,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to upsert. For native embedding vector fields, omit the generated vector field and provide only the configured source text field."
+                    "description": "Documents to insert or fully replace. Assign stable IDs before sending when later retrieval or retries are needed; the acceptance response does not return generated IDs, and replay without IDs can create duplicates. Keep the branch and partition-field value unchanged when replaying. For native embedding vector fields, omit the generated vector field and supply source text. Missing source text does not preserve a previous vector."
                   },
                   "branch": {
                     "type": "string",
@@ -2921,6 +2921,7 @@
                   "value": {
                     "docs": [
                       {
+                        "id": "example-id1",
                         "example-field1": "example-value1",
                         "example-field2": [
                           0.1,
@@ -2929,6 +2930,7 @@
                         ]
                       },
                       {
+                        "id": "example-id2",
                         "example-field1": "example-value2",
                         "example-field2": [
                           0.4,
@@ -2963,7 +2965,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Invalid document input or native embedding input, including provider token-limit rejection. Validation and embedding failures occur before the documents are submitted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2994,6 +2996,19 @@
                       "message": "Authentication failed"
                     }
                   }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Project write, storage, or inference quota exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "example": {
+                  "message": "Project inference quota exceeded"
                 }
               }
             }
@@ -3046,7 +3061,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Internal server error, including native embedding provider, response, or transport failures.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3483,7 +3498,7 @@
           "collections.docs"
         ],
         "operationId": "updateDocs",
-        "description": "Update documents in a collection. Note that the maximum supported payload size is 6MB.",
+        "description": "Update existing documents by ID with a strongly consistent read followed by a merged replacement. Omitted fields are preserved, nested objects are recursively merged, and arrays are replaced. Indexed fields reject null. A missing ID in the selected branch and partition rejects the whole request with 400 before submission. No document-version precondition is supported; concurrent updates can overwrite each other. The maximum supported payload size is 6MB.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3507,7 +3522,7 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "A list of documents to update. Each document must contain 'id' field to be updated. For native embedding vector fields, omit the generated vector field and update only the configured source text field."
+                    "description": "Documents to update; each must contain the existing document ID and, for partitioned documents outside __default__, its existing partition-field value. Omitted fields are preserved. Objects merge recursively; arrays and scalars replace existing values. Null is rejected for indexed fields and stored as JSON null for unindexed fields, not as a field deletion. For native embedding fields, omit the generated vector; unchanged source text reuses an existing vector, while changed source text regenerates it."
                   },
                   "branch": {
                     "type": "string",
@@ -3570,7 +3585,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Invalid update input, a missing document in the selected branch and partition, invalid merged document, or native embedding input rejection. These failures occur before the updates are submitted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3601,6 +3616,19 @@
                       "message": "Authentication failed"
                     }
                   }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Project read, write, storage, or inference quota exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "example": {
+                  "message": "Project inference quota exceeded"
                 }
               }
             }
@@ -3653,7 +3681,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Internal server error, including native embedding provider, response, or transport failures.",
             "content": {
               "application/json": {
                 "schema": {

@@ -24,7 +24,9 @@ It is built using one or more boolean clauses, each clause with a typed occurren
 | filter   | The clause (query) must appear in matching documents. However, unlike `must`, the score of the query will be ignored. Each query defined under a `filter` acts as a logical "AND", returning only documents that match all the specified queries. |
 | must     | The clause (query) must appear in matching documents and will contribute to the score. Each query defined under a `must` acts as a logical "AND", returning only documents that match all the specified queries. |
 | must_not | The clause (query) must not appear in the matching documents. Each query defined under a `must_not` acts as a logical "NOT", returning only documents that do not match any of the specified queries. |
-| should   | The clause (query) should appear in the matching document. Each query defined under a `should` acts as a logical "OR", returning documents that match any of the specified queries. |
+| should   | With no `must` or `filter` clauses, at least one `should` clause must match. With a `must` or `filter` clause, `should` clauses are optional and contribute to the score when they match. |
+
+For example, two `should` clauses match documents satisfying either clause. Adding a `filter` changes that behavior: the filter determines which documents can match, and the `should` clauses only affect their scores. Use `must` when a clause must match even alongside a filter. These rules apply independently at each nested `bool` level.
 
 ### Boost
 

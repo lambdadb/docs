@@ -7,7 +7,7 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to use the delete endpoint to remove documents from a collection.
 
-The REST request accepts an optional `branch` field. Omitting it deletes from the default branch, `main`; a tag or alias is not a valid write target.
+The examples delete from the default branch, `main`. To delete from another existing writable branch, include its name in the REST request's optional `branch` field. A tag or alias is not a valid write target. See [Branch selection](/guides/data-versioning/branches-tags-aliases#write-to-a-branch).
 
 Specify exactly one of `ids` or `filter`. An empty request, both fields together, or `partitionFilter` alone returns `400 BadRequest`. For partitioned collections, `partitionFilter` narrows the IDs or filter selection; it is not an independent deletion selector.
 
@@ -71,12 +71,16 @@ deleting by ID is the most efficient way to remove specific records.
   ```
 
   ```bash cURL
+  BASE_URL="YOUR_BASE_URL"
+  PROJECT_NAME="YOUR_PROJECT_NAME"
+  COLLECTION_NAME="your_collection_name"
+  LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
+
   curl -i -X POST \
-    --url "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/delete" \
+    --url "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/delete" \
     --header 'content-type: application/json' \
-    --header 'x-api-key: <YOUR_API_KEY>' \
+    --header "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     --data '{
-    "branch": "candidate",
     "ids": [
       "example-doc-id-1",
       "example-doc-id-2"
@@ -93,7 +97,7 @@ This deletes all documents matching the filter query.
 
 For example, to delete all documents with genre "documentary" and year 2019 from a collection, use the following code:
 
-These snippets reuse the imports and client setup above. For Go, replace the ID-deletion call inside `main` with the filter example below.
+These snippets reuse the imports, client setup, and cURL variables above. For Go, replace the ID-deletion call inside `main` with the filter example below.
 
 <CodeGroup>
   
@@ -125,11 +129,10 @@ These snippets reuse the imports and client setup above. For Go, replace the ID-
 
   ```bash cURL
   curl -i -X POST \
-    --url "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/delete" \
+    --url "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/delete" \
     --header 'content-type: application/json' \
-    --header 'x-api-key: <YOUR_API_KEY>' \
+    --header "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     --data '{
-    "branch": "candidate",
     "filter": {
       "queryString": {
         "query": "genre:documentary AND year:2019"
