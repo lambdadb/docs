@@ -7,11 +7,11 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to update documents in a collection.
 
-The REST request accepts an optional `branch` field. Omitting it writes to the default branch, `main`; a tag or alias is not a valid write target.
+The examples write to the default branch, `main`. The REST request accepts an optional `branch` field. To write to another branch, [create it first](/guides/data-versioning/branches-tags-aliases#create-and-list-branches), then include its name in `branch`; a tag or alias is not a valid write target.
 
 <Note>
 
-  If the collection contains native embedding vector fields, update the configured source text fields instead of sending direct vector values for native embedding fields.
+  If the collection contains native embedding vector fields, update the configured source text fields instead of sending direct vector values for native embedding fields. Unchanged source text reuses an existing vector; see [Native embedding write behavior](/guides/collections/native-embeddings#write-behavior).
 
 </Note>
 
@@ -79,14 +79,16 @@ The REST request accepts an optional `branch` field. Omitting it writes to the d
   ```
 
   ```bash cURL
+  BASE_URL="YOUR_BASE_URL"
+  PROJECT_NAME="YOUR_PROJECT_NAME"
+  COLLECTION_NAME="my_collection"
   LAMBDADB_PROJECT_API_KEY="YOUR_API_KEY"
 
   curl -X POST \
-    "$BASE_URL/projects/$PROJECT_NAME/collections/{collectionName}/docs/update" \
+    "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/update" \
     -H 'content-type: application/json' \
     -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     -d '{
-      "branch": "candidate",
       "docs": [
         {
           "id": "33201222",
@@ -105,14 +107,73 @@ The REST request accepts an optional `branch` field. Omitting it writes to the d
 
 </CodeGroup>
 
-The cURL example writes to the `candidate` branch. Remove `branch` to write to `main`.
-
 <Info>
   
   Each document in a payload must contain an `id` field to uniquely identify a document to update.
   For a partitioned collection, a document in the `__default__` partition with a matching `id` value is updated if the partition field is not provided.
 
 </Info>
+
+## How fields are updated
+
+An update reads the existing document with strong consistency, merges the supplied fields into it, and submits the resulting document for indexing. Omitted fields remain unchanged. The resulting document must still satisfy the collection's field types and document-size limit.
+
+| Supplied value | Behavior |
+|:---------------|:---------|
+| Scalar | Replaces the existing value |
+| Object | Recursively merges into an existing object, preserving omitted nested fields |
+| Array | Replaces the entire array; elements are not appended or merged |
+| `null` | Rejected with HTTP `400` for an indexed field. On an unindexed field, stores JSON `null`; it does not remove the field |
+
+For example, assume `metadata` is an object field and `labels` is a keyword field. Start with this document:
+
+```json
+{
+  "id": "doc-1",
+  "title": "Refund policy",
+  "metadata": { "language": "en", "revision": 1 },
+  "labels": ["draft", "support"]
+}
+```
+
+Send this update request:
+
+```json
+{
+  "docs": [
+    {
+      "id": "doc-1",
+      "metadata": { "revision": 2 },
+      "labels": ["published"]
+    }
+  ]
+}
+```
+
+After the update becomes visible, the document is:
+
+```json
+{
+  "id": "doc-1",
+  "title": "Refund policy",
+  "metadata": { "language": "en", "revision": 2 },
+  "labels": ["published"]
+}
+```
+
+An empty object does not clear an existing object. To remove fields, use [upsert](/guides/documents/upsert-data) with the complete replacement document and omit those fields.
+
+## Missing documents and failed requests
+
+Update does not create documents. If any ID is missing from the selected branch and partition, the request returns HTTP `400` and none of its updates are submitted. Use upsert when a document may not exist. Updating a partitioned document requires its existing partition-field value; omitting that field selects `__default__` and does not move a document from another partition.
+
+Input validation and native embedding generation complete before the merged documents are submitted. A failure in either stage prevents submission of the whole update request. A `202 Accepted` response confirms acceptance, not completed indexing. A timeout or transport failure after submission can still leave the write applied; [verify the resulting state before retrying](/reference/api/introduction#errors-and-retries).
+
+## Concurrent updates and cost
+
+Update is a read-modify-write operation without a document-version precondition. Concurrent requests can read the same earlier document and submit different replacements, overwriting each other's changes even when they update different fields. Serialize writes to the same document when preserving concurrent changes matters.
+
+The internal strongly consistent fetch is billed as read usage in addition to the update's write usage. See [Write usage](/guides/costs/understanding-costs#write-usage).
 
 ## Update limits
 

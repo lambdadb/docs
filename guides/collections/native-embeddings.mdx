@@ -71,6 +71,13 @@ Use the recommended [SDK versions](/reference/sdk/introduction#supported-sdk-ver
 
 For native embedding vector fields, send the source text field and let LambdaDB generate the vector value.
 
+| Operation | Source text and vector behavior |
+|:----------|:--------------------------------|
+| Upsert | A supplied source string generates a vector. Omitting the source field stores the document without that generated vector. Upsert replaces the whole document, so omission does not preserve a previous vector |
+| Update | Changed source text generates a replacement vector. Unchanged source text, including an omitted source field, reuses the existing vector if one is present. If the stored source text has no vector yet, an update can generate it |
+
+The source field must be a string when supplied. Explicit `null` and non-string values for the indexed source field return HTTP `400`. To omit a source field or remove it with a replacement upsert, leave out the JSON property rather than setting it to `null`.
+
 Do not send direct vector values for native embedding fields in:
 
 - [upsert](/guides/documents/upsert-data)
@@ -89,9 +96,30 @@ Example upsert payload:
 }
 ```
 
+### Input limits
+
+Use nonempty source text. The supported OpenAI models accept at most **8,192 tokens per input**, and OpenAI limits a provider request to **300,000 tokens across its inputs**. These limits apply to source text and query text, independently of LambdaDB's request and document byte limits. See the [OpenAI embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create).
+
+LambdaDB sends source strings to the provider without automatic chunking or truncation. Split long documents into separate records with stable chunk IDs before writing them, and count tokens using the selected model's tokenizer. When writing many long records, use smaller upsert or update batches to stay within the provider's combined token limit.
+
+### Failed embedding generation
+
+Embedding generation completes before a write is submitted for indexing. If generation fails for any document or native field, the write request fails without submitting its documents; it does not store a partially embedded batch. Successful embedding calls can still consume inference usage if a later call in the same request fails.
+
+| Status | Meaning and next step |
+|:-------|:----------------------|
+| `400` | Invalid source or query input, including an empty string or provider token-limit rejection. Correct or split the input before retrying |
+| `403` | Project inference quota exceeded. Check plan usage before retrying |
+| `429` | Request or provider throttling. Retry with bounded backoff |
+| `500` | Provider failure, invalid response, or embedding transport failure. Retain the server message for troubleshooting |
+
+Native embeddings have no `returnOriginal` fallback. The [reranking failure policy](/guides/search/native-reranking#handle-failures) applies only to the reranking stage; it cannot bypass query embedding failures. For an overall request timeout or an unknown write outcome, [verify the resulting state before retrying](/guides/documents/upsert-data#ids-and-retries).
+
 ## Query behavior
 
 For native embedding vector fields, use `knn.queryText` instead of `knn.queryVector`.
+
+`queryText` must be nonblank and fit the input token limit above. LambdaDB generates the query vector with the field's configured model before retrieval; if that call fails, the query fails without returning search results.
 
 ```json
 {
