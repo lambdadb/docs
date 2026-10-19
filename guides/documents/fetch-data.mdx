@@ -40,7 +40,7 @@ To fetch documents, specify the document IDs (up to 100 IDs).
       res = coll.docs.fetch(
           ids=["33201222"],
           include_vectors=True,
-          fields={"include": ["url", "title", "text"], "exclude": ["metadata.raw"]},
+          fields={"include": ["url", "title", "text", "dense_vector"], "exclude": ["metadata.raw"]},
       )
       # `res.docs` contains items (each item includes `doc` and metadata).
       # `res.documents` contains document bodies only.
@@ -59,7 +59,7 @@ To fetch documents, specify the document IDs (up to 100 IDs).
   const res = await client.collection("my_collection").docs.fetch({
     ids: ["33201222"],
     includeVectors: true,
-    fields: { include: ["url", "title", "text"], exclude: ["metadata.raw"] },
+    fields: { include: ["url", "title", "text", "dense_vector"], exclude: ["metadata.raw"] },
   });
   ```
 
@@ -81,7 +81,8 @@ To fetch documents, specify the document IDs (up to 100 IDs).
     )
     res, err := client.Collection("my_collection").Docs().Fetch(ctx, lambdadb.FetchDocsInput{
       Ids: []string{"33201222"},
-      // Optional: IncludeVectors, Fields (include/exclude)
+      IncludeVectors: lambdadb.Bool(true),
+      // Optional: Fields (include/exclude)
     })
     if err != nil {
       log.Fatal(err)
@@ -99,7 +100,7 @@ To fetch documents, specify the document IDs (up to 100 IDs).
       "ref": { "kind": "tag", "name": "validated-2026-09" },
       "includeVectors": true,
       "fields": {
-        "include": ["url", "title", "text"]
+        "include": ["url", "title", "text", "dense_vector"]
       }
     }'
   ```
@@ -110,7 +111,7 @@ To fetch documents, specify the document IDs (up to 100 IDs).
 
 Consistent reads overlay eligible pending writes. Pending bulk imports remain invisible until committed, and a pending payload above the consistent-read limit returns `429`.
 
-The response will look like this:
+The response below includes the synthetic 64-dimensional `dense_vector` from the [upsert example](/guides/documents/upsert-data):
 
 ```json
 {
@@ -124,7 +125,16 @@ The response will look like this:
         "url": "https://en.wikipedia.org/wiki/LambdaDB",
         "title": "LambdaDB",
         "text": "LambdaDB is the vector lake for AI memory ... ",
-        "vector": [0.6, -0.12, 0.65, 0.2, 0.3]
+        "dense_vector": [
+          0.015625, 0.03125, 0.046875, 0.0625, 0.078125, 0.09375, 0.109375, 0.125,
+          0.140625, 0.15625, 0.171875, 0.1875, 0.203125, 0.21875, 0.234375, 0.25,
+          0.265625, 0.28125, 0.296875, 0.3125, 0.328125, 0.34375, 0.359375, 0.375,
+          0.390625, 0.40625, 0.421875, 0.4375, 0.453125, 0.46875, 0.484375, 0.5,
+          0.515625, 0.53125, 0.546875, 0.5625, 0.578125, 0.59375, 0.609375, 0.625,
+          0.640625, 0.65625, 0.671875, 0.6875, 0.703125, 0.71875, 0.734375, 0.75,
+          0.765625, 0.78125, 0.796875, 0.8125, 0.828125, 0.84375, 0.859375, 0.875,
+          0.890625, 0.90625, 0.921875, 0.9375, 0.953125, 0.96875, 0.984375, 1.0
+        ]
       }
     }
   ],
