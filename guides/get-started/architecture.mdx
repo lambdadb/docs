@@ -7,7 +7,19 @@ LambdaDB separates request handling, writes, queries, and index building from du
 
 Last updated: October 19, 2026
 
-[![LambdaDB data plane: independently scalable Gateway, Writer, and Query Executor services, on-demand Builder jobs, and durable storage in S3 and a PostgreSQL-compatible metadata store.](/images/architecture.svg)](/images/architecture.svg)
+<div className="block dark:hidden">
+  <img
+    src="/images/architecture.svg"
+    alt="LambdaDB data plane: independently scalable Gateway, Writer, and Query Executor services, on-demand Builder jobs, and durable storage in S3 and a PostgreSQL-compatible metadata store."
+  />
+</div>
+
+<div className="hidden dark:block">
+  <img
+    src="/images/architecture-dark.svg"
+    alt="LambdaDB data plane: independently scalable Gateway, Writer, and Query Executor services, on-demand Builder jobs, and durable storage in S3 and a PostgreSQL-compatible metadata store."
+  />
+</div>
 
 *Tap or click to enlarge.*
 
@@ -49,7 +61,19 @@ The **metadata store** uses a PostgreSQL-compatible relational database to hold 
 
 Each collection branch's snapshot reference in PostgreSQL points to its current committed collection snapshot in S3. The snapshot records its partitions, each with an index storage root and shard metadata for query execution. The partition's storage root contains both Lucene index data and the vector index.
 
-[![Storage organization: a collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index root for full-text, vector, filtering, and other index data.](/images/storage-organization.svg)](/images/storage-organization.svg)
+<div className="block dark:hidden">
+  <img
+    src="/images/storage-organization.svg"
+    alt="Storage organization: a collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index root for full-text, vector, filtering, and other index data."
+  />
+</div>
+
+<div className="hidden dark:block">
+  <img
+    src="/images/storage-organization-dark.svg"
+    alt="Storage organization: a collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index root for full-text, vector, filtering, and other index data."
+  />
+</div>
 
 *Tap or click to enlarge.*
 

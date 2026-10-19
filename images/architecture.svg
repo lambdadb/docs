@@ -1,147 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1010" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1010" role="img" aria-labelledby="title description" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" width="1000" height="1010">
   <title id="title">LambdaDB data plane</title>
   <desc id="description">Gateway, Writer, and Query Executor scale independently within configured limits. Builder runs on-demand jobs. Gateway routes writes and consistent reads to Writer, and snapshot reads to Query Executor. Writer uses Query Executor to search committed snapshots. Below the compute group, a durable storage group contains S3 and a PostgreSQL-compatible metadata store. Writer, Query Executor, and Builder access S3 for documents, vectors, indexes, and the write-ahead log. Compute components access the metadata store for catalog information, references, and coordination.</desc>
   <defs>
-    <style>
-      svg {
-        --background: #ffffff;
-        --surface: #f6faf9;
-        --card: #ffffff;
-        --stack: #e4f1ec;
-        --border: #bfd8cd;
-        --ink: #173b32;
-        --muted: #526b63;
-        --accent: #087f62;
-        --tint: #e9f6f0;
-        --line: #628578;
-        --note: #f1f4f3;
-        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      @media (prefers-color-scheme: dark) {
-        svg {
-          --background: #101917;
-          --surface: #15231f;
-          --card: #1b2e27;
-          --stack: #234238;
-          --border: #3d6253;
-          --ink: #edf6f1;
-          --muted: #b2c7bd;
-          --accent: #6cddb3;
-          --tint: #204637;
-          --line: #94b5a6;
-          --note: #24362f;
-        }
-      }
-      text { fill: var(--ink); }
-      .muted { fill: var(--muted); }
-      .accent { fill: var(--accent); }
-      .diagram-title { font-size: 30px; font-weight: 650; }
-      .section-title { font-size: 18px; font-weight: 600; }
-      .component-title { font-size: 25px; font-weight: 650; }
-      .flow-label { font-size: 18px; }
-      .detail { font-size: 18px; }
-      .card { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
-      .back { fill: var(--stack); stroke: var(--border); stroke-width: 1.2; }
-      .flow { fill: none; stroke: var(--accent); stroke-width: 2.3; stroke-linejoin: round; marker-end: url(#arrow); }
-      .metadata { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 6 6; stroke-linejoin: round; marker-end: url(#meta-arrow); }
-      .scale { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    </style>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 1 1 L 9 5 L 1 9 Z" fill="var(--accent)"/>
+      <path d="M 1 1 L 9 5 L 1 9 Z" fill="#006b4f"/>
     </marker>
     <marker id="meta-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 1 1 L 9 5 L 1 9 Z" fill="var(--line)"/>
+      <path d="M 1 1 L 9 5 L 1 9 Z" fill="#426a59"/>
     </marker>
-    <g id="scale-icon" class="scale">
+    <g id="scale-icon" fill="none" stroke="#006b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M 0 5 H 27 M 0 5 L 5 0 M 0 5 L 5 10 M 27 5 L 22 0 M 27 5 L 22 10"/>
     </g>
   </defs>
 
-  <rect width="1000" height="1010" rx="20" fill="var(--background)"/>
-  <text x="40" y="48" class="diagram-title">Data plane</text>
+  <rect width="1000" height="1010" rx="20" fill="#ffffff"/>
+  <text x="40" y="48" fill="#123629" font-size="30" font-weight="650">Data plane</text>
 
-  <rect x="417" y="82" width="166" height="48" rx="24" fill="var(--note)"/>
-  <text x="500" y="113" text-anchor="middle" class="detail">Client</text>
+  <rect x="417" y="82" width="166" height="48" rx="24" fill="#e2ebe5"/>
+  <text x="500" y="113" text-anchor="middle" fill="#123629" font-size="18" font-weight="500">Client</text>
 
-  <rect x="24" y="165" width="952" height="440" rx="22" fill="var(--surface)" stroke="var(--border)" stroke-dasharray="7 7"/>
-  <text x="48" y="196" class="section-title muted">COMPUTE</text>
-  <path d="M 500 130 V 205" class="flow"/>
+  <rect x="24" y="165" width="952" height="440" rx="22" fill="#edf4f0" stroke="#6d8e7e" stroke-dasharray="7 7"/>
+  <text x="48" y="196" fill="#365449" font-size="18" font-weight="600">COMPUTE</text>
+  <path d="M 500 130 V 205" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
 
   <g id="gateway">
-    <rect x="401" y="193" width="230" height="110" rx="14" class="back"/>
-    <rect x="393" y="199" width="230" height="110" rx="14" class="back"/>
-    <rect x="385" y="205" width="230" height="110" rx="14" class="card"/>
-    <text x="500" y="241" text-anchor="middle" class="component-title">Gateway</text>
-    <text x="500" y="268" text-anchor="middle" class="detail muted">Authenticate · route</text>
+    <rect x="401" y="193" width="230" height="110" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="393" y="199" width="230" height="110" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="385" y="205" width="230" height="110" rx="14" fill="#ffffff" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="500" y="241" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">Gateway</text>
+    <text x="500" y="268" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Authenticate · route</text>
     <use href="#scale-icon" x="436" y="287"/>
-    <text x="473" y="298" class="detail accent">Auto scales</text>
+    <text x="473" y="298" fill="#006b4f" font-size="18" font-weight="500">Auto scales</text>
   </g>
 
-  <path d="M 425 315 V 370 H 175 V 415" class="flow"/>
-  <text x="69" y="349" class="flow-label muted">Writes / consistent reads</text>
-  <path d="M 500 315 V 415" class="flow"/>
-  <text x="518" y="368" class="flow-label muted">Snapshot reads</text>
+  <path d="M 425 315 V 370 H 175 V 415" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="69" y="349" fill="#365449" font-size="18" font-weight="500">Writes / consistent reads</text>
+  <path d="M 500 315 V 415" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="518" y="368" fill="#365449" font-size="18" font-weight="500">Snapshot reads</text>
 
   <g id="writer">
-    <rect x="76" y="403" width="230" height="130" rx="14" class="back"/>
-    <rect x="68" y="409" width="230" height="130" rx="14" class="back"/>
-    <rect x="60" y="415" width="230" height="130" rx="14" class="card"/>
-    <text x="175" y="453" text-anchor="middle" class="component-title">Writer</text>
-    <text x="175" y="481" text-anchor="middle" class="detail muted">Write · coordinate reads</text>
+    <rect x="76" y="403" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="68" y="409" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="60" y="415" width="230" height="130" rx="14" fill="#ffffff" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="175" y="453" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">Writer</text>
+    <text x="175" y="481" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Write · coordinate reads</text>
     <use href="#scale-icon" x="111" y="511"/>
-    <text x="148" y="522" class="detail accent">Auto scales</text>
+    <text x="148" y="522" fill="#006b4f" font-size="18" font-weight="500">Auto scales</text>
   </g>
 
-  <path d="M 306 483 H 385" class="flow"/>
-  <text x="346" y="468" text-anchor="middle" class="flow-label muted">Search</text>
+  <path d="M 306 483 H 385" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="346" y="468" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Search</text>
 
   <g id="query-executor">
-    <rect x="401" y="403" width="230" height="130" rx="14" class="back"/>
-    <rect x="393" y="409" width="230" height="130" rx="14" class="back"/>
-    <rect x="385" y="415" width="230" height="130" rx="14" class="card"/>
-    <text x="500" y="453" text-anchor="middle" class="component-title">Query Executor</text>
-    <text x="500" y="481" text-anchor="middle" class="detail muted">Coordinate · search</text>
+    <rect x="401" y="403" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="393" y="409" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="385" y="415" width="230" height="130" rx="14" fill="#ffffff" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="500" y="453" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">Query Executor</text>
+    <text x="500" y="481" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Coordinate · search</text>
     <use href="#scale-icon" x="436" y="511"/>
-    <text x="473" y="522" class="detail accent">Auto scales</text>
+    <text x="473" y="522" fill="#006b4f" font-size="18" font-weight="500">Auto scales</text>
   </g>
 
   <g id="builder">
-    <rect x="726" y="403" width="230" height="130" rx="14" class="back"/>
-    <rect x="718" y="409" width="230" height="130" rx="14" class="back"/>
-    <rect x="710" y="415" width="230" height="130" rx="14" class="card"/>
-    <text x="825" y="453" text-anchor="middle" class="component-title">Builder</text>
-    <text x="825" y="481" text-anchor="middle" class="detail muted">Index · publish snapshots</text>
+    <rect x="726" y="403" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="718" y="409" width="230" height="130" rx="14" fill="#cfdfd5" stroke="#6d8e7e" stroke-width="1.5"/>
+    <rect x="710" y="415" width="230" height="130" rx="14" fill="#ffffff" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="825" y="453" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">Builder</text>
+    <text x="825" y="481" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Index · publish snapshots</text>
     <use href="#scale-icon" x="740" y="511"/>
-    <text x="777" y="522" class="detail accent">On-demand jobs</text>
+    <text x="777" y="522" fill="#006b4f" font-size="18" font-weight="500">On-demand jobs</text>
   </g>
 
   <g id="durable-storage-frame">
-    <rect x="24" y="750" width="952" height="235" rx="22" fill="var(--surface)" stroke="var(--border)" stroke-dasharray="7 7"/>
-    <text x="48" y="782" class="section-title muted">DURABLE STORAGE</text>
+    <rect x="24" y="750" width="952" height="235" rx="22" fill="#edf4f0" stroke="#6d8e7e" stroke-dasharray="7 7"/>
+    <text x="48" y="782" fill="#365449" font-size="18" font-weight="600">DURABLE STORAGE</text>
   </g>
 
-  <path d="M 175 545 V 650 H 270 V 810" class="flow"/>
-  <text x="200" y="630" class="flow-label muted">Append / replay WAL</text>
-  <path d="M 500 545 V 810" class="flow"/>
-  <text x="365" y="708" class="flow-label muted">Read indexes</text>
-  <path d="M 825 545 V 650 H 590 V 810" class="flow"/>
-  <text x="665" y="630" class="flow-label muted">WAL → indexes</text>
+  <path d="M 175 545 V 650 H 270 V 810" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="200" y="630" fill="#365449" font-size="18" font-weight="500">Append / replay WAL</text>
+  <path d="M 500 545 V 810" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="365" y="708" fill="#365449" font-size="18" font-weight="500">Read indexes</text>
+  <path d="M 825 545 V 650 H 590 V 810" fill="none" stroke="#006b4f" stroke-width="2.3" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="665" y="630" fill="#365449" font-size="18" font-weight="500">WAL → indexes</text>
 
-  <path d="M 950 605 V 710 H 825 V 810" class="metadata"/>
-  <text x="720" y="692" class="flow-label muted">Metadata access</text>
+  <path d="M 950 605 V 710 H 825 V 810" fill="none" stroke="#426a59" stroke-width="2" stroke-dasharray="6 6" stroke-linejoin="round" marker-end="url(#meta-arrow)"/>
+  <text x="720" y="692" fill="#365449" font-size="18" font-weight="500">Metadata access</text>
 
   <g id="s3">
-    <rect x="60" y="810" width="565" height="115" rx="16" fill="var(--tint)" stroke="var(--border)" stroke-width="1.5"/>
-    <text x="342.5" y="849" text-anchor="middle" class="component-title">S3</text>
-    <text x="342.5" y="880" text-anchor="middle" class="detail">WAL · documents · indexes</text>
-    <text x="342.5" y="906" text-anchor="middle" class="detail muted">Write-ahead log  /  index storage</text>
+    <rect x="60" y="810" width="565" height="115" rx="16" fill="#dceee3" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="342.5" y="849" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">S3</text>
+    <text x="342.5" y="880" text-anchor="middle" fill="#123629" font-size="18" font-weight="500">WAL · documents · indexes</text>
+    <text x="342.5" y="906" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Write-ahead log  /  index storage</text>
   </g>
   <g id="metadata-store">
-    <rect x="710" y="810" width="230" height="115" rx="16" fill="var(--tint)" stroke="var(--border)" stroke-width="1.5"/>
-    <text x="825" y="849" text-anchor="middle" class="component-title">PostgreSQL</text>
-    <text x="825" y="880" text-anchor="middle" class="detail">Catalog · references</text>
-    <text x="825" y="906" text-anchor="middle" class="detail muted">Coordination</text>
+    <rect x="710" y="810" width="230" height="115" rx="16" fill="#dceee3" stroke="#6d8e7e" stroke-width="1.8"/>
+    <text x="825" y="849" text-anchor="middle" fill="#123629" font-size="25" font-weight="650">PostgreSQL</text>
+    <text x="825" y="880" text-anchor="middle" fill="#123629" font-size="18" font-weight="500">Catalog · references</text>
+    <text x="825" y="906" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Coordination</text>
   </g>
 
-  <text x="500" y="968" text-anchor="middle" class="detail muted">Durable storage · independent of compute lifetimes</text>
+  <text x="500" y="968" text-anchor="middle" fill="#365449" font-size="18" font-weight="500">Durable storage · independent of compute lifetimes</text>
 </svg>
