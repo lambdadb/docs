@@ -1,34 +1,77 @@
 ---
 title: Architecture
-description: Understand LambdaDB's serverless vector lake architecture on AWS, including the gateway layer, control and data functions, durable write buffering, and object storage.
+description: "Understand LambdaDB's data plane: independently scalable compute for requests, writes, queries, and indexing, backed by durable storage."
 ---
 
-LambdaDB implements the vector lake as a collection of serverless functions and resources within AWS. It persists collection documents, vectors, and indexes to S3-backed object storage. User requests flow through a regional Gateway, which routes them to either Control or Data functions, and the Builder function periodically commits buffered data to object storage.
+LambdaDB separates request handling, writes, queries, and index building from durable storage. Gateway, Writer, Query Executor, and Builder provide compute capacity for different parts of the workload. Documents, vectors, and indexes persist independently of those compute resources.
 
-![LambdaDB serverless architecture diagram](/images/architecture.svg)
+Last updated: October 19, 2026
 
-## Gateway
+[![LambdaDB data plane: independently scalable Gateway, Writer, and Query Executor services, on-demand Builder jobs, and durable storage in S3 and a PostgreSQL-compatible metadata store.](/images/architecture.svg)](/images/architecture.svg)
 
-**Gateway** verifies the project API key in user requests for targeted projects. If the key is valid, it checks whether the project exceeds its configured rate limit. It then routes the request to either Control or Data functions, based on the type of work needed.
+*Tap or click to enlarge.*
 
-## Control functions
+Stacked cards represent variable compute capacity. Each compute component can expand or contract independently within its configured capacity limits. Builder jobs run as indexing work becomes available and exit when that work is complete.
 
-**Control functions** handle collection lifecycle operations and data versioning for branches, tags, and aliases. They also perform maintenance tasks, such as adjusting the number of virtual shards for each collection to enable parallel query execution based on collection size, triggered by EventBridge Scheduler. They use DynamoDB for storing metadata and coordinating concurrent readers, writers, and background tasks.
+## Components
 
-Shards are an internal execution detail; LambdaDB does not expose shard-count or placement settings to users. Separately, applications can [configure collection partitions](/guides/collections/create-a-collection#create-a-partitioned-collection) and use `partitionFilter` to narrow a request's physical search scope.
+### Gateway
 
-## Data functions
+**Gateway** is the regional entry point for API requests. It validates project API keys, enforces access and rate limits, and handles collection and data-versioning management requests. It sends document writes and branch queries or fetches with `consistentRead: true` to Writer. Other read requests go to the Query Executor's coordination service.
 
-**Data functions** perform actual data writes and reads.
+### Writer
 
-### The write path
+**Writer** durably records document changes in a write-ahead log (WAL) before acknowledging them. It also maintains a local view of eligible changes that have not yet been incorporated into a committed snapshot.
 
-When the Writer function receives a request to upsert, update, or delete records in a collection, it records the request details for the selected branch in a log with a monotonically increasing sequence number. This request log is written into a durable write buffer before returning a response to the client. Later, the Builder writes buffered logs to object storage in batches and advances the branch head when data is committed. Immutable snapshots provide consistent read points for branches and tags, while aliases route reads to a named branch or tag.
+For consistent reads, Writer coordinates that pending view with the committed data searched by Query Executors. A consistent read can also run before a new collection has its first committed snapshot.
 
-### The read path
+### Query Executor
 
-When a query is received, the Router resolves the requested ref and then invokes Executor functions based on the number of virtual shards assigned to the collection. A strongly consistent read is available only when the request directly selects a branch; the Router includes eligible buffered writes, excluding pending bulk imports. If that pending payload exceeds the consistent-read limit, the request returns `429`. Each executor scans its assigned shard data and returns top candidates. The Router merges and deduplicates candidates, includes buffered results when required, and returns the final result set.
+**Query Executor** searches committed snapshots. Its coordination service resolves the requested branch, tag, or alias, distributes work across the relevant internal shards, and merges the results. For consistent reads, Writer coordinates the query and Query Executors search the committed portion.
 
-When requested, [native reranking](/guides/search/native-reranking) evaluates globally merged, deduplicated candidates before the final `size` limit. Its model and criteria are selected per query, with provider credentials managed by LambdaDB.
+Query Executors read indexes through an S3-native key-value storage engine with memory and local disk caches. [Apache Lucene](https://github.com/apache/lucene) handles full-text search and filtering.
 
-On a partitioned collection, `partitionFilter` restricts the search to selected physical partitions; unselected partitions are not searched. Without it, all partitions remain in the search scope. Internal sharding distributes the work within that scope rather than selecting the application's tenant, session, or repository data.
+Dense vector retrieval uses a dedicated vector index with a structure optimized for S3-backed storage. This index uses the same key-value storage engine as the Lucene indexes.
+
+### Builder
+
+**Builder** consumes WAL changes, builds indexes, and publishes immutable snapshots. It advances the branch head after the new snapshot is ready, making those changes available to ordinary reads. Builder capacity is provided by on-demand jobs, separately from request-serving capacity.
+
+Builder uses the same storage engine to publish new index roots and compact stored index data. The engine runs within Builder and Query Executor.
+
+### Durable storage
+
+**S3** stores documents, vectors, indexes, and the WAL. The S3-backed WAL implements the [OSWALD](https://github.com/nvartolomei/oswald) design. The WAL records accepted changes; the indexes provide efficient search over committed snapshots. Compute-local caches and pending-write indexes can be reconstructed from durable storage.
+
+The **metadata store** uses a PostgreSQL-compatible relational database to hold collection schemas, branch and tag references, aliases, snapshot references, and coordination state. It tracks which data is current and how work is coordinated; documents and vector indexes remain in S3.
+
+## Storage organization
+
+Each collection branch's snapshot reference in PostgreSQL points to its current committed collection snapshot in S3. The snapshot records its partitions, each with an index storage root and shard metadata for query execution. The partition's storage root contains both Lucene index data and the vector index.
+
+[![Storage organization: a collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index root for full-text, vector, filtering, and other index data.](/images/storage-organization.svg)](/images/storage-organization.svg)
+
+*Tap or click to enlarge.*
+
+Snapshot metadata and new index objects use the collection branch's prefix, with partition metadata organized under partition-specific subprefixes. Snapshots can reuse existing index objects through references. The diagram shows logical references, rather than the physical prefix layout.
+
+The WAL records pending changes separately; Builder incorporates those changes into new snapshots.
+
+## Write and indexing flow
+
+1. Gateway authenticates a document write and routes it to Writer for the selected branch.
+2. Writer commits the change to the durable WAL before returning a successful response. A successful write does not mean a new snapshot is already available.
+3. Builder processes pending changes and writes the resulting indexes and snapshot data to S3.
+4. Builder publishes the snapshot through the metadata store and advances the branch head. Ordinary reads can then see the indexed changes.
+
+[Branches](/guides/data-versioning/branches-tags-aliases) advance to new snapshots as data is indexed. Tags pin immutable snapshots, and aliases route reads to a named branch or tag.
+
+## Read consistency
+
+By default, reads use the selected committed snapshot, so newly acknowledged writes may not be visible immediately. For a branch query or fetch with `consistentRead: true`, Writer combines the committed snapshot with eligible pending changes, including updates and deletes.
+
+Consistent reads require a direct branch selector; tags and aliases do not support them. Pending bulk imports remain invisible until Builder commits them to a snapshot. A consistent read can return `429` when its pending payload exceeds the supported limit. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
+
+Query coordination merges and deduplicates candidates before returning results. When requested, [native reranking](/guides/search/native-reranking) evaluates globally merged candidates before the final `size` limit.
+
+On a [partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection), `partitionFilter` selects the physical partitions to search. Without it, all partitions are in scope. Internal sharding distributes work within that scope. LambdaDB automatically manages shard counts and placement to balance workloads and use compute capacity efficiently.

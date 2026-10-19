@@ -32,13 +32,13 @@ class BayesianNativeEmbeddingContractTest(unittest.TestCase):
         native = example["indexConfigs"]["bodyEmbedding"]
         configs.validate({"vector": native})
         configs.validate({"vector": {**native, "managedEmbedding": True}})
-        configs.validate({"vector": {"type": "vector", "dimensions": 3}})
+        configs.validate({"vector": {"type": "vector", "dimensions": 64}})
         configs.validate({"vector": {
-            "type": "vector", "dimensions": 3, "managedEmbedding": False,
+            "type": "vector", "dimensions": 64, "managedEmbedding": False,
         }})
         for update in (
             {"managedEmbedding": False},
-            {"dimensions": 3},
+            {"dimensions": 64},
             {"similarity": "cosine"},
         ):
             with self.subTest(update=update):
@@ -49,3 +49,40 @@ class BayesianNativeEmbeddingContractTest(unittest.TestCase):
             broken = copy.deepcopy(native)
             del broken["embedding"][required]
             self.assertFalse(configs.is_valid({"vector": broken}))
+
+    def test_dense_vector_dimensions_and_metrics(self):
+        configs = validator(SPEC["components"]["schemas"]["IndexConfigs"])
+        embeddings = validator(SPEC["components"]["schemas"]["EmbeddingConfig"])
+        native = {
+            "provider": "openai",
+            "model": "text-embedding-3-small",
+            "sourceField": "body",
+        }
+        for dimensions in (64, 4096):
+            for similarity in ("cosine", "euclidean"):
+                with self.subTest(dimensions=dimensions, similarity=similarity):
+                    configs.validate({"vector": {
+                        "type": "vector", "dimensions": dimensions,
+                        "similarity": similarity,
+                    }})
+        # Native dimensions also obey the model's upper limit on the server.
+        for dimensions in (64, 1536):
+            for similarity in ("cosine", "euclidean"):
+                embeddings.validate({
+                    **native, "dimensions": dimensions, "similarity": similarity,
+                })
+        for dimensions in (1, 63, 4097, 64.5, "64"):
+            with self.subTest(dimensions=dimensions):
+                self.assertFalse(configs.is_valid({"vector": {
+                    "type": "vector", "dimensions": dimensions,
+                }}))
+                self.assertFalse(embeddings.is_valid({**native, "dimensions": dimensions}))
+        for similarity in ("dot_product", "max_inner_product", "Cosine"):
+            with self.subTest(similarity=similarity):
+                self.assertFalse(configs.is_valid({"vector": {
+                    "type": "vector", "dimensions": 64, "similarity": similarity,
+                }}))
+        for similarity in ("dot_product", "max_inner_product"):
+            self.assertFalse(embeddings.is_valid({**native, "similarity": similarity}))
+        # Dense restrictions do not remove the sparse vector field type.
+        configs.validate({"sparse": {"type": "sparseVector"}})

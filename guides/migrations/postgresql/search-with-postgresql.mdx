@@ -109,7 +109,7 @@ In the tables below, **API mapping** means a documented LambdaDB operation exist
 |:---------------------|:-------|:--------------------------------------|
 | `ORDER BY embedding <=> query_vector LIMIT k` | API mapping | Configure `similarity: "cosine"` and use `knn`. Reuse embeddings with matching dimensions and model. Results contain relevance scores rather than the selected PostgreSQL distance. |
 | `ORDER BY embedding <-> query_vector LIMIT k` | API mapping | Configure `similarity: "euclidean"` and use `knn`. Review score thresholds separately from L2 distance thresholds. |
-| `ORDER BY embedding <#> query_vector LIMIT k` | API mapping | Use `similarity: "max_inner_product"` for maximum inner-product retrieval. PostgreSQL returns negative inner product for ascending ordering; LambdaDB returns relevance scores. Preserve vector magnitudes and do not assume `score = -distance`. |
+| `ORDER BY embedding <#> query_vector LIMIT k` | No direct equivalent | Dense inner-product metrics are not supported. Cosine can change ranking when vector magnitudes carry information; review the retrieval objective before selecting another metric. |
 | L1 (`<+>`), Hamming (`<~>`), or Jaccard (`<%>`) distance | No direct equivalent | These are not supported dense-vector similarity options. Changing to cosine or Euclidean changes the retrieval objective. |
 | `WHERE tenant_id = $1 AND status = $2` combined with vector ordering | Rewrite required | Index the scope fields and express document predicates inside `knn.filter`, using `bool` for combinations. If the collection is partitioned by `tenant_id`, also pass top-level `partitionFilter` to skip other partitions. Resolve the allowed tenant in the backend. |
 | `WHERE distance < threshold`, exact search, or stable tie ordering | Rewrite required | Establish an explicit result contract. A top-k ANN request and its relevance scores do not reproduce a SQL radius query, exact scan, or tie-breaking rule automatically. |
@@ -131,7 +131,7 @@ See [query string syntax](/guides/search/query-string), [hybrid queries](/guides
 
 ## Example: move one chat session's search
 
-Suppose PostgreSQL stores one session in `chat_session_42`, with `id`, `body`, and `embedding vector(3)` columns. Map its search data to a LambdaDB collection named `chat-session-42`. Three-dimensional vectors keep these examples short; use your actual model's dimensions and the same embedding model for documents and queries.
+Suppose PostgreSQL stores one session in `chat_session_42`, with `id`, `body`, and `embedding vector(64)` columns. Map its search data to a LambdaDB collection named `chat-session-42`. The example query uses a synthetic 64-dimensional vector to demonstrate request structure; use your actual model's dimensions and the same embedding model for documents and queries.
 
 ### Create the search collection
 
@@ -147,7 +147,7 @@ Send this body to `POST /projects/{projectName}/collections` on your regional ba
     },
     "embedding": {
       "type": "vector",
-      "dimensions": 3,
+      "dimensions": 64,
       "similarity": "cosine"
     }
   }
@@ -158,12 +158,12 @@ Export rows into documents with a stable string `id`, the original `body`, and t
 
 ### Vector retrieval
 
-Existing pgvector query:
+Existing pgvector query, with the same 64-dimensional query vector bound to `$1`:
 
 ```sql
-SELECT id, body, embedding <=> '[0.1,0.2,0.3]'::vector AS distance
+SELECT id, body, embedding <=> $1::vector AS distance
 FROM chat_session_42
-ORDER BY embedding <=> '[0.1,0.2,0.3]'::vector
+ORDER BY embedding <=> $1::vector
 LIMIT 10;
 ```
 
@@ -174,7 +174,16 @@ LambdaDB request body for `POST /projects/{projectName}/collections/chat-session
   "query": {
     "knn": {
       "field": "embedding",
-      "queryVector": [0.1, 0.2, 0.3],
+      "queryVector": [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+      ],
       "k": 10
     }
   },

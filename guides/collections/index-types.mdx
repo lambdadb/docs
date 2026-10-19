@@ -177,7 +177,7 @@ print(dt.isoformat(timespec="seconds"))
 
 The `vector` type indexes dense vectors of numeric values. `vector` indexes are primarily used for k-nearest neighbor (kNN) search. The vector type does not support aggregations or sorting. You add a vector field as an array of numeric values.
 
-A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. LambdaDB supports four similarity metrics: `euclidean`, `dot_product`, `cosine`, `max_inner_product`. You can define the vector similarity to use in kNN search.
+A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. Dense vector fields support **64 to 4096 dimensions** and the `cosine` and `euclidean` similarity metrics. For caller-provided vector fields, metric names are case-sensitive; omitting `similarity` selects `cosine`. Document and query vectors must match the field's dimensions and contain only finite numbers. Cosine vectors must have nonzero magnitude.
 
 LambdaDB supports two vector field modes:
 
@@ -363,7 +363,7 @@ complete_index_config = {
     "datetime": {"type": "datetime"},
     "vector": {
         "type": "vector",
-        "dimensions": 10,
+        "dimensions": 64,
         "similarity": "cosine",
     },
     "sparseVector": {"type": "sparseVector"},
@@ -385,7 +385,7 @@ complete_index_config = {
             "datetime": {"type": "datetime"},
             "vector": {
                 "type": "vector",
-                "dimensions": 10,
+                "dimensions": 64,
                 "similarity": "cosine",
             },
             "sparseVector": {"type": "sparseVector"},
@@ -411,7 +411,7 @@ complete_index_config = {
     "datetime": {"type": "datetime"},
     "vector": {
         "type": "vector",
-        "dimensions": 10,
+        "dimensions": 64,
         "similarity": "cosine"
     },
     "sparseVector": {"type": "sparseVector"},
@@ -433,7 +433,7 @@ complete_index_config = {
             "datetime": {"type": "datetime"},
             "vector": {
                 "type": "vector",
-                "dimensions": 10,
+                "dimensions": 64,
                 "similarity": "cosine"
             },
             "sparseVector": {"type": "sparseVector"}
@@ -516,9 +516,7 @@ Ask in the [LambdaDB community Slack](https://join.slack.com/t/lambdadbcommunity
 |:-------|:------------|:---------|
 | `cosine` | Cosine similarity | Most common for text embeddings |
 | `euclidean` | Euclidean distance | Geometric distance calculations |
-| `dot_product` | Dot product for unit-length vectors | Document and query vectors are already normalized to unit length |
-| `max_inner_product` | Maximum inner product without a normalization requirement | Preserve vector magnitudes when they contribute to relevance |
 
-For dense vectors, use `dot_product` only when both document and query vectors have unit length. Use `max_inner_product` to preserve an unnormalized inner-product objective; normalizing vectors can change that ranking. These semantics follow [Lucene's vector similarity definitions](https://lucene.apache.org/core/10_4_0/core/org/apache/lucene/index/VectorSimilarityFunction.html). This normalization requirement does not apply to `sparseVector` fields.
+These options apply to dense `vector` fields. Dense `dot_product` and `max_inner_product` are not supported. Changing an inner-product workload to cosine can change ranking when vector magnitudes carry information; validate the retrieval objective before migrating. The `sparseVector` type continues to use `dot_product` without a unit-length requirement.
 
 Dense-vector query results contain relevance scores, not raw distances or inner products. Validate score thresholds separately when migrating between systems.

@@ -101,7 +101,7 @@ with LambdaDB(
             "keyword": {"type": "keyword"},
             "vector": {
                 "type": "vector",
-                "dimensions": 10,
+                "dimensions": 64,
                 "similarity": "cosine",
             },
         },
@@ -126,7 +126,7 @@ const createResult = await client.createCollection({
   indexConfigs: {
     text: { type: "text", analyzers: ["english", "korean"] },
     keyword: { type: "keyword" },
-    vector: { type: "vector", dimensions: 10, similarity: "cosine" },
+    vector: { type: "vector", dimensions: 64, similarity: "cosine" },
   },
 });
 console.log(createResult);
@@ -161,7 +161,7 @@ func main() {
       "keyword": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
       "vector": components.CreateIndexConfigsUnionVector(components.IndexConfigsVector{
         Type: components.TypeVectorVector,
-        Dimensions: 10,
+        Dimensions: 64,
         Similarity: components.SimilarityCosine.ToPointer(),
       }),
     },
@@ -192,7 +192,7 @@ The underlying REST response is `201 Created` and includes the default branch:
 **Key configuration details:**
 
 - **Text field**: This example selects English and Korean analyzers from the 49 fixed presets. Both process every value; language is not detected automatically. [Choose text analyzers](/guides/collections/choose-text-analyzers) explains how to select and combine presets for your data.
-- **Vector field**: Illustrative 10-dimensional vectors using cosine similarity. For real embeddings, match the model's dimensions and [similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
+- **Vector field**: Synthetic 64-dimensional vectors using cosine similarity. For real embeddings, match the model's dimensions and [similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
 - **Keyword field**: Added to support [exact match filtering](/guides/search/query-string#exact-keyword-match).
 
 To have LambdaDB generate embeddings from your text, choose a [native embedding configuration](/guides/collections/native-embeddings#collection-schema) when creating the collection. That flow writes source text instead of direct vector values and searches with `knn.queryText` instead of `knn.queryVector`; LambdaDB manages provider credentials. The examples below use caller-provided vectors.
@@ -208,9 +208,9 @@ Now let's [upsert some sample documents](/guides/documents/upsert-data). Each do
 with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
     coll = client.collection(collection_name)
     docs = [
-        {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]},
-        {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]},
-        {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": ["serverless", "infrastructure"], "vector": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]},
+        {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": [(i + 1) / 64 for i in range(64)]},
+        {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": [(i + 2) / 64 for i in range(64)]},
+        {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": ["serverless", "infrastructure"], "vector": [(i + 3) / 64 for i in range(64)]},
     ]
     res = coll.docs.upsert(docs=docs)
     print(res)
@@ -218,19 +218,24 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
 ```typescript TypeScript
 const collection = client.collection(collectionName);
 const docs = [
-  { id: "doc1", text: "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", keyword: "serverless", vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
-  { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", keyword: "cloud", vector: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1] },
-  { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", keyword: ["serverless", "infrastructure"], vector: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] },
+  { id: "doc1", text: "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", keyword: "serverless", vector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64) },
+  { id: "doc2", text: "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", keyword: "cloud", vector: Array.from({ length: 64 }, (_, i) => (i + 2) / 64) },
+  { id: "doc3", text: "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", keyword: ["serverless", "infrastructure"], vector: Array.from({ length: 64 }, (_, i) => (i + 3) / 64) },
 ];
 const upsertResult = await collection.docs.upsert({ docs });
 console.log(upsertResult);
 ```
 ```go Go
 coll := client.Collection(collectionName)
+demoVector := func(offset int) []float64 {
+  values := make([]float64, 64)
+  for i := range values { values[i] = float64(i + offset) / 64 }
+  return values
+}
 docs := []map[string]interface{}{
-  {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},
-  {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1}},
-  {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": []string{"serverless", "infrastructure"}, "vector": []float64{0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2}},
+  {"id": "doc1", "text": "Serverless computing does not mean no servers are involved. It refers to a cloud computing model where the server management is abstracted away from developers.", "keyword": "serverless", "vector": demoVector(1)},
+  {"id": "doc2", "text": "Instead, it refers to a cloud computing model where developers can build and run applications without having to manage the underlying infrastructure.", "keyword": "cloud", "vector": demoVector(2)},
+  {"id": "doc3", "text": "The key aspect is that developers don't need to explicitly provision or manage servers. The cloud provider handles all server management automatically.", "keyword": []string{"serverless", "infrastructure"}, "vector": demoVector(3)},
 }
 upsertResult, err := coll.Docs().Upsert(ctx, lambdadb.UpsertDocsInput{Docs: docs})
 if err != nil { log.Fatal(err) }
@@ -374,7 +379,7 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         query={
             "l2": [
                 {"queryString": {"query": "I hate managing servers", "defaultField": "text"}},
-                {"knn": {"field": "vector", "k": 5, "queryVector": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0]}},
+                {"knn": {"field": "vector", "k": 5, "queryVector": [(i + 1) / 64 for i in range(64)]}},
             ]
         },
         consistent_read=True,
@@ -390,7 +395,7 @@ const hybridResult = await collection.query({
   query: {
     l2: [
       { queryString: { query: "I hate managing servers", defaultField: "text" } },
-      { knn: { field: "vector", k: 5, queryVector: [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0] } },
+      { knn: { field: "vector", k: 5, queryVector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64) } },
     ],
   },
   consistentRead: true,
@@ -406,7 +411,7 @@ hybridResult, err := coll.Query(ctx, lambdadb.QueryInput{
   Query: map[string]interface{}{
     "l2": []interface{}{
       map[string]interface{}{"queryString": map[string]interface{}{"query": "I hate managing servers", "defaultField": "text"}},
-      map[string]interface{}{"knn": map[string]interface{}{"field": "vector", "k": 5, "queryVector": []float64{0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0}}},
+      map[string]interface{}{"knn": map[string]interface{}{"field": "vector", "k": 5, "queryVector": demoVector(1)}},
     },
   },
   ConsistentRead: lambdadb.Bool(true),

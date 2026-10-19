@@ -23,7 +23,7 @@ Use LambdaDB native APIs directly when:
 - You need LambdaDB-specific query features such as lexical plus vector hybrid search.
 - You want the clearest long-term API surface after migration.
 
-The compatibility clients map Qdrant `Dot` to LambdaDB `dot_product`, which requires unit-length document and query vectors. If your inner-product search relies on vector magnitudes, use LambdaDB native APIs with `max_inner_product` and validate ranking and score handling. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
+Dense vectors must have 64–4096 dimensions. Use Qdrant `Cosine` or `Euclid` for the supported LambdaDB metrics. The compatibility clients map `Dot` to `dot_product`, which the server rejects for dense fields; `max_inner_product` is not a native API workaround. Changing to cosine can change ranking when vector magnitudes carry information. See [dense-vector requirements](/guides/collections/index-types#vector).
 
 ## Install
 
@@ -63,7 +63,7 @@ Change the import and client construction explicitly:
 + )
 ```
 
-Create a collection, write points, and query with Qdrant-style calls:
+Create a collection, write points, and query with Qdrant-style calls. These examples use a synthetic 64-dimensional unit vector:
 
 ```python Python
 from lambdadb.compat.qdrant import QdrantCompatClient, models
@@ -77,7 +77,7 @@ client = QdrantCompatClient(
 client.create_collection(
     collection_name="articles",
     vectors_config=models.VectorParams(
-        size=3,
+        size=64,
         distance=models.Distance.COSINE,
     ),
     payload_schema={
@@ -90,7 +90,7 @@ client.upsert(
     points=[
         models.PointStruct(
             id=1,
-            vector=[1.0, 0.0, 0.0],
+            vector=[1.0] + [0.0] * 63,
             payload={"tenant_id": "acme", "title": "Refund policy"},
         )
     ],
@@ -98,7 +98,7 @@ client.upsert(
 
 results = client.query_points(
     collection_name="articles",
-    query=[1.0, 0.0, 0.0],
+    query=[1.0] + [0.0] * 63,
     query_filter=models.Filter(
         must=[
             models.FieldCondition(
@@ -129,7 +129,7 @@ Change the import and client construction explicitly:
 + });
 ```
 
-Create a collection, write points, and query with Qdrant-style calls:
+Create a collection, write points, and query with Qdrant-style calls. These examples use a synthetic 64-dimensional unit vector:
 
 ```ts TypeScript
 import { QdrantCompatClient, models } from "@functional-systems/lambdadb/compat/qdrant";
@@ -142,7 +142,7 @@ const client = new QdrantCompatClient({
 
 await client.createCollection("articles", {
   vectorsConfig: new models.VectorParams({
-    size: 3,
+    size: 64,
     distance: models.Distance.COSINE,
   }),
   payloadSchema: {
@@ -154,14 +154,14 @@ await client.upsert("articles", {
   points: [
     new models.PointStruct({
       id: 1,
-      vector: [1.0, 0.0, 0.0],
+      vector: [1.0, ...Array(63).fill(0.0)],
       payload: { tenant_id: "acme", title: "Refund policy" },
     }),
   ],
 });
 
 const results = await client.queryPoints("articles", {
-  query: [1.0, 0.0, 0.0],
+  query: [1.0, ...Array(63).fill(0.0)],
   queryFilter: new models.Filter({
     must: [
       new models.FieldCondition({
@@ -218,14 +218,14 @@ Vector-name selectors request vector values from LambdaDB and filter the returne
 ```python Python
 client.query_points(
     collection_name="articles",
-    query=[1.0, 0.0, 0.0],
+    query=[1.0] + [0.0] * 63,
     with_vectors=["title"],
 )
 ```
 
 ```ts TypeScript
 await client.query("articles", {
-  query: [1.0, 0.0, 0.0],
+  query: [1.0, ...Array(63).fill(0.0)],
   with_vector: ["title"],
 });
 ```

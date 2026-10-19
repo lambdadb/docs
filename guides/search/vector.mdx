@@ -15,11 +15,13 @@ A vector query finds the k nearest vectors to a query vector or query text, as m
 | k             | Number of candidates requested from this vector retrieval leg; top-level `size` limits final returned documents | integer  | ✓        |
 | filter        | Query to filter the documents that can match        | object   |          |
 
-Provide exactly one of `queryVector` or `queryText`.
+Provide exactly one of `queryVector` or `queryText`. Dense fields support 64–4096 dimensions and `cosine` or `euclidean` similarity. `queryVector` must match the field's dimensions and contain only finite numbers; cosine queries must have nonzero magnitude. The `nodeSize` parameter is not supported.
 
 The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [native reranking](/guides/search/native-reranking#candidate-counts), `rerank.candidateSize` limits the merged rerank pool and does not automatically increase `k`.
 
 ## Examples
+
+The raw-vector examples use synthetic 64-dimensional vectors and assume fields configured with `dimensions: 64`. Use your model's full query vector for real searches.
 
 ### Simple vector query
 
@@ -28,16 +30,14 @@ The JSON examples below are query objects: place them under the request body's `
   "knn": {
     "field": "example_vector_field",
     "queryVector": [
-        0.030255454,
-        -0.058824085,
-        -0.065448694,
-        -0.03987034,
-        0.060786933,
-        -0.15469691,
-        -0.043918714,
-        0.057719983,
-        0.054530356,
-        0.007080819
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
     ],
     "k": 5
   }
@@ -74,16 +74,14 @@ This is useful when you have different types of embeddings (e.g., text embedding
         "knn": {
           "field": "text_embedding",
           "queryVector": [
-            0.030255454,
-            -0.058824085,
-            -0.065448694,
-            -0.03987034,
-            0.060786933,
-            -0.15469691,
-            -0.043918714,
-            0.057719983,
-            0.054530356,
-            0.007080819
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
           ],
           "k": 10
         }
@@ -92,16 +90,14 @@ This is useful when you have different types of embeddings (e.g., text embedding
         "knn": {
           "field": "image_embedding", 
           "queryVector": [
-            0.125434521,
-            -0.087654321,
-            0.045123789,
-            -0.156789012,
-            0.098765432,
-            0.034567890,
-            -0.123456789,
-            0.076543210,
-            -0.089012345,
-            0.112345678
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
           ],
           "k": 10
         }
@@ -125,16 +121,14 @@ An example vector query with a filter for better performance and relevance:
     },
     "field": "example_vector_field",
     "queryVector": [
-        0.030255454,
-        -0.058824085,
-        -0.065448694,
-        -0.03987034,
-        0.060786933,
-        -0.15469691,
-        -0.043918714,
-        0.057719983,
-        0.054530356,
-        0.007080819
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+      0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
     ],
     "k": 5
   }

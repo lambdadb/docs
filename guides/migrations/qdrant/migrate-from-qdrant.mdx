@@ -176,21 +176,32 @@ By default, `--migration.query-overlap` reports dense-vector overlap without fai
 
 The Migration CLI generates this default distance mapping for dense vector fields:
 
-| Qdrant distance | LambdaDB similarity |
+| Qdrant distance | Generated setting and target support |
 |:----------------|:--------------------|
 | `Cosine` | `cosine` |
-| `Dot` | `dot_product` |
+| `Dot` | The CLI generates `dot_product`, which is not supported for dense vectors. |
 | `Euclid` | `euclidean` |
 | `Manhattan` | No direct equivalent. Re-evaluate the embedding/search setup before migrating. |
 
-For `Dot`, verify that both stored vectors and query vectors have unit length before using the generated `dot_product` setting. If vector magnitudes contribute to relevance, set `similarity: max_inner_product` for that dense vector in the generated mapping file before creating the target collection. The CLI does not infer this choice from the source distance name. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics), and validate ranking and score thresholds after migration.
+Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `Dot` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either.
+
+The following field-mapping examples use synthetic 64-dimensional vectors. Preserve the full vectors and dimensions of your actual data when migrating; supported dense fields have 64–4096 dimensions.
 
 For a Qdrant point with a single dense vector:
 
 ```json Qdrant point
 {
   "id": 1,
-  "vector": [0.12, 0.34, 0.56],
+  "vector": [
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12
+  ],
   "payload": {
     "tenant_id": "acme",
     "title": "Refund policy",
@@ -209,7 +220,16 @@ the CLI writes a LambdaDB document like this:
   "title": "Refund policy",
   "body": "Refunds are available within 7 days.",
   "created_at": "2026-05-01T10:00:00Z",
-  "dense": [0.12, 0.34, 0.56]
+  "dense": [
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12
+  ]
 }
 ```
 
@@ -219,8 +239,26 @@ For Qdrant named vectors:
 {
   "id": 1,
   "vector": {
-    "title_dense": [0.1, 0.2, 0.3],
-    "body_dense": [0.4, 0.5, 0.6]
+    "title_dense": [
+      0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+      0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1,
+      0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3,
+      0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+      0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1,
+      0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3,
+      0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+      0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1
+    ],
+    "body_dense": [
+      0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+      0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4,
+      0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6,
+      0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+      0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4,
+      0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6,
+      0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+      0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4
+    ]
   },
   "payload": {
     "title": "Refund policy",
@@ -236,8 +274,26 @@ the CLI writes separate LambdaDB vector fields:
   "id": "1",
   "title": "Refund policy",
   "body": "Refunds are available within 7 days.",
-  "title_dense": [0.1, 0.2, 0.3],
-  "body_dense": [0.4, 0.5, 0.6]
+  "title_dense": [
+    0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+    0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1,
+    0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3,
+    0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+    0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1,
+    0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3,
+    0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1, 0.2,
+    0.3, 0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.1
+  ],
+  "body_dense": [
+    0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+    0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4,
+    0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6,
+    0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+    0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4,
+    0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6,
+    0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4, 0.5,
+    0.6, 0.4, 0.5, 0.6, 0.4, 0.5, 0.6, 0.4
+  ]
 }
 ```
 
@@ -386,7 +442,7 @@ Use field types intentionally:
 
 ## Rewrite hybrid search
 
-Qdrant hybrid queries often use `prefetch` plus RRF fusion across dense and sparse vectors.
+Qdrant hybrid queries often use `prefetch` plus RRF fusion across dense and sparse vectors. These query examples use synthetic 64-dimensional dense vectors; replace them with query embeddings from the migrated field's model and with the field's full dimensions.
 
 ```json Qdrant hybrid query
 {
@@ -397,7 +453,16 @@ Qdrant hybrid queries often use `prefetch` plus RRF fusion across dense and spar
       "limit": 20
     },
     {
-      "query": [0.01, 0.45, 0.67],
+      "query": [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+      ],
       "using": "dense",
       "limit": 20
     }
@@ -424,7 +489,16 @@ In LambdaDB, express the same dense/sparse fusion with `rrf`:
     {
       "knn": {
         "field": "dense",
-        "queryVector": [0.01, 0.45, 0.67],
+        "queryVector": [
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+        ],
         "k": 20
       }
     }
@@ -447,7 +521,16 @@ You can also combine lexical and vector relevance:
     {
       "knn": {
         "field": "dense",
-        "queryVector": [0.01, 0.45, 0.67],
+        "queryVector": [
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+        ],
         "k": 20
       },
       "boost": 0.6
