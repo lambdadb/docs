@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" role="img" aria-labelledby="title description">
+  <title id="title">LambdaDB storage organization</title>
+  <desc id="description">A collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index storage root containing full-text, vector, filtering, and other index data. This diagram shows logical references, not an S3 directory layout.</desc>
+  <defs>
+    <style>
+      svg {
+        --background: #ffffff;
+        --surface: #f6faf9;
+        --card: #ffffff;
+        --border: #bfd8cd;
+        --ink: #173b32;
+        --muted: #526b63;
+        --accent: #087f62;
+        --tint: #e9f6f0;
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        svg {
+          --background: #101917;
+          --surface: #15231f;
+          --card: #1b2e27;
+          --border: #3d6253;
+          --ink: #edf6f1;
+          --muted: #b2c7bd;
+          --accent: #6cddb3;
+          --tint: #204637;
+        }
+      }
+      text { fill: var(--ink); }
+      .muted { fill: var(--muted); }
+      .diagram-title { font-size: 30px; font-weight: 650; }
+      .section-title { font-size: 18px; font-weight: 600; }
+      .component-title { font-size: 25px; font-weight: 650; }
+      .detail { font-size: 18px; }
+      .frame { fill: var(--surface); stroke: var(--border); stroke-dasharray: 7 7; }
+      .card { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
+      .reference { fill: none; stroke: var(--accent); stroke-width: 2.3; marker-end: url(#arrow); }
+      .hierarchy { fill: none; stroke: var(--border); stroke-width: 2; stroke-linejoin: round; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 1 1 L 9 5 L 1 9 Z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="550" rx="20" fill="var(--background)"/>
+  <text x="40" y="48" class="diagram-title">Storage organization</text>
+
+  <rect x="24" y="90" width="320" height="210" rx="22" class="frame"/>
+  <text x="48" y="124" class="section-title muted">POSTGRESQL</text>
+  <rect x="54" y="160" width="260" height="105" rx="14" class="card"/>
+  <text x="184" y="204" text-anchor="middle" class="component-title">Branch snapshot</text>
+  <text x="184" y="235" text-anchor="middle" class="component-title">reference</text>
+
+  <rect x="430" y="90" width="546" height="420" rx="22" class="frame"/>
+  <text x="454" y="124" class="section-title muted">S3</text>
+  <rect x="466" y="160" width="474" height="220" rx="14" class="card"/>
+  <text x="500" y="198" class="component-title">Collection snapshot</text>
+  <path d="M 508 220 V 245 H 535" class="hierarchy"/>
+  <text x="550" y="252" class="component-title">Partitions</text>
+  <path d="M 558 265 V 338 H 585 M 558 293 H 585" class="hierarchy"/>
+  <text x="600" y="300" class="component-title">Shards</text>
+  <text x="710" y="300" class="detail muted">Query execution</text>
+  <text x="600" y="345" class="component-title">Index root</text>
+
+  <path d="M 314 212 H 466" class="reference"/>
+  <text x="390" y="194" text-anchor="middle" class="detail muted">Points to</text>
+  <path d="M 660 355 V 425" class="reference"/>
+  <text x="680" y="406" class="detail muted">References</text>
+
+  <rect x="466" y="425" width="474" height="65" rx="14" fill="var(--tint)" stroke="var(--border)" stroke-width="1.5"/>
+  <text x="703" y="454" text-anchor="middle" class="component-title">Index data</text>
+  <text x="703" y="478" text-anchor="middle" class="detail muted">Full-text · vector · filtering · …</text>
+</svg>

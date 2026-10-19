@@ -73,7 +73,7 @@ Each object within the rescoring method array contains a query-type key directly
 
 ## Examples
 
-Each JSON example below is a complete [query request body](/reference/api/endpoint/document-query). Field names must match your collection schema. The raw-vector examples use illustrative three-dimensional vectors; supply vectors with the dimensions configured for your fields.
+Each JSON example below is a complete [query request body](/reference/api/endpoint/document-query). Field names must match your collection schema. The raw-vector examples use synthetic 64-dimensional vectors and assume fields configured with `dimensions: 64`; use your model's full vectors, matching the configured dimensions, for real searches.
 
 ### Bayesian hybrid query
 
@@ -151,7 +151,16 @@ Use the recommended releases in [SDK usage](/reference/sdk/introduction#supporte
             }
           },
           "field": "text_embedding",
-          "queryVector": [0.1, 0.2, 0.3],
+          "queryVector": [
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+          ],
           "k": 5
         },
         "boost": 0.3
@@ -184,7 +193,16 @@ This request combines text search with pre-filtered vector search using L2 norma
       {
         "knn": {
           "field": "dense_embedding",
-          "queryVector": [0.1, 0.2, 0.3],
+          "queryVector": [
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+          ],
           "k": 10
         },
         "boost": 0.4
@@ -212,7 +230,16 @@ This request combines sparse and dense vector search using Min-Max normalization
       {
         "knn": {
           "field": "content_embedding",
-          "queryVector": [0.1, 0.2, 0.3],
+          "queryVector": [
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+          ],
           "k": 10
         }
       }

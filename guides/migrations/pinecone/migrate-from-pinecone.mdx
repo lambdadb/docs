@@ -239,20 +239,31 @@ By default, `--migration.query-overlap` reports vector overlap without failing t
 
 The Migration CLI generates this default metric mapping for dense vector fields:
 
-| Pinecone metric | LambdaDB similarity |
+| Pinecone metric | Generated setting and target support |
 |:----------------|:--------------------|
 | `cosine` | `cosine` |
 | `euclidean` | `euclidean` |
-| `dotproduct` | `dot_product` |
+| `dotproduct` | The CLI generates `dot_product`, which is not supported for dense vectors. |
 
-For `dotproduct`, verify that both stored vectors and query vectors have unit length before using the generated `dot_product` setting. If vector magnitudes contribute to relevance, set `similarity: max_inner_product` for that dense vector in the generated mapping file before creating the target collection. The CLI does not infer this choice from the source metric name. See [dense-vector similarity requirements](/guides/collections/index-types#supported-similarity-metrics), and validate ranking and score thresholds after migration. This distinction does not apply to sparse-vector indexes.
+Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `dotproduct` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either. Sparse-vector indexes continue to use `dot_product`.
+
+The following field-mapping examples use synthetic 64-dimensional vectors. Preserve the full vectors and dimensions of your actual data when migrating; supported dense fields have 64–4096 dimensions.
 
 For a Pinecone dense record:
 
 ```json Pinecone record
 {
   "id": "doc-1",
-  "values": [0.12, 0.34, 0.56],
+  "values": [
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12
+  ],
   "metadata": {
     "tenant_id": "acme",
     "title": "Refund policy",
@@ -271,7 +282,16 @@ the CLI writes a LambdaDB document like this:
   "title": "Refund policy",
   "body": "Refunds are available within 7 days.",
   "created_at": "2026-05-01T10:00:00Z",
-  "dense": [0.12, 0.34, 0.56]
+  "dense": [
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12,
+    0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56,
+    0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12, 0.34,
+    0.56, 0.12, 0.34, 0.56, 0.12, 0.34, 0.56, 0.12
+  ]
 }
 ```
 
@@ -385,7 +405,7 @@ results = coll.query(
 )
 ```
 
-Pinecone vector-API hybrid search can use one index with both dense and sparse values, or separate dense and sparse indexes whose results are merged client-side. In LambdaDB, use a collection with both dense and sparse fields, then query those fields together:
+Pinecone vector-API hybrid search can use one index with both dense and sparse values, or separate dense and sparse indexes whose results are merged client-side. In LambdaDB, use a collection with both dense and sparse fields, then query those fields together. This example uses a synthetic 64-dimensional vector; replace it with a query embedding from the migrated field's model and with the field's full dimensions:
 
 ```json LambdaDB dense + sparse hybrid query
 {
@@ -393,7 +413,16 @@ Pinecone vector-API hybrid search can use one index with both dense and sparse v
     {
       "knn": {
         "field": "dense",
-        "queryVector": [0.01, 0.45, 0.67],
+        "queryVector": [
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+        ],
         "k": 20
       },
       "boost": 0.7

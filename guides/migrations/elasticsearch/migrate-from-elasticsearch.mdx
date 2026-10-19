@@ -135,7 +135,7 @@ Review the generated mapping before migration:
 
 <Note>
 
-The CLI maps Elasticsearch `l2_norm` vector similarity to LambdaDB `euclidean`. Elasticsearch `cosine`, `dot_product`, and `max_inner_product` map directly.
+The CLI maps Elasticsearch `l2_norm` to LambdaDB `euclidean` and preserves `cosine`. Generated `dot_product` and `max_inner_product` settings are not supported for dense vectors. Review and edit the mapping before collection creation; changing to cosine can change ranking when vector magnitudes carry information. Dense fields must have 64–4096 dimensions. See [dense-vector requirements](/guides/collections/index-types#vector).
 
 </Note>
 
@@ -242,7 +242,7 @@ Example LambdaDB lexical query:
 }
 ```
 
-Example LambdaDB hybrid query:
+Example LambdaDB hybrid query using a synthetic 64-dimensional vector. Replace it with a query embedding from the migrated field's model and with the field's full dimensions:
 
 ```json JSON
 {
@@ -256,7 +256,16 @@ Example LambdaDB hybrid query:
     {
       "knn": {
         "field": "embedding",
-        "queryVector": [0.1, 0.2, 0.3],
+        "queryVector": [
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+          0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+        ],
         "k": 10
       }
     }

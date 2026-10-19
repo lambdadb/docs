@@ -237,16 +237,16 @@
           },
           "dimensions": {
             "type": "integer",
-            "description": "Resolved embedding dimensions. Optional in requests and resolved in stored collection metadata."
+            "description": "Resolved embedding dimensions, at least 64 and no greater than the model's supported maximum. Optional in requests and resolved in stored collection metadata.",
+            "minimum": 64,
+            "maximum": 4096
           },
           "similarity": {
             "type": "string",
             "description": "Resolved vector similarity metric. Optional in requests and resolved in stored collection metadata.",
             "enum": [
               "cosine",
-              "euclidean",
-              "dot_product",
-              "max_inner_product"
+              "euclidean"
             ],
             "default": "cosine"
           }
@@ -356,16 +356,16 @@
                 },
                 "dimensions": {
                   "type": "integer",
-                  "description": "Vector dimensions for vector fields with caller-provided values."
+                  "description": "Vector dimensions for vector fields with caller-provided values.",
+                  "minimum": 64,
+                  "maximum": 4096
                 },
                 "similarity": {
                   "type": "string",
                   "description": "Vector similarity metric for vector fields with caller-provided values.",
                   "enum": [
                     "cosine",
-                    "euclidean",
-                    "dot_product",
-                    "max_inner_product"
+                    "euclidean"
                   ],
                   "default": "cosine"
                 }

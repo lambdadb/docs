@@ -8,8 +8,11 @@ description: Review LambdaDB query constraints, large-result downloads, executio
 | Max `size` value    | 100    |
 | Max execution time  | 30s    |
 | Max boolean clauses | 4,096  |
+| Dense vector dimensions | 64–4,096, matching the field configuration |
 | Max term-weight entries for sparse vector query | 4,096  |
 | Value range for sparse vector query | 0-64  |
+
+Dense vector fields support `cosine` and `euclidean`. Query vectors must contain only finite values; cosine query vectors must have nonzero magnitude. See [Vector query](/guides/search/vector) for request examples.
 
 ## Bayesian candidate limits
 

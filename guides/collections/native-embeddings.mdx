@@ -25,11 +25,13 @@ LambdaDB currently supports the following embedding provider:
 
 The following OpenAI embedding models are currently supported for native embedding vector fields.
 
-| Model | Default dimensions | Dimensions parameter | Similarity |
+| Model | Default dimensions | Dimensions parameter | Default similarity |
 |:------|:-------------------|:---------------------|:-----------|
-| `text-embedding-3-small` | `1536` | Optional, from `1` to `1536` | `cosine` |
-| `text-embedding-3-large` | `3072` | Optional, from `1` to `3072` | `cosine` |
+| `text-embedding-3-small` | `1536` | Optional, from `64` to `1536` | `cosine` |
+| `text-embedding-3-large` | `3072` | Optional, from `64` to `3072` | `cosine` |
 | `text-embedding-ada-002` | `1536` | Fixed at `1536` | `cosine` |
+
+LambdaDB requires at least 64 dimensions, even when the embedding provider accepts a smaller value. Optional `embedding.similarity` supports `cosine` and `euclidean`; the models above default to `cosine`.
 
 ## Collection schema
 
