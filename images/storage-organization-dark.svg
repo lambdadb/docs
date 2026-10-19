@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" role="img" aria-labelledby="title description" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" width="1000" height="550">
+  <title id="title">LambdaDB storage organization</title>
+  <desc id="description">A collection branch's snapshot reference in PostgreSQL points to a collection snapshot in S3. Each partition references shards for query execution and an index storage root containing full-text, vector, filtering, and other index data. This diagram shows logical references, not an S3 directory layout.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 1 1 L 9 5 L 1 9 Z" fill="#6cddb3"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="550" rx="20" fill="#101917"/>
+  <text x="40" y="48" fill="#edf6f1" font-size="30" font-weight="650">Storage organization</text>
+
+  <rect x="24" y="90" width="320" height="210" rx="22" fill="#15231f" stroke="#3d6253" stroke-dasharray="7 7"/>
+  <text x="48" y="124" fill="#b2c7bd" font-size="18" font-weight="600">POSTGRESQL</text>
+  <rect x="54" y="160" width="260" height="105" rx="14" fill="#1b2e27" stroke="#3d6253" stroke-width="1.8"/>
+  <text x="184" y="204" text-anchor="middle" fill="#edf6f1" font-size="25" font-weight="650">Branch snapshot</text>
+  <text x="184" y="235" text-anchor="middle" fill="#edf6f1" font-size="25" font-weight="650">reference</text>
+
+  <rect x="430" y="90" width="546" height="420" rx="22" fill="#15231f" stroke="#3d6253" stroke-dasharray="7 7"/>
+  <text x="454" y="124" fill="#b2c7bd" font-size="18" font-weight="600">S3</text>
+  <rect x="466" y="160" width="474" height="220" rx="14" fill="#1b2e27" stroke="#3d6253" stroke-width="1.8"/>
+  <text x="500" y="198" fill="#edf6f1" font-size="25" font-weight="650">Collection snapshot</text>
+  <path d="M 508 220 V 245 H 535" fill="none" stroke="#3d6253" stroke-width="2" stroke-linejoin="round"/>
+  <text x="550" y="252" fill="#edf6f1" font-size="25" font-weight="650">Partitions</text>
+  <path d="M 558 265 V 338 H 585 M 558 293 H 585" fill="none" stroke="#3d6253" stroke-width="2" stroke-linejoin="round"/>
+  <text x="600" y="300" fill="#edf6f1" font-size="25" font-weight="650">Shards</text>
+  <text x="710" y="300" fill="#b2c7bd" font-size="18" font-weight="500">Query execution</text>
+  <text x="600" y="345" fill="#edf6f1" font-size="25" font-weight="650">Index root</text>
+
+  <path d="M 314 212 H 466" fill="none" stroke="#6cddb3" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <text x="390" y="194" text-anchor="middle" fill="#b2c7bd" font-size="18" font-weight="500">Points to</text>
+  <path d="M 660 355 V 425" fill="none" stroke="#6cddb3" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <text x="680" y="406" fill="#b2c7bd" font-size="18" font-weight="500">References</text>
+
+  <rect x="466" y="425" width="474" height="65" rx="14" fill="#204637" stroke="#3d6253" stroke-width="1.8"/>
+  <text x="703" y="454" text-anchor="middle" fill="#edf6f1" font-size="25" font-weight="650">Index data</text>
+  <text x="703" y="478" text-anchor="middle" fill="#b2c7bd" font-size="18" font-weight="500">Full-text · vector · filtering · …</text>
+</svg>
