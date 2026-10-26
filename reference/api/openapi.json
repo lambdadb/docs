@@ -233,7 +233,7 @@
           },
           "sourceField": {
             "type": "string",
-            "description": "Source text field name used to generate embeddings."
+            "description": "Stored scalar string path used to generate embeddings, using dotted paths through objects. The source does not need an index config. If configured, the leaf must be text or keyword and configured ancestors must be objects. Empty or blank path segments are invalid. Missing source values skip embedding generation; present null, array, object, or non-string values on unindexed source paths are rejected at write time."
           },
           "dimensions": {
             "type": "integer",
@@ -1081,7 +1081,7 @@
               "minLength": 1,
               "pattern": ".*\\S.*"
             },
-            "description": "Ordered, unique stored scalar string paths, using dotted paths for nested fields. Paths must have text or keyword index configs; arrays, objects, and non-string values are invalid. Missing/null values are skipped, but every candidate must have at least one nonblank selected value. Only these fields enter model input; top-level fields controls the response projection. Rendered candidate text is limited to 16 KiB UTF-8, and query plus all rendered candidates plus custom criteria to 256 KiB."
+            "description": "Ordered, unique stored scalar string paths, using dotted paths for nested fields. Paths do not need index configs. If configured, leaves must be text or keyword and configured ancestors must be objects. Empty or blank path segments are invalid; arrays, objects, and non-string values are invalid, including on unindexed stored paths. Values are checked before provider dispatch. Missing/null values are skipped, but every candidate must have at least one nonblank selected value. Only these fields enter model input; top-level fields controls the response projection. Rendered candidate text is limited to 16 KiB UTF-8, and query plus all rendered candidates plus custom criteria to 256 KiB."
           },
           "candidateSize": {
             "type": [
@@ -1089,8 +1089,8 @@
               "null"
             ],
             "minimum": 1,
-            "maximum": 100,
-            "description": "Upper bound on the globally merged and deduplicated rerank pool. Omitted or null defaults to max(50, size). Must satisfy size <= candidateSize <= 100. Does not modify any knn.k and does not guarantee this many candidates."
+            "maximum": 1000,
+            "description": "Upper bound on the globally merged and deduplicated rerank pool. Omitted or null defaults to max(50, size). Must satisfy size <= candidateSize <= 1000. Does not modify any knn.k and does not guarantee this many candidates."
           },
           "onFailure": {
             "type": [
@@ -1162,13 +1162,13 @@
           "candidateCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 100,
+            "maximum": 1000,
             "description": "Actual unique candidates in the rerank stage before final size limiting, not the returned-document count."
           },
           "scoredCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 100,
+            "maximum": 1000,
             "description": "Equals candidateCount on applied results; zero for skipped/fallback. Partial scores are never exposed."
           },
           "took": {
@@ -1508,7 +1508,8 @@
                     "description": "Collection name unique within the project."
                   },
                   "indexConfigs": {
-                    "$ref": "#/components/schemas/IndexConfigs"
+                    "$ref": "#/components/schemas/IndexConfigs",
+                    "minProperties": 1
                   },
                   "description": {
                     "type": "string",
@@ -2035,7 +2036,8 @@
                   "indexConfigs": {
                     "anyOf": [
                       {
-                        "$ref": "#/components/schemas/IndexConfigs"
+                        "$ref": "#/components/schemas/IndexConfigs",
+                        "minProperties": 1
                       },
                       {
                         "type": "null"
@@ -2349,11 +2351,12 @@
           {
             "in": "query",
             "name": "size",
-            "description": "Max number of documents to return at once.",
+            "description": "Max number of documents to return at once, from 1 to 1000. Defaults to 100 when omitted.",
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000,
+              "default": 100
             }
           },
           {
@@ -2562,7 +2565,8 @@
             "$ref": "#/components/responses/BadGateway"
           },
           "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
+            "$ref": "#/components/responses/ServiceUnavailable",
+            "description": "Service unavailable, including temporary result-storage admission failure. Retry with backoff."
           },
           "504": {
             "$ref": "#/components/responses/GatewayTimeout"
@@ -2597,18 +2601,27 @@
                 "additionalProperties": false,
                 "properties": {
                   "size": {
-                    "type": "integer",
-                    "description": "Max number of documents to return at once.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Max number of documents to return at once, from 1 to 1000. Defaults to 100 when omitted or null.",
                     "minimum": 1,
-                    "maximum": 100,
+                    "maximum": 1000,
                     "default": 100
                   },
                   "pageToken": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages."
                   },
                   "filter": {
-                    "type": "object",
+                    "type": [
+                      "object",
+                      "null"
+                    ],
                     "additionalProperties": true,
                     "description": "Filter applied before pagination. Supports queryString and nested bool filters. Vector and ranking query objects are not supported."
                   },
@@ -2863,7 +2876,8 @@
             "$ref": "#/components/responses/BadGateway"
           },
           "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
+            "$ref": "#/components/responses/ServiceUnavailable",
+            "description": "Service unavailable, including temporary result-storage admission failure. Retry with backoff."
           },
           "504": {
             "$ref": "#/components/responses/GatewayTimeout"
@@ -2900,9 +2914,11 @@
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "additionalProperties": true
+                      "additionalProperties": true,
+                      "minProperties": 1
                     },
-                    "description": "Documents to insert or fully replace. Assign stable IDs before sending when later retrieval or retries are needed; the acceptance response does not return generated IDs, and replay without IDs can create duplicates. Keep the branch and partition-field value unchanged when replaying. For native embedding vector fields, omit the generated vector field and supply source text. Missing source text does not preserve a previous vector."
+                    "description": "Documents to insert or fully replace. Assign stable IDs before sending when later retrieval or retries are needed; the acceptance response does not return generated IDs, and replay without IDs can create duplicates. Keep the branch and partition-field value unchanged when replaying. For native embedding vector fields, omit the generated vector field and supply source text. Missing source text does not preserve a previous vector.",
+                    "minItems": 1
                   },
                   "branch": {
                     "type": "string",
@@ -3520,9 +3536,11 @@
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "additionalProperties": true
+                      "additionalProperties": true,
+                      "minProperties": 1
                     },
-                    "description": "Documents to update; each must contain the existing document ID and, for partitioned documents outside __default__, its existing partition-field value. Omitted fields are preserved. Objects merge recursively; arrays and scalars replace existing values. Null is rejected for indexed fields and stored as JSON null for unindexed fields, not as a field deletion. For native embedding fields, omit the generated vector; unchanged source text reuses an existing vector, while changed source text regenerates it."
+                    "description": "Documents to update; each must contain the existing document ID and, for partitioned documents outside __default__, its existing partition-field value. Omitted fields are preserved. Objects merge recursively; arrays and scalars replace existing values. Null is rejected for indexed fields and stored as JSON null for unindexed fields, not as a field deletion. For native embedding fields, omit the generated vector; unchanged source text reuses an existing vector, while changed source text regenerates it.",
+                    "minItems": 1
                   },
                   "branch": {
                     "type": "string",
@@ -3740,7 +3758,8 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "A list of document IDs."
+                    "description": "A list of document IDs.",
+                    "minItems": 1
                   },
                   "filter": {
                     "type": "object",
@@ -3955,9 +3974,15 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "^[\\u0009-\\u000d\\u001c-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$"
+                      }
                     },
-                    "description": "A list of document IDs to fetch. Note that the maximum number of document IDs is 100."
+                    "description": "A list of 1 to 1000 nonblank document IDs to fetch. The count limit does not guarantee that all requested document bodies fit within response size limits.",
+                    "minItems": 1,
+                    "maxItems": 1000
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -4104,7 +4129,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request, including more than 1000 IDs or projected document bodies exceeding the 64 MiB per-node JSON size limit. Size-limit errors return no partial result; request fewer IDs or fields, or disable includeVectors.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4208,7 +4233,8 @@
             "$ref": "#/components/responses/BadGateway"
           },
           "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
+            "$ref": "#/components/responses/ServiceUnavailable",
+            "description": "Service unavailable, including temporary result-storage admission failure. Retry with backoff."
           },
           "504": {
             "$ref": "#/components/responses/GatewayTimeout"
@@ -4247,9 +4273,9 @@
                       "null"
                     ],
                     "minimum": 0,
-                    "maximum": 100,
+                    "maximum": 1000,
                     "default": 10,
-                    "description": "Number of documents to return, from 0 to 100. Defaults to 10 when omitted or null. Zero requires at least one facet; facet counts cover all matching documents regardless of this size. Rerank requires a positive size; this remains the final returned-document limit, distinct from candidateSize and each knn.k."
+                    "description": "Number of documents to return, from 0 to 1000. Defaults to 10 when omitted or null. Zero requires at least one facet; facet counts cover all matching documents regardless of this size. Rerank requires a positive size; this remains the final returned-document limit, distinct from candidateSize and each knn.k."
                   },
                   "query": {
                     "type": [
@@ -4257,7 +4283,7 @@
                       "null"
                     ],
                     "additionalProperties": true,
-                    "description": "Query object. For native embedding vector fields, use knn.queryText. For vector fields with caller-provided values, use knn.queryVector. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
+                    "description": "Query object. For native embedding vector fields, use knn.queryText. Alternatively, supply knn.queryVector directly, including for native embedding vector fields. Each knn query requires exactly one non-null queryText or queryVector and has its own k from 1 to 1000, independent of size and candidateSize. Query text requires a native embedding vector field. Query structure and per-leg bounds are validated by the server. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -4309,8 +4335,8 @@
                       "null"
                     ],
                     "minimum": 1,
-                    "maximum": 100,
-                    "description": "Required for top-level Bayesian fusion without rerank: 1 <= size <= candidateSize <= 100. Controls retrieval and calibration depth per signal, independently of final size and each knn.k. With rerank, omit this field and use rerank.candidateSize. Other query types must omit it. Null is treated as omitted; query semantics and the cross-field size bound are validated by the server."
+                    "maximum": 1000,
+                    "description": "Required for top-level Bayesian fusion without rerank: 1 <= size <= candidateSize <= 1000. Controls retrieval and calibration depth per signal, independently of final size and each knn.k. With rerank, omit this field and use rerank.candidateSize. Other query types must omit it. Null is treated as omitted; query semantics and the cross-field size bound are validated by the server."
                   }
                 },
                 "additionalProperties": false,
