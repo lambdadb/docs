@@ -122,6 +122,11 @@ class NativeRerankingContractTest(unittest.TestCase):
             self.assertFalse(self.requests.is_valid(body), field)
 
     def test_field_criteria_and_candidate_bounds(self):
+        for value in (101, 1000):
+            with self.subTest(candidate_size=value):
+                body = copy.deepcopy(self.request)
+                body["rerank"]["candidateSize"] = value
+                self.requests.validate(body)
         invalid = (
             ("fields", []),
             ("fields", ["body"] * 2),
@@ -130,7 +135,7 @@ class NativeRerankingContractTest(unittest.TestCase):
             ("queryText", ""),
             ("queryText", " \t"),
             ("candidateSize", 0),
-            ("candidateSize", 101),
+            ("candidateSize", 1001),
             ("candidateSize", 50.5),
             ("onFailure", "ignore"),
             ("criteria", []),

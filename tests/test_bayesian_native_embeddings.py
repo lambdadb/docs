@@ -15,7 +15,10 @@ class BayesianNativeEmbeddingContractTest(unittest.TestCase):
         example = json.loads(re.search(r"```json\n(.*?)\n```", guide, re.S)[1])
         self.assertEqual(REQUEST["examples"]["bayesianHybrid"]["value"], example)
         requests.validate(example)
-        for value in (0, 101, 1.5, "30"):
+        for value in (101, 1000):
+            with self.subTest(candidate_size=value):
+                requests.validate({**example, "candidateSize": value})
+        for value in (0, 1001, 1.5, "30"):
             with self.subTest(candidate_size=value):
                 self.assertFalse(requests.is_valid({**example, "candidateSize": value}))
         reranked = REQUEST["examples"]["bayesianReranking"]["value"]
