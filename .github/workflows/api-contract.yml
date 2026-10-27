@@ -1,0 +1,20 @@
+name: API contract copy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Check provenance, public scope, and OpenAPI validity
+        run: uv run --with-requirements tests/requirements.txt python -B scripts/sync_openapi.py --check
+      - name: Check sync behavior and guide examples
+        run: uv run --with-requirements tests/requirements.txt python -B -m unittest discover -s tests -v
