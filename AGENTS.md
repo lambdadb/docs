@@ -55,4 +55,4 @@ adding documentation for a new feature, tool, or integration.
   and guide examples; it does not independently prove remote origin/deployment.
 - Guide-only edits do not require a spec refresh. Contract boundary tests belong
   in the server repo; guide/spec consistency tests remain here.
-- Read `scripts/README.md` for commands and the initial migration exception.
+- Read `scripts/README.md` for synchronization commands and verification requirements.

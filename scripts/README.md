@@ -22,14 +22,6 @@ evidence. Review that evidence; the script cannot infer deployment from a SHA.
 The script reads the Git object, not a dirty working-tree file, and has no option
 to select the admin path. It does not copy or log credentials.
 
-For the initial ownership migration only, byte identity with the already public
-docs spec at `94a7b71613a3bf217a370d5117b3ff6ddfbae851` is publication evidence.
-This does not assert that the server source commit or other develop changes are
-in production. Merge the server ownership PR before this dependent docs PR;
-verify the pinned source remains reachable, and update the pin if the server PR
-is squashed or rebased. Public API changes after migration require deployment
-confirmation before docs promotion.
-
 CI runs `--check` without accessing the private repository: it checks local
 integrity and the public-path allowlist, not independent source authenticity.
 Before submitting a sync, run the source-byte check above. The allowlist must be
