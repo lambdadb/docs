@@ -38,3 +38,21 @@ adding documentation for a new feature, tool, or integration.
   items are complete. Do not add entries for every documentation edit.
 - Update `Last updated` when changing the page's visible content. Preserve the
   release months of historical milestones and verify links to supporting guides.
+
+## API contract ownership and publication
+
+- The only canonical customer API spec is `api/openapi.json` in the private
+  `lambdadb/lambdadb` repository. `reference/api/openapi.json` here is a read-only
+  publication copy. Make contract changes in the server repo first.
+- Never sync `api/openapi-admin.json`, glob spec files, or publish internal
+  project/key administration through docs or customer SDKs.
+- Use `scripts/sync_openapi.py` with an exact server commit and publication
+  evidence. Keep `reference/api/openapi-source.json` with the copy; do not edit
+  its digest to conceal direct spec edits. A merge is not deployment evidence.
+- Before submitting a sync, verify bytes against an authenticated local server
+  checkout using `--check --server-repo`. CI without private-repo credentials
+  validates the local digest, source identity format, public scope, OpenAPI,
+  and guide examples; it does not independently prove remote origin/deployment.
+- Guide-only edits do not require a spec refresh. Contract boundary tests belong
+  in the server repo; guide/spec consistency tests remain here.
+- Read `scripts/README.md` for synchronization commands and verification requirements.
