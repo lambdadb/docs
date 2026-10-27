@@ -1,7 +1,7 @@
 {
   "repository": "lambdadb/lambdadb",
   "path": "api/openapi.json",
-  "commit": "cdcf4b2e2f93d80b803f4f188ed9ad15d3888768",
+  "commit": "f38827aa6c1273457210b6ef64d9c4ea74c8be34",
   "sha256": "14b3767cd373f278e961b9bcd0b8acf2c99148948d4e812bc6f6633a449ae4f6",
-  "publicationEvidence": "Ownership migration only: byte-identical to published lambdadb/docs@94a7b71613a3bf217a370d5117b3ff6ddfbae851:reference/api/openapi.json. No new public contract and no assertion that server develop is deployed."
+  "publicationEvidence": "Byte-identical to the already published lambdadb/docs@94a7b71613a3bf217a370d5117b3ff6ddfbae851:reference/api/openapi.json. This ownership-only sync adds no public API behavior and does not assert deployment of other changes in the server commit."
 }
