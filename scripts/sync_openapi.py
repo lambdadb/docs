@@ -91,7 +91,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--server-repo", type=Path, help="Authenticated local lambdadb checkout")
     parser.add_argument("--commit", help="Exact server commit SHA (sync only)")
-    parser.add_argument("--publication-evidence", help="Deployment confirmation or byte-identical public migration evidence")
+    parser.add_argument("--publication-evidence", help="Evidence that the selected public contract is approved for publication")
     parser.add_argument("--check", action="store_true", help="Verify locally; add --server-repo for source-byte verification")
     args = parser.parse_args()
     if args.check:
