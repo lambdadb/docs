@@ -144,7 +144,7 @@ The create response is intentionally compact. Use describe or list to retrieve `
 
 ## Create a collection with native embeddings
 
-Native embeddings let LambdaDB derive vector values from a source text field. Define the vector field with an `embedding` block. The source field must be a `text` field in the same collection.
+Native embeddings let LambdaDB derive vector values from fields in the document. Define the vector field with an `embedding` block that lists its `sources`. Source fields do not need their own index configs.
 
 For supported models and configuration rules, see [Native embeddings](/guides/collections/native-embeddings).
 
@@ -170,7 +170,7 @@ with LambdaDB(
                 "embedding": {
                     "provider": "openai",
                     "model": "text-embedding-3-small",
-                    "sourceField": "body",
+                    "sources": [{"field": "body", "type": "text"}],
                 },
             },
         },
@@ -190,7 +190,7 @@ await client.createCollection({
       embedding: {
         provider: "openai",
         model: "text-embedding-3-small",
-        sourceField: "body",
+        sources: [{ field: "body", type: "text" }],
       },
     },
   },
@@ -213,7 +213,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
             "embedding": {
               "provider": "openai",
               "model": "text-embedding-3-small",
-              "sourceField": "body"
+              "sources": [{ "field": "body", "type": "text" }]
             }
           }
         }

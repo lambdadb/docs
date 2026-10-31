@@ -23,10 +23,10 @@ Create a **project API key** in [LambdaDB Cloud](https://app.lambdadb.ai): open 
 **Installation:**
 
 ```bash
-pip install cohere lambdadb==0.12.1
+pip install cohere lambdadb==0.14.1
 ```
 
-Python SDK 0.12.1 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
+Python SDK 0.14.1 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
 
 These examples use caller-provided Cohere vectors. To have LambdaDB generate document and query embeddings, use [native embeddings](/guides/collections/native-embeddings) with a supported model. Native embedding fields require a different schema and search with `knn.queryText`, so changing only the query does not convert this collection's existing vectors.
 
@@ -82,7 +82,7 @@ def display_results(results, title, description=""):
 
 <Tip>
 
-See [Hybrid query](/guides/search/hybrid) for scoring details. To try Bayesian fusion in the example below, replace the `rrf` key with `bayesian` and add `candidate_size=30` to `coll.query(...)`. Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 100`; `knn.k` remains independent. Keep exactly two unboosted subqueries. Bayesian fusion calibrates scores on the retained candidates, so changing the budget can change ranking. See [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query) for complete requests and reranking options.
+See [Hybrid query](/guides/search/hybrid) for scoring details. To try Bayesian fusion in the example below, replace the `rrf` key with `bayesian` and add `candidate_size=30` to `coll.query(...)`. Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 1000`; `knn.k` remains independent. Keep exactly two unboosted subqueries. Bayesian fusion calibrates scores on the retained candidates, so changing the budget can change ranking. See [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query) for complete requests and reranking options.
 
 </Tip>
 

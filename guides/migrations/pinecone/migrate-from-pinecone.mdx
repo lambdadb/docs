@@ -42,7 +42,7 @@ Pinecone's current API reference is versioned as `2026-04`. If you call Pinecone
 
 ## Step 1: Install the CLI
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.9` using Homebrew or the standalone installer.
 
 Check the Pinecone command:
 
@@ -243,7 +243,9 @@ The Migration CLI generates this default metric mapping for dense vector fields:
 |:----------------|:--------------------|
 | `cosine` | `cosine` |
 | `euclidean` | `euclidean` |
-| `dotproduct` | The CLI generates `dot_product`, which is not supported for dense vectors. |
+| `dotproduct` | The CLI generates `dot_product`, which is not supported for dense vectors; the migration is rejected before any LambdaDB request. Sparse indexes keep `dotproduct` and migrate to sparse vector fields, which have no similarity setting. |
+
+The inventory reports each vector's generated `similarity` with the original `sourceSimilarity`, and `warnings` names every vector whose metric or dimensions LambdaDB cannot store. Migration runs, including `--migration.dry-run`, validate the mapping first and exit with an error naming the vector and metric; the CLI never converts a similarity on its own. To migrate such a vector, set `vectors.<source vector>.similarity` to `cosine` or `euclidean` in the mapping file and pass it with `--mapping-file`.
 
 Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `dotproduct` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either. Sparse-vector indexes continue to use `dot_product`.
 
@@ -443,7 +445,7 @@ Pinecone vector-API hybrid search can use one index with both dense and sparse v
 
 Use `rrf` when you want rank fusion without explicit boosts, or `mm`/`l2` when you want weighted score fusion.
 
-For automatic score calibration on retained candidates, use [Bayesian fusion](/guides/search/hybrid#bayesian-hybrid-query). To adapt the example, replace `mm` with `bayesian`, remove both `boost` fields, and place the expression under the request body's `query`. Without reranking, include top-level `size` and `candidateSize` with `1 <= size <= candidateSize <= 100`; with reranking, omit top-level `candidateSize` and use `rerank.candidateSize`. Keep exactly two subqueries; `knn.k` remains independent. Evaluate ranking on your workload because this changes the fusion behavior.
+For automatic score calibration on retained candidates, use [Bayesian fusion](/guides/search/hybrid#bayesian-hybrid-query). To adapt the example, replace `mm` with `bayesian`, remove both `boost` fields, and place the expression under the request body's `query`. Without reranking, include top-level `size` and `candidateSize` with `1 <= size <= candidateSize <= 1000`; with reranking, omit top-level `candidateSize` and use `rerank.candidateSize`. Keep exactly two subqueries; `knn.k` remains independent. Evaluate ranking on your workload because this changes the fusion behavior.
 
 ## Rewrite filters
 
@@ -502,7 +504,7 @@ Use field types intentionally:
 - **Namespaces**: Run one migration per namespace. If the namespace itself matters in LambdaDB, use separate target collections or add namespace metadata in Pinecone before migration.
 - **Metadata indexes**: Pinecone metadata index settings are not introspected. Add LambdaDB `payload.indexConfigs` manually for fields used in filters or sorting.
 - **Field names**: LambdaDB field names cannot contain dots. Dotted Pinecone metadata keys are normalized during migration, such as `metadata.url` to `metadata_url`.
-- **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use LambdaDB native embeddings when you want LambdaDB to generate embeddings from source text after migration.
+- **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use [LambdaDB native embeddings](/guides/migrations/overview#generate-embeddings-from-migrated-text) when you want LambdaDB to generate embeddings from migrated text or image fields.
 - **Hybrid shape**: Pinecone supports multiple hybrid patterns. Validate whether your workload uses a single dense index with `sparse_values`, separate dense and sparse indexes, or a document-schema index before choosing the target LambdaDB schema.
 - **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with native embeddings.
 - **Consistency**: Pinecone is eventually consistent for freshly written data. LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches; use query overlap checks before cutover.

@@ -205,6 +205,8 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 
 New fields can be added under existing objects at any depth. Include all existing fields in the submitted schema, including nested children, and preserve their types and settings. For example, adding `profile.city` is supported when `profile.name` and its settings are retained. Removing an existing field or changing its type, analyzers, vector settings, or embedding configuration is rejected. `partitionConfig` and `defaultBranchName` cannot be changed with PATCH.
 
+Described and listed collections include the server-managed top-level `id` field as `{"type": "keyword"}`. You can send a described `indexConfigs` back unchanged, with that `id` entry, or omit it; any other `id` configuration, an `id` inside an object field, or another reserved field name is rejected.
+
 Metadata tags allow up to five entries. Keys must match `[A-Za-z0-9_.-]{1,63}`; values must be nonblank, at most 127 characters, and cannot contain `:`, `#`, or `,`. These metadata tags are separate from data-versioning tags.
 
 ## Delete a collection

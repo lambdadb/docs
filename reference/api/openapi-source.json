@@ -1,7 +1,7 @@
 {
   "repository": "lambdadb/lambdadb",
   "path": "api/openapi.json",
-  "commit": "f38827aa6c1273457210b6ef64d9c4ea74c8be34",
-  "sha256": "14b3767cd373f278e961b9bcd0b8acf2c99148948d4e812bc6f6633a449ae4f6",
-  "publicationEvidence": "Byte-identical to the already published lambdadb/docs@94a7b71613a3bf217a370d5117b3ff6ddfbae851:reference/api/openapi.json. This ownership-only sync adds no public API behavior and does not assert deployment of other changes in the server commit."
+  "commit": "6757e333d92fc0d194c07a239c8f3d2b1baca24c",
+  "sha256": "8a78c2abb9f4169abed31176d9ee86deb1f4782bb2134bee513e52899a9c3aea",
+  "publicationEvidence": "Deploy Prod run 41208216184 (2026-10-31, head 6757e333) succeeded for prod-aws-apne2-v3 and prod-aws-apne1-v3. The spec bytes are identical to a8f04f2ff30749a5f5a0dda08b275c98bb05816c; the Cohere contract (#483) was deployed by run 40679914192 (2026-10-28) and the server-managed id round trip (#515) by run 40880189624 (2026-10-29), both to both prod stacks."
 }

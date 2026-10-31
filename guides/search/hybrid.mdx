@@ -96,7 +96,7 @@ Use exactly two unboosted subqueries. Bayesian fusion is top-level only: nested 
 
 | Setting | Without reranking | With reranking |
 |:--------|:------------------|:---------------|
-| Candidate budget | Required top-level `candidateSize`; `1 <= size <= candidateSize <= 100` | Omit top-level `candidateSize`; use `rerank.candidateSize`, which defaults to `max(50, size)` and must satisfy `1 <= size <= rerank.candidateSize <= 100` |
+| Candidate budget | Required top-level `candidateSize`; `1 <= size <= candidateSize <= 1000` | Omit top-level `candidateSize`; use `rerank.candidateSize`, which defaults to `max(50, size)` and must satisfy `1 <= size <= rerank.candidateSize <= 1000` |
 | Final results | `size` | `size` |
 | Dense vector depth | Each `knn.k` remains independent | Each `knn.k` remains independent |
 

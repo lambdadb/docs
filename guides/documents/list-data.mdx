@@ -11,7 +11,7 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 
 | Parameter   | Description                                      | Type    | Required | Default |
 | :---------- | :----------------------------------------------- | :------ | :------- | :------ |
-| size        | Max number of documents to return per page (1–100). | integer |          | 100     |
+| size        | Max number of documents to return per page (1–1000). | integer |          | 100     |
 | pageToken   | Token for the next page of results.              | string  |          |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
 | refKind     | Ref type: `branch`, `tag`, or `alias`; use with `refName`. | string | | |
@@ -272,7 +272,7 @@ The extended list request body supports:
 
 | Parameter      | Description                                                  | Type    | Required | Default |
 | :------------- | :----------------------------------------------------------- | :------ | :------- | :------ |
-| size           | Max number of documents to return per page (1–100).          | integer |          | 100     |
+| size           | Max number of documents to return per page (1–1000).         | integer |          | 100     |
 | pageToken      | Token for the next page of results.                          | string  |          |         |
 | filter         | Filter applied before pagination. Supports `queryString` and nested `bool` filters. | object  |          |         |
 | partitionFilter | Restricts the request to matching partition values.         | object  |          |         |

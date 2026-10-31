@@ -11,7 +11,7 @@ The examples write to the default branch, `main`. The REST request accepts an op
 
 <Note>
 
-  If the collection contains native embedding vector fields, update the configured source text fields instead of sending direct vector values for native embedding fields. Unchanged source text reuses an existing vector; see [Native embedding write behavior](/guides/collections/native-embeddings#write-behavior).
+  If the collection contains native embedding vector fields, update the configured source fields and LambdaDB regenerates the vector; unchanged source input reuses the existing vector. A directly supplied vector takes precedence and skips inference. See [Native embedding write behavior](/guides/collections/native-embeddings#write-behavior).
 
 </Note>
 

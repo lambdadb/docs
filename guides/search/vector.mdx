@@ -10,12 +10,13 @@ A vector query finds the k nearest vectors to a query vector or query text, as m
 | Parameter     | Description                                         | Type     | Required |
 |:------------- |:--------------------------------------------------- |:-------  |:-------- |
 | field         | The name of the vector field to search against      | string   | ✓        |
-| queryVector   | Query vector for vector fields with caller-provided values            | float[]  | Conditionally required |
-| queryText     | Query text for native embedding vector fields      | string   | Conditionally required |
-| k             | Number of candidates requested from this vector retrieval leg; top-level `size` limits final returned documents | integer  | ✓        |
+| queryVector   | Query vector you computed yourself; on a native embedding field it skips inference | float[]  | Conditionally required |
+| queryText     | Query text that LambdaDB embeds with a native embedding field's model | string   | Conditionally required |
+| queryInputs   | Ordered text and image parts that LambdaDB embeds with a native embedding field's model | object[] | Conditionally required |
+| k             | Number of candidates requested from this vector retrieval leg, from 1 to 1000; top-level `size` limits final returned documents | integer  | ✓        |
 | filter        | Query to filter the documents that can match        | object   |          |
 
-Provide exactly one of `queryVector` or `queryText`. Dense fields support 64–4096 dimensions and `cosine` or `euclidean` similarity. `queryVector` must match the field's dimensions and contain only finite numbers; cosine queries must have nonzero magnitude. The `nodeSize` parameter is not supported.
+Provide exactly one of `queryVector`, `queryText`, or `queryInputs`. `queryText` and `queryInputs` require a native embedding vector field. Dense fields support 64–4096 dimensions and `cosine` or `euclidean` similarity. `queryVector` must match the field's dimensions and contain only finite numbers; cosine queries must have nonzero magnitude. The `nodeSize` parameter is not supported.
 
 The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [native reranking](/guides/search/native-reranking#candidate-counts), `rerank.candidateSize` limits the merged rerank pool and does not automatically increase `k`.
 
@@ -48,7 +49,7 @@ The raw-vector examples use synthetic 64-dimensional vectors and assume fields c
 
 ### Native embedding vector query
 
-Use `queryText` when the target field is a native embedding vector field.
+Use `queryText` when the target field is a native embedding vector field. LambdaDB generates the query vector with the field's model before retrieval.
 
 Supported providers and models are listed in [Native embeddings](/guides/collections/native-embeddings).
 
@@ -61,6 +62,23 @@ Supported providers and models are listed in [Native embeddings](/guides/collect
   }
 }
 ```
+
+For a Cohere field, `queryInputs` combines ordered text and image parts into one query vector. An image value is a public HTTPS URL or a data URI, with the same [image limits](/guides/collections/native-embeddings#image-inputs) as document writes. OpenAI fields accept a single text part.
+
+```json
+{
+  "knn": {
+    "field": "embedding",
+    "queryInputs": [
+      { "type": "text", "value": "red shoes" },
+      { "type": "image", "value": "https://example.com/shoe.png" }
+    ],
+    "k": 5
+  }
+}
+```
+
+A native embedding field also accepts `queryVector`. Use it when you already have a vector from the same model; the query then runs without inference.
 
 ### Multi-field vector query
 
@@ -134,9 +152,3 @@ An example vector query with a filter for better performance and relevance:
   }
 }
 ```
-
-<Note>
-
-For native embedding vector fields, `queryVector` is not supported. Query the field with `knn.queryText`, and let LambdaDB generate the query embedding with the field's configured embedding model.
-
-</Note>

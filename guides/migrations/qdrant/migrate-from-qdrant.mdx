@@ -29,7 +29,7 @@ Qdrant multi-vectors and Manhattan distance collections require workload-specifi
 
 ## Step 1: Install the CLI
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.9` using Homebrew or the standalone installer.
 
 Check the Qdrant command:
 
@@ -179,9 +179,11 @@ The Migration CLI generates this default distance mapping for dense vector field
 | Qdrant distance | Generated setting and target support |
 |:----------------|:--------------------|
 | `Cosine` | `cosine` |
-| `Dot` | The CLI generates `dot_product`, which is not supported for dense vectors. |
+| `Dot` | The CLI generates `dot_product`, which is not supported for dense vectors; the migration is rejected before any LambdaDB request. |
 | `Euclid` | `euclidean` |
-| `Manhattan` | No direct equivalent. Re-evaluate the embedding/search setup before migrating. |
+| `Manhattan` | The CLI generates `unsupported:manhattan`; the migration is rejected. Re-evaluate the embedding/search setup before migrating. |
+
+The inventory reports each vector's generated `similarity` with the original `sourceSimilarity`, and `warnings` names every vector whose metric or dimensions LambdaDB cannot store. Migration runs, including `--migration.dry-run`, validate the mapping first and exit with an error naming the vector and metric; the CLI never converts a similarity on its own. To migrate such a vector, set `vectors.<source vector>.similarity` to `cosine` or `euclidean` in the mapping file and pass it with `--mapping-file`.
 
 Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `Dot` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either.
 

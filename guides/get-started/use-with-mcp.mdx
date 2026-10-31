@@ -37,24 +37,24 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The stable npm package is `@functional-systems/lambdadb-mcp@0.1.4`. This guide pins that published version. No source checkout or build is required.
+The stable npm package is `@functional-systems/lambdadb-mcp@0.3.0`. This guide pins that published version. No source checkout or build is required.
 
 ```bash
 node --version
-npm view @functional-systems/lambdadb-mcp@0.1.4 version engines
+npm view @functional-systems/lambdadb-mcp@0.3.0 version engines
 ```
 
 With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-npx --yes @functional-systems/lambdadb-mcp@0.1.4
+npx --yes @functional-systems/lambdadb-mcp@0.3.0
 ```
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
 The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's API request limits.
 
-Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.1.4` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.3.0` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
 
 ### Environment variables
 
@@ -76,7 +76,7 @@ For **Claude Desktop**, open **Settings → Developer → Edit Config** and merg
   "mcpServers": {
     "lambdadb": {
       "command": "npx",
-      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.1.4"],
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.3.0"],
       "env": {
         "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
@@ -94,13 +94,16 @@ Fully quit and restart Claude Desktop. Other MCP clients can use the same comman
 
 ## Step 4: Verify the connection
 
-Open your client's server/tool list (in Claude Desktop, **Manage connectors → lambdadb**). A read-only connection should advertise these five tools:
+Open your client's server/tool list (in Claude Desktop, **Manage connectors → lambdadb**). A read-only connection should advertise these eight tools:
 
 - `lambdadb_list_collections`
 - `lambdadb_get_collection`
 - `lambdadb_query_collection`
 - `lambdadb_list_docs`
 - `lambdadb_fetch_docs`
+- `lambdadb_list_branches`
+- `lambdadb_list_tags`
+- `lambdadb_list_aliases`
 
 Tool discovery confirms the local MCP connection; it does not authenticate to LambdaDB. To check project access:
 
@@ -108,7 +111,9 @@ Tool discovery confirms the local MCP connection; it does not authenticate to La
 2. Call `lambdadb_get_collection` for a known collection.
 3. Run `lambdadb_query_collection` with a small query against that collection.
 
-Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Use `lambdadb_list_branches`, `lambdadb_list_tags`, and `lambdadb_list_aliases` to discover refs when `main` is not the intended target. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+
+Query `size` is 1–1000, fetch accepts up to 1000 IDs, and list accepts `size` 1–1000 plus optional `filter`, `fields`, `includeVectors`, and `partitionFilter`. The server does not cap result size, so keep `size` small while exploring and use `fields` to leave out large stored fields.
 
 For example, pass these arguments to `lambdadb_query_collection` for the sample collection created in the [CLI guide](/guides/get-started/use-with-cli):
 
@@ -153,17 +158,47 @@ The MCP server accepts the [Bayesian request](/guides/search/hybrid#bayesian-hyb
 
 ## Optional: Enable write tools
 
-The LambdaDB MCP server can also expose write operations such as:
+The LambdaDB MCP server can also expose write operations:
 
-- `lambdadb_create_collection`
-- `lambdadb_upsert_docs`
-- `lambdadb_delete_docs`
+| Area | Tools |
+|:-----|:------|
+| Collections | `lambdadb_create_collection`, `lambdadb_update_collection`, `lambdadb_delete_collection` |
+| Documents | `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs`, `lambdadb_delete_docs` |
+| Data versioning | `lambdadb_create_branch`, `lambdadb_delete_branch`, `lambdadb_create_tag`, `lambdadb_delete_tag`, `lambdadb_create_alias`, `lambdadb_retarget_alias`, `lambdadb_delete_alias` |
 
-The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility) when creating collections.
+The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers) when creating collections.
 
-The create tool accepts an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema). The MCP server has no collection-schema update tool.
+The create and update tools accept an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema); schema updates follow the [collection update rules](/guides/collections/manage-collections#configure-a-collection).
 
-Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
+Every tool takes `collectionName`. The other inputs are:
+
+| Tool | Inputs and behavior |
+|:-----|:--------------------|
+| `lambdadb_create_collection` | Nonempty `indexConfigs`; optional `description`, metadata `tags`, `partitionConfig`, and `snapshotRetentionInDays` (1–31) |
+| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`. Omitted or `null` values leave settings unchanged; use `description: ""` or `tags: {}` to clear those fields. Retention must be 1–31 and cannot be cleared. Index changes are additive |
+| `lambdadb_delete_collection` | Deletes the collection with its documents, branches, tags, and aliases |
+| `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs` | `docs` and optional `branch`. Update rows need existing IDs and merge into stored documents; bulk runs the SDK upload workflow and never generates native embeddings |
+| `lambdadb_delete_docs` | Exactly one of a nonempty `ids` array or a `filter`, plus optional `partitionFilter` and `branch` |
+| `lambdadb_create_branch` | `branchName`; optional `source: { "kind": "branch", "name": "...", "asOf"?: <epoch ms> }`, default `main`. Copies committed state only |
+| `lambdadb_create_tag` | `tagName`; optional branch source as above or `{ "kind": "tag", "name": "..." }`, default `main` |
+| `lambdadb_create_alias`, `lambdadb_retarget_alias` | `aliasName` and `target: { "kind": "branch" \| "tag", "name": "..." }`. Retargeting changes future alias reads, not write targets |
+| `lambdadb_delete_branch`, `lambdadb_delete_tag`, `lambdadb_delete_alias` | `branchName`, `tagName`, or `aliasName`. Deleting an alias does not delete its target |
+
+A typical versioning workflow creates a branch from `main`, writes and evaluates on it, pins a tag once the intended data is committed, and then retargets the serving alias:
+
+```json
+{ "collectionName": "memories", "branchName": "candidate", "source": { "kind": "branch", "name": "main" } }
+```
+
+```json
+{ "collectionName": "memories", "tagName": "reviewed", "source": { "kind": "branch", "name": "candidate" } }
+```
+
+```json
+{ "collectionName": "memories", "aliasName": "serving", "target": { "kind": "tag", "name": "reviewed" } }
+```
+
+Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the 10 MiB transport limit; the tool does not accept local paths or URLs.
 
 To enable them, change the environment value and restart the MCP server:
 
@@ -205,7 +240,7 @@ If the server cannot start:
 For development, use a release tag and Node.js 22.14.0 or later:
 
 ```bash
-git clone --branch v0.1.4 https://github.com/lambdadb/lambdadb-mcp
+git clone --branch v0.3.0 https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
 npm ci
 npm run build

@@ -224,7 +224,8 @@
             "type": "string",
             "description": "Embedding provider.",
             "enum": [
-              "openai"
+              "openai",
+              "cohere"
             ]
           },
           "model": {
@@ -232,12 +233,17 @@
             "description": "Embedding model name. See /guides/collections/native-embeddings for the current supported providers and models."
           },
           "sourceField": {
-            "type": "string",
-            "description": "Stored scalar string path used to generate embeddings, using dotted paths through objects. The source does not need an index config. If configured, the leaf must be text or keyword and configured ancestors must be objects. Empty or blank path segments are invalid. Missing source values skip embedding generation; present null, array, object, or non-string values on unindexed source paths are rejected at write time."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Legacy single-text source path in the original JSON. Use exactly one non-null sourceField or sources. Missing text is skipped; invalid values fail when inference is needed. An explicitly supplied vector takes precedence over inference.",
+            "minLength": 1,
+            "pattern": ".*\\S.*"
           },
           "dimensions": {
             "type": "integer",
-            "description": "Resolved embedding dimensions, at least 64 and no greater than the model's supported maximum. Optional in requests and resolved in stored collection metadata.",
+            "description": "Optional model dimensions, resolved in stored metadata. OpenAI limits depend on the model. Cohere accepts 256, 512, 768, 1024, 1536 or 2048 and defaults to 2048.",
             "minimum": 64,
             "maximum": 4096
           },
@@ -249,12 +255,113 @@
               "euclidean"
             ],
             "default": "cosine"
+          },
+          "sources": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/EmbeddingSource"
+            },
+            "description": "Ordered source mappings; field paths must be unique. Text sources are scalar strings. Cohere image sources are strings or flat string arrays, expanded in place to create one combined vector. Missing sources and empty image arrays are skipped. At most 16 effective parts, 8 images and 1 MiB decoded image bytes per input; each image is limited to 4,194,304 pixels. Images must be supported data URIs or public HTTPS URLs. URL, field-path, duplicate-path, format and byte/pixel validation remain server checks. OpenAI requires exactly one text source."
           }
         },
         "required": [
           "provider",
-          "model",
-          "sourceField"
+          "model"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "sourceField"
+            ],
+            "properties": {
+              "sourceField": {
+                "type": "string"
+              },
+              "sources": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "required": [
+              "sources"
+            ],
+            "properties": {
+              "sources": {
+                "type": "array"
+              },
+              "sourceField": {
+                "type": "null"
+              }
+            }
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "cohere"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "enum": [
+                    "embed-v5.0-pro",
+                    "embed-v5.0-fast"
+                  ]
+                },
+                "dimensions": {
+                  "enum": [
+                    256,
+                    512,
+                    768,
+                    1024,
+                    1536,
+                    2048
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "openai"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "enum": [
+                    "text-embedding-3-small",
+                    "text-embedding-3-large",
+                    "text-embedding-ada-002"
+                  ]
+                },
+                "sources": {
+                  "maxItems": 1,
+                  "items": {
+                    "properties": {
+                      "type": {
+                        "const": "text"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         ]
       },
       "IndexConfigs": {
@@ -443,7 +550,7 @@
           ]
         },
         "minProperties": 1,
-        "description": "Nonempty full schema. Collection updates preserve all existing fields and their settings while allowing new top-level fields and nested children at any depth. Removing or changing an existing field is rejected."
+        "description": "Nonempty full schema. Collection updates preserve all existing fields and their settings while allowing new top-level fields and nested children at any depth. Removing or changing an existing field is rejected. Collection responses include the server-managed top-level id field as {\"type\":\"keyword\"}. Requests may omit it or send exactly that configuration, so returned indexConfigs can be sent back unchanged; any other id configuration, id inside an object field, or other reserved internal field name is rejected."
       },
       "PartitionConfig": {
         "title": "PartitionConfig",
@@ -1049,19 +1156,22 @@
           "object",
           "null"
         ],
-        "description": "Optional native reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no Jev API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
+        "description": "Optional native reranking for this query, not a collection setting. Omitted or null preserves existing search behavior. LambdaDB manages provider credentials; no provider API key is supplied by the caller. Request validation, field types, UTF-8 byte limits, and size <= candidateSize are checked by the server.",
         "properties": {
           "provider": {
             "type": "string",
             "enum": [
-              "typesafe"
+              "typesafe",
+              "cohere"
             ],
             "description": "Required native reranking provider."
           },
           "model": {
             "type": "string",
             "enum": [
-              "jev-1.13.0"
+              "jev-1.13.0",
+              "rerank-v5.0-pro",
+              "rerank-v5.0-fast"
             ],
             "description": "Required reranking model; independent of the collection embedding model."
           },
@@ -1118,7 +1228,7 @@
               "minLength": 1,
               "pattern": ".*\\S.*"
             },
-            "description": "Distinct nonblank descriptions ordered from lowest to highest relevance. Omitted/null uses default-relevance-v1. Each description is limited to 2 KiB and the full list to 8 KiB UTF-8. Text is preserved exactly. Custom levels use uniformly spaced scores from 0 to 1; explicitly sending the default descriptions still selects custom scoring. Weights and thresholds are not supported."
+            "description": "TypeSafe/Jev only; Cohere requires omitted or null criteria. Distinct nonblank descriptions ordered from lowest to highest relevance. Omitted/null uses default-relevance-v1. Each description is limited to 2 KiB and the full list to 8 KiB UTF-8. Text is preserved exactly. Custom levels use uniformly spaced scores from 0 to 1; explicitly sending the default descriptions still selects custom scoring. Weights and thresholds are not supported."
           }
         },
         "required": [
@@ -1127,7 +1237,47 @@
           "queryText",
           "fields"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "cohere"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "enum": [
+                    "rerank-v5.0-pro",
+                    "rerank-v5.0-fast"
+                  ]
+                },
+                "criteria": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "typesafe"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "const": "jev-1.13.0"
+                }
+              }
+            }
+          }
+        ]
       },
       "RerankResponse": {
         "type": "object",
@@ -1144,14 +1294,17 @@
           "provider": {
             "type": "string",
             "enum": [
-              "typesafe"
+              "typesafe",
+              "cohere"
             ],
             "description": "Requested provider."
           },
           "model": {
             "type": "string",
             "enum": [
-              "jev-1.13.0"
+              "jev-1.13.0",
+              "rerank-v5.0-pro",
+              "rerank-v5.0-fast"
             ],
             "description": "Requested model."
           },
@@ -1180,9 +1333,10 @@
             "type": "string",
             "enum": [
               "default-relevance-v1",
-              "custom"
+              "custom",
+              "cohere-relevance-v1"
             ],
-            "description": "Only on applied results: default-relevance-v1 for omitted/null criteria, custom for caller-supplied descriptions. custom is not a hash or unique content version."
+            "description": "Only on applied results. TypeSafe/Jev uses default-relevance-v1 or custom; Cohere uses cohere-relevance-v1."
           },
           "reason": {
             "type": "string",
@@ -1293,8 +1447,75 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "cohere"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "enum": [
+                    "rerank-v5.0-pro",
+                    "rerank-v5.0-fast"
+                  ]
+                },
+                "criteriaVersion": {
+                  "const": "cohere-relevance-v1"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "provider": {
+                  "const": "typesafe"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "const": "jev-1.13.0"
+                },
+                "criteriaVersion": {
+                  "enum": [
+                    "default-relevance-v1",
+                    "custom"
+                  ]
+                }
+              }
+            }
           }
         ]
+      },
+      "EmbeddingSource": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "description": "Unique dotted path in the original stored JSON; no index declaration is required."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image"
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "type"
+        ],
+        "additionalProperties": false
       }
     }
   },
@@ -1369,6 +1590,9 @@
                               ]
                             },
                             "category": {
+                              "type": "keyword"
+                            },
+                            "id": {
                               "type": "keyword"
                             }
                           },
@@ -1895,6 +2119,9 @@
                           },
                           "category": {
                             "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
                           }
                         },
                         "description": "Product catalog",
@@ -2031,7 +2258,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema. New fields may be added at any object depth while retaining existing fields and their settings.",
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema; the server-managed id field may be included as returned or omitted. New fields may be added at any object depth while retaining existing fields and their settings.",
                 "properties": {
                   "indexConfigs": {
                     "anyOf": [
@@ -2194,6 +2421,9 @@
                             ]
                           },
                           "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
                             "type": "keyword"
                           }
                         },
@@ -2917,7 +3147,7 @@
                       "additionalProperties": true,
                       "minProperties": 1
                     },
-                    "description": "Documents to insert or fully replace. Assign stable IDs before sending when later retrieval or retries are needed; the acceptance response does not return generated IDs, and replay without IDs can create duplicates. Keep the branch and partition-field value unchanged when replaying. For native embedding vector fields, omit the generated vector field and supply source text. Missing source text does not preserve a previous vector.",
+                    "description": "Documents to insert or fully replace. Assign stable IDs before sending when later retrieval or retries are needed; the acceptance response does not return generated IDs, and replay without IDs can create duplicates. Keep the branch and partition-field value unchanged when replaying. For native embedding fields, supply source fields to generate a vector, or supply a vector directly to skip inference and image retrieval for that binding. Source fields and a direct vector may coexist. A full replacement with no source or explicit vector does not preserve the previous vector.",
                     "minItems": 1
                   },
                   "branch": {
@@ -3113,7 +3343,7 @@
           "collections.docs"
         ],
         "operationId": "getBulkUpsertDocs",
-        "description": "Request required info to upload documents. Bulk upsert is not supported for collections with native embedding vector fields. Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
+        "description": "Request required info to upload documents. Native embedding collections are supported with caller-supplied vectors. Bulk never generates embeddings: a present source without its vector fails before any documents are committed (empty image arrays are skipped). Upload with the returned method, type as Content-Type, and signed headers. PUT is create-only: reusing an uploaded object can return object-storage 412. Get a new URL for a new upload attempt and resolve uncertain prior outcomes before resubmitting. The object key is bound to the original branch identity and cannot be reused after branch recreation.",
         "security": [
           {
             "ProjectApiKey": []
@@ -3207,12 +3437,6 @@
                   "$ref": "#/components/schemas/BadRequest"
                 },
                 "examples": {
-                  "nativeEmbeddingUnsupported": {
-                    "summary": "Example response for unsupported native embedding bulk upsert",
-                    "value": {
-                      "message": "Bulk upsert is not supported for collections with native embedding fields"
-                    }
-                  },
                   "example": {
                     "summary": "Example response for bad request",
                     "value": {
@@ -3320,7 +3544,7 @@
           "collections.docs"
         ],
         "operationId": "bulkUpsertDocs",
-        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Bulk upsert is not supported for collections with native embedding vector fields.",
+        "description": "Bulk upsert documents into a collection. Note that the maximum supported object size is 200MB. Native embedding collections are supported with caller-supplied vectors. Bulk never generates embeddings: a present source without its vector fails before any documents are committed (empty image arrays are skipped).",
         "security": [
           {
             "ProjectApiKey": []
@@ -3396,12 +3620,6 @@
                   "$ref": "#/components/schemas/BadRequest"
                 },
                 "examples": {
-                  "nativeEmbeddingUnsupported": {
-                    "summary": "Example response for unsupported native embedding bulk upsert",
-                    "value": {
-                      "message": "Bulk upsert is not supported for collections with native embedding fields"
-                    }
-                  },
                   "example": {
                     "summary": "Example response for bad request",
                     "value": {
@@ -3539,7 +3757,7 @@
                       "additionalProperties": true,
                       "minProperties": 1
                     },
-                    "description": "Documents to update; each must contain the existing document ID and, for partitioned documents outside __default__, its existing partition-field value. Omitted fields are preserved. Objects merge recursively; arrays and scalars replace existing values. Null is rejected for indexed fields and stored as JSON null for unindexed fields, not as a field deletion. For native embedding fields, omit the generated vector; unchanged source text reuses an existing vector, while changed source text regenerates it.",
+                    "description": "Documents to update; each must contain the existing document ID and, for partitioned documents outside __default__, its existing partition-field value. Omitted fields are preserved. Objects merge recursively; arrays and scalars replace existing values. Null is rejected for indexed fields and stored as JSON null for unindexed fields, not as a field deletion. For native embedding fields, an explicitly supplied vector takes precedence. Otherwise equivalent input reuses an existing vector, changed source input regenerates it, and removal of the last source removes an inherited vector. Metadata-only updates preserve direct vectors when raw source fields are unchanged.",
                     "minItems": 1
                   },
                   "branch": {
@@ -4283,7 +4501,7 @@
                       "null"
                     ],
                     "additionalProperties": true,
-                    "description": "Query object. For native embedding vector fields, use knn.queryText; knn.queryVector is not supported. Use knn.queryVector for vector fields with caller-provided values. Each knn query requires exactly one non-null queryText or queryVector and has its own k from 1 to 1000, independent of size and candidateSize. Query text requires a native embedding vector field. Query structure and per-leg bounds are validated by the server. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
+                    "description": "Query object. For native embedding vector fields, use knn.queryText or ordered knn.queryInputs parts with explicit type (text or image) and string value. Cohere accepts mixed parts, OpenAI one text part. A raw knn.queryVector is also accepted for native fields and skips inference. Each knn query requires exactly one non-null queryText, queryInputs or queryVector and has its own k from 1 to 1000, independent of size and candidateSize. Text and multimodal inputs require a native embedding vector field. queryInputs uses the same part, image and byte limits as document inputs. All automatic query inputs are prepared before the first provider call; Cohere preparation checks inference quota before retrieving images. Query structure and per-leg bounds are validated by the server. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -4572,6 +4790,28 @@
                       ],
                       "candidateSize": 30
                     }
+                  }
+                },
+                "cohereMultimodalKnnQuery": {
+                  "summary": "Mixed text and image retrieval on a Cohere native vector field",
+                  "value": {
+                    "query": {
+                      "knn": {
+                        "field": "embedding",
+                        "queryInputs": [
+                          {
+                            "type": "text",
+                            "value": "red shoes"
+                          },
+                          {
+                            "type": "image",
+                            "value": "https://example.com/shoe.png"
+                          }
+                        ],
+                        "k": 10
+                      }
+                    },
+                    "size": 10
                   }
                 }
               }

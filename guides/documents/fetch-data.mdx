@@ -11,7 +11,7 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 
 | Parameter      | Description                                                   | Type       | Required | Default |
 | :------------- | :------------------------------------------------------------ | :--------- | :------- | :------ |
-| ids            | The document IDs to fetch up to 100.                         | string[]   | ✓        |         |
+| ids            | The document IDs to fetch, up to 1000.                       | string[]   | ✓        |         |
 | includeVectors | Indicates whether vector values are included in the response. (Python: `include_vectors`) | boolean    |          | false   |
 | consistentRead | Determines the read consistency model: If set to true, then the operation uses strongly consistent reads; otherwise, the operation uses eventually consistent reads. (Python: `consistent_read`) | boolean          |          | false   |
 | fields         | A list of field names to include and/or exclude in the result. Use dot notation (e.g., user.name) to specify nested fields. | object  |          |    |
@@ -24,7 +24,7 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 
 </Tip>
 
-To fetch documents, specify the document IDs (up to 100 IDs).
+To fetch documents, specify the document IDs (up to 1000 IDs).
 
 <CodeGroup>
 

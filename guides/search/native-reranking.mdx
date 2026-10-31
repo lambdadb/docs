@@ -7,9 +7,11 @@ import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
 Native reranking evaluates retrieved candidates against a query and orders them by the resulting score before returning the final `size` documents. It runs after global merge and deduplication, so it can be used with lexical, vector, sparse vector, or hybrid scoring queries.
 
-Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and native embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a Jev API key.
+Add a `rerank` object to a [query request](/reference/api/endpoint/document-query). This is a per-query choice, independent of collection settings and native embedding models. Omitting `rerank` or setting it to `null` preserves existing search behavior and response fields. LambdaDB manages the provider credentials; you do not supply a provider API key.
 
-Use a [compatible client version](#client-compatibility-and-usage) when reranking through an SDK, CLI, or MCP server. The REST examples below can be used directly without an SDK.
+Two providers are available. `typesafe` evaluates candidates with the Jev model against default or custom relevance criteria. `cohere` scores candidates with a Cohere Rerank model's native relevance scores and does not accept criteria. The request shape, candidate controls, response fields, and failure handling are the same for both.
+
+Use the recommended [SDK, CLI, or MCP server releases](/reference/sdk/introduction#supported-sdk-versions) when reranking through a client. The REST examples below can be used directly without an SDK.
 
 ## Request reranking
 
@@ -70,13 +72,13 @@ These parameters belong inside the `rerank` object.
 
 | Parameter | Contract |
 |:----------|:---------|
-| `provider` | Required: `typesafe` |
-| `model` | Required: `jev-1.13.0`; not inferred from an embedding model |
+| `provider` | Required: `typesafe` or `cohere` |
+| `model` | Required: `jev-1.13.0` for `typesafe`; `rerank-v5.0-pro` or `rerank-v5.0-fast` for `cohere`. Not inferred from an embedding model |
 | `queryText` | Required nonblank evaluation query, including for raw-vector or hybrid retrieval; at most 8 KiB UTF-8 |
-| `fields` | Required ordered list of 1–8 unique stored scalar string paths with `text` or `keyword` index configs; nested paths use dots |
-| `candidateSize` | Optional/null: `max(50, size)`; must satisfy `size <= candidateSize <= 100` |
+| `fields` | Required ordered list of 1–8 unique stored scalar string paths; nested paths use dots. Paths do not need index configs; if indexed, they must be `text` or `keyword` |
+| `candidateSize` | Optional/null: `max(50, size)`; must satisfy `size <= candidateSize <= 1000` |
 | `onFailure` | Optional/null: `error`; alternatively `returnOriginal` for eligible provider-stage failures |
-| `criteria` | Optional/null: default relevance criteria; otherwise 2–10 distinct nonblank descriptions ordered from lowest to highest relevance |
+| `criteria` | `typesafe` only. Optional/null: default relevance criteria; otherwise 2–10 distinct nonblank descriptions ordered from lowest to highest relevance. `cohere` requires it omitted or `null` |
 
 Each candidate must contain nonblank text in at least one selected field. Missing or null individual values contribute no text. Arrays, objects, non-string selected values, or candidates with no nonblank selected text are validation errors; they are not silently dropped or handled by provider fallback.
 
@@ -90,7 +92,7 @@ These three controls serve different purposes:
 |:--------|:--------|
 | `size` | Final number of documents returned; must be positive with reranking |
 | `knn.k` | Candidates requested from that particular dense-vector retrieval leg |
-| `rerank.candidateSize` | Retrieval planning depth and upper bound on the merged, deduplicated rerank pool before the final `size` limit; defaults to `max(50, size)`, with `size <= candidateSize <= 100` |
+| `rerank.candidateSize` | Retrieval planning depth and upper bound on the merged, deduplicated rerank pool before the final `size` limit; defaults to `max(50, size)`, with `size <= candidateSize <= 1000` |
 
 For example, a vector-only query with `size: 10`, `knn.k: 20`, and `rerank.candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
 
@@ -105,6 +107,8 @@ Reranking requires a scoring retrieval query. Query-less, match-all requests wit
 [Facets](/guides/search/facets) keep their existing query restrictions: reranking does not enable facets on vector, sparse vector, or hybrid queries. For supported lexical queries, facet counts cover the full matching population and survive reranking or fallback; they are not recomputed from the final documents. `size: 0` remains available for facet-only requests without reranking.
 
 ## Default criteria and scoring
+
+This section and [Use custom criteria](#use-custom-criteria) describe the `typesafe` provider. For `cohere`, see [Cohere scoring](#cohere-scoring).
 
 Omitting `criteria` or setting it to `null` selects `default-relevance-v1`. The model evaluates each candidate's selected text against `queryText` using these ten descriptions, ordered from lowest to highest relevance:
 
@@ -169,6 +173,23 @@ For custom criteria with N levels, the server assigns uniformly spaced level val
 
 There are no caller-supplied `weights` or `threshold` options. `criteriaVersion: "custom"` identifies custom criteria, not a content hash or unique version. Retain the request descriptions when comparing or reproducing evaluations.
 
+## Cohere scoring
+
+With `provider: "cohere"`, LambdaDB sends the query text and every candidate's selected fields to the chosen Cohere Rerank model in one request and uses the model's relevance scores directly, in [0,1]. There are no criteria to configure; sending `criteria`, including an empty list, returns HTTP `400`. Applied results report `criteriaVersion: "cohere-relevance-v1"`.
+
+To rerank the first example with Cohere, replace the provider and model:
+
+```jsonc
+"rerank": {
+  "provider": "cohere",
+  "model": "rerank-v5.0-pro",
+  "queryText": "How do I restore a previous collection version?",
+  "fields": ["title", "body"]
+}
+```
+
+Cohere scores are not comparable to Jev scores or to retrieval scores. Choose one provider and model when comparing results across queries.
+
 ## Read the response
 
 The following response is illustrative, not a quality or latency guarantee:
@@ -227,7 +248,7 @@ Results are ordered by descending final score. Exact ties preserve original cand
 | `candidateCount` | Actual unique candidates before final `size` limiting |
 | `scoredCount` | Equals `candidateCount` when applied; zero when skipped or fallback |
 | `took` | Rerank stage milliseconds after hydration, through preparation and ordering or failure handling |
-| `criteriaVersion` | Only on applied results: `default-relevance-v1` for omitted/null criteria, or `custom` |
+| `criteriaVersion` | Only on applied results: `default-relevance-v1` or `custom` for `typesafe`; `cohere-relevance-v1` for `cohere` |
 | `reason` | `noCandidates` when skipped; a bounded provider failure code when fallback |
 
 Without reranking, both top-level `rerank` and envelope `retrievalScore` are omitted. `rerankScore` and `rubricVersion` are not response fields.
@@ -304,6 +325,8 @@ The default `onFailure: "error"` fails the request on provider-stage errors. Eli
 
 Set `onFailure: "returnOriginal"` to return the first `size` documents from the retained pre-rerank pool when the provider times out, rate-limits, becomes unavailable, rejects credentials, or returns malformed/incomplete scores. The server keeps original search scores, omits `retrievalScore` and `criteriaVersion`, and reports `scoredCount: 0`. It never mixes partial reranking scores with search scores.
 
+Use `returnOriginal` when a search result is more useful than an error, and check `rerank.status` in the response. Hosted providers occasionally stall, so an application that cannot tolerate `408` or `503` from the rerank stage should prefer this policy over client-side retries, which repeat the paid retrieval and inference work.
+
 An illustrative timeout fallback:
 
 ```json
@@ -353,18 +376,8 @@ These errors do **not** become fallback results, even with `returnOriginal`:
 
 Fallback reason codes are `timeout`, `rateLimit`, `unavailable`, `invalidResponse`, or `credentials`. They expose no provider credentials or request payloads.
 
-## Client compatibility and usage
+## Usage and billing
 
-These recommended stable releases support optional query-level reranking, final/retrieval score envelopes, stage metadata, and downloaded results:
-
-| Client or tool | Recommended release | Usage guide |
-|:---------------|:--------|:------------|
-| Python SDK | [0.12.1](https://pypi.org/project/lambdadb/0.12.1/) | [Python reranking](https://github.com/lambdadb/lambdadb-python-client/blob/v0.12.1/docs/native-reranking.md) |
-| JavaScript/TypeScript SDK | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) | [TypeScript reranking](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/native-reranking.md) |
-| Go SDK | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) | [Go reranking](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/native-reranking.md) |
-| LambdaDB CLI | [0.1.4](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.4) | [Query JSON files](/guides/get-started/use-with-cli#native-reranking) |
-| LambdaDB MCP server | [0.1.4](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.1.4) | [Query tool](/guides/get-started/use-with-mcp#native-reranking) |
-
-For current SDK versions, see [Supported SDK versions](/reference/sdk/introduction#supported-sdk-versions). Python requires Python 3.10–3.13, Go requires Go 1.22 or later, and CLI/MCP require Node.js 22.14.0 or later. The Migration CLI does not rerank its verification searches.
+The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `rerank` in query requests; see their reranking guides for [Python](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.1/docs/native-reranking.md), [TypeScript](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/native-reranking.md), and [Go](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/native-reranking.md). The [CLI](/guides/get-started/use-with-cli#native-reranking) accepts it in query JSON files and the [MCP server](/guides/get-started/use-with-mcp#native-reranking) through `lambdadb_query_collection`. The Migration CLI does not rerank its verification searches.
 
 Reranking uses native inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Native reranking rates](/guides/costs/understanding-costs#native-reranking-rates) for token-to-LIU rates and a cost example.

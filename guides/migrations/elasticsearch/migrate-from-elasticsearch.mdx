@@ -9,7 +9,7 @@ Use the LambdaDB Migration CLI to migrate an Elasticsearch index into LambdaDB. 
 
 <Note>
 
-Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.8` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
+Follow [Install the Migration CLI](/guides/migrations/overview#install-the-cli) to install stable `v0.1.9` using Homebrew or the standalone installer. Check `lambdadb-migration --version` and `lambdadb-migration elasticsearch --help` before continuing.
 
 </Note>
 
@@ -135,7 +135,7 @@ Review the generated mapping before migration:
 
 <Note>
 
-The CLI maps Elasticsearch `l2_norm` to LambdaDB `euclidean` and preserves `cosine`. Generated `dot_product` and `max_inner_product` settings are not supported for dense vectors. Review and edit the mapping before collection creation; changing to cosine can change ranking when vector magnitudes carry information. Dense fields must have 64–4096 dimensions. See [dense-vector requirements](/guides/collections/index-types#vector).
+The CLI maps Elasticsearch `l2_norm` to LambdaDB `euclidean` and preserves `cosine`. Generated `dot_product` and `max_inner_product` settings are not supported for dense vectors: the inventory lists them under `warnings` with the original `sourceSimilarity`, and migration runs, including `--migration.dry-run`, are rejected before any LambdaDB request until `vectors.<source vector>.similarity` is set to `cosine` or `euclidean` in the mapping file. Review and edit the mapping before collection creation; changing to cosine can change ranking when vector magnitudes carry information. Dense fields must have 64–4096 dimensions. See [dense-vector requirements](/guides/collections/index-types#vector).
 
 </Note>
 
