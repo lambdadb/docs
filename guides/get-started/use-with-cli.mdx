@@ -1,11 +1,11 @@
 ---
 title: Use the CLI
-description: Install the LambdaDB CLI, configure a project, manage collections and refs, import JSONL, and query, list, update, or delete documents from your terminal.
+description: Set up LambdaDB, list organizations, manage projects, view usage, connect coding agents, and work with collections, documents, and refs from your terminal.
 ---
 
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
-Use `lambdadb` for project-scoped collection management, JSONL imports, queries, ID-based fetches, document updates and deletes, and branch, tag, and alias management. To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
+Use `lambdadb` to sign in, list organizations, create and select projects, view usage, connect coding agents, and manage collections, documents, branches, tags, and aliases. To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
 
 ## Install
 
@@ -59,11 +59,25 @@ The stable release covered by this guide is `0.1.8`. Choose one installation met
 
 Installed copies do not update themselves. Pin an exact version for reproducible npm installs; `@dev` is a separate prerelease channel. See [CLI releases](https://github.com/lambdadb/lambdadb-cli/releases) and the [public tap](https://github.com/lambdadb/homebrew-tap) for availability.
 
+## Guided setup
+
+Start with `init` to connect a project and optionally install coding-agent settings:
+
+```bash
+lambdadb init
+```
+
+Choose account login to sign in and approve the CLI in your browser, then select or create a project in the terminal. Project creation and new key issuance require explicit confirmation. The CLI saves account and project credentials in the OS credential store and non-secret references in its configuration. Account setup requires an accessible OS credential store; use [environment-variable setup](#configure-a-project) for CI or environments without one.
+
+On SSH or a machine without a visible browser, use `lambdadb init --no-browser` and open the printed approval URL on another device. Browser approval is still required. If a project is provisioning, select that existing project when it becomes active instead of creating another.
+
+You can then choose agents and review their configuration files; see [Connect coding agents](#connect-coding-agents) for scope and write-tool defaults. Choose **Skip agent setup** to configure only the CLI. `init` does not create collections or documents. Connection verification checks authentication and collection-list access, not write permission or search readiness.
+
 ## Configure a project
 
 <CloudConnectionDetails />
 
-Use an existing development project and replace the placeholders below. The endpoint is your region's HTTPS API origin, without `/projects/...`. This `configure` flow uses an existing project and key.
+For environment-variable setup, use an existing development project and replace the placeholders below. The endpoint is your region's HTTPS API origin, without `/projects/...`. This path uses an existing project key and does not require account login.
 
 ```bash
 lambdadb configure --endpoint YOUR_REGION_BASE_URL --project YOUR_PROJECT_NAME --api-key-env LAMBDADB_API_KEY
@@ -80,7 +94,124 @@ lambdadb doctor
 
 This environment-variable setup saves the endpoint, project, and name of the key environment variable; `configure` makes no service call. Explicit `--api-key-env` selects environment mode even after an earlier `init` saved an OS credential reference. `doctor` checks authentication and collection-list access. Success does not prove write permission or search readiness.
 
-Alternatively, `lambdadb init` uses browser-based account login, then project selection or creation and key issuance in the terminal. Account setup stores keys in the OS credential store and saves a non-secret reference in the CLI configuration. It can also register the connection with coding agents; see the [CLI setup guide](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/setup.md). Neither path creates documents or collections.
+## Manage your account and projects
+
+Account commands use a saved account login independently of the project key used for data commands. Keep the same `--config` path throughout if you override it. Only `init` prompts for choices; other commands require their arguments explicitly.
+
+### Sign in and list organizations
+
+```bash
+lambdadb login
+lambdadb orgs list --json
+lambdadb projects regions --json
+lambdadb projects list --org-id ORG_UUID --json
+```
+
+`login` waits for browser approval and saves an account session; it does not select a project or configure agents. Use `login --no-browser` to approve from another device. Expired or unavailable account credentials require login or unlocking the OS store; ordinary management commands do not start login automatically.
+
+Replace `ORG_UUID` with an ID from `orgs list`. Account commands take organization and project **UUIDs**; the global `--project NAME` option selects a project by name for data commands.
+
+### Create and select a project
+
+Choose a region returned by `projects regions`, then create a project in an existing organization:
+
+```bash
+lambdadb projects create --org-id ORG_UUID --name my-project --region REGION --json
+lambdadb projects list --org-id ORG_UUID --json
+```
+
+For a new account without an organization, use `--default-org` instead of `--org-id`. Creation requires exactly one of those options plus `--name` and `--region`. It does not select the CLI default, issue a project key, or install agent settings. If the organization has reached its project limit, follow the reported billing guidance; only an organization owner can activate billing.
+
+Wait until the project reports `ACTIVE`, then use its UUID from `projects list`:
+
+```bash
+lambdadb projects use --org-id ORG_UUID --project-id PROJECT_UUID --issue-key
+lambdadb doctor
+```
+
+First connection or deliberate key replacement requires `--issue-key` and organization Owner or Admin permission. To switch back to a project with a saved key, omit `--issue-key`:
+
+```bash
+lambdadb projects use --org-id ORG_UUID --project-id PROJECT_UUID
+```
+
+`projects use` changes the saved CLI connection. Existing agent settings stay pinned to their selected project; rerun `init` for the same agents and scope and approve the updated file plan to switch them too.
+
+### View usage
+
+After account login, inspect usage for the saved project connection or select an organization explicitly:
+
+```bash
+lambdadb usage
+lambdadb usage --org-id ORG_UUID --json
+lambdadb usage --org-id ORG_UUID --project-id PROJECT_UUID --json
+```
+
+Environment-key setups or overridden targets need explicit IDs; a project key alone does not authorize `usage`. `--project-id` requires `--org-id`.
+
+| Plan | Report |
+|:-----|:-------|
+| Free | Current per-project read, write, storage, and inference usage against reported quotas; no price conversion. Historical quota windows are unavailable, so omit `--month` |
+| Pay as You Go | Recorded usage and USD list-rate estimates for the current UTC month; requires organization Owner or Admin permission. Use `--month YYYY-MM` for a current or past month |
+
+For example, to inspect a paid project's recorded October usage:
+
+```bash
+lambdadb usage --org-id ORG_UUID --project-id PROJECT_UUID --month 2026-10 --json
+```
+
+Usage can lag recent activity. Estimates are neither forecasts nor final invoices and exclude free allowances, credits, taxes, and billing rounding. Missing counters or prices remain unavailable; a total with unpriced metrics is a partial subtotal. JSON preserves paid usage totals and costs as decimal strings; Free quota counters are numbers. See [Understanding costs](/guides/costs/understanding-costs) for the billing model.
+
+### Sign out or remove a local key
+
+`lambdadb logout` revokes the account session and removes it locally. It requires access to the saved OS entry and server connectivity; a failed revocation retains metadata. It does not revoke project keys or disconnect existing agents.
+
+`lambdadb credentials remove` deletes the selected connection's local OS credential while retaining its metadata. Agents using that credential reference will need a usable credential again. It does not revoke the server key; revoke unused project keys in Console. For environment mode, remove the key from the shell or secret manager instead.
+
+## Connect coding agents
+
+`init` installs MCP configuration and a LambdaDB usage skill for selected agents. Choose agents explicitly; detection does not preselect them or prove a working connection.
+
+| Agent | `--agents` value | Scope |
+|:------|:-----------------|:------|
+| Codex | `codex` | Project or user |
+| Claude Code | `claude` | Project or user |
+| Cursor editor/CLI | `cursor` | Project or user |
+| VS Code | `vscode` | Project or user |
+| Gemini CLI | `gemini` | Project or user |
+| OpenCode | `opencode` | Project or user |
+| GitHub Copilot CLI | `copilot` | Project or user |
+| Kiro IDE/CLI | `kiro` | Project or user |
+| Cline VS Code extension | `cline` | User only |
+
+`--scope project` writes agent files in the current working directory; run from your repository root. `--scope user` writes them in the agent's user configuration. Scope does not change the selected LambdaDB project or CLI config path. Claude Desktop uses the [manual MCP setup](/guides/get-started/use-with-mcp#step-3-add-the-server-to-your-mcp-client), not the `claude` adapter.
+
+| Setup mode | Scope and write tools |
+|:-----------|:----------------------|
+| Guided `init` | Defaults to user scope and enabled MCP write tools. Review the file plan and use **Change options** to choose project scope or disable writes |
+| `init --non-interactive` | Requires explicit `--agents` and `--scope`; write tools are disabled unless `--write-tools` is supplied |
+
+With an existing saved connection, install a read-only project-scoped connection for two agents:
+
+```bash
+lambdadb init --non-interactive --agents codex,claude --scope project --json
+```
+
+Add `--write-tools` to enable mutations, or use `--agents none` to configure only the CLI. For an existing environment-held key, pass the target and variable name explicitly:
+
+```bash
+lambdadb init --non-interactive --agents codex,claude --scope project \
+  --endpoint YOUR_REGION_BASE_URL --project YOUR_PROJECT_NAME \
+  --api-key-env LAMBDADB_API_KEY --json
+```
+
+Supply the key securely before running. Non-interactive setup applies the requested file plan without prompts; it does not log in or issue a key. In a non-TTY session or with `--json`, `init` requires `--non-interactive`.
+
+Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.1.8` launches MCP `0.3.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
+
+After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/agents.md) for configuration paths and per-agent reload instructions.
+
+To launch the bridge directly from an MCP client's command configuration, use `lambdadb mcp`, adding `--write-tools` if needed. It is read-only by default and reserves stdout for MCP protocol traffic, so `--json` is not supported. The flag controls writes even if `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` is set in the parent environment. See [MCP connection methods](/guides/get-started/use-with-mcp#connect-with-the-cli) for the distinction from launching the MCP package directly.
 
 ## Create a collection and import JSONL
 
@@ -291,7 +422,7 @@ No command accepts the raw API key as an argument. Config files are written atom
 
 ## JSON output and failures
 
-`--json` emits one object and a newline on stdout, including command failures. It uses `schemaVersion: 1`, `command`, `ok`, and optional `target`, `data`, and `error`. Diagnostics go to stderr. Help and version remain plain text. Invoke the executable directly for machine-readable output.
+For ordinary CLI commands, `--json` emits one object and a newline on stdout, including command failures. It uses `schemaVersion: 1`, `command`, `ok`, and optional `target`, `data`, and `error`. Diagnostics go to stderr. Help and version remain plain text; `mcp` uses stdout for MCP protocol traffic instead. Invoke the executable directly for machine-readable output.
 
 | Exit code | Meaning |
 |:----------|:--------|
@@ -303,7 +434,9 @@ No command accepts the raw API key as an argument. Config files are written atom
 
 Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
 
-The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
+For data commands, the shared network budget covers retries, pages, batches, and large-result downloads. Account, project, and usage commands apply `--timeout-ms` to each HTTP request; it does not bound browser approval, prompts, or project provisioning. Use `--timeout-ms 120000` for a longer request budget. Optional `--mode bulk` on `docs import` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
+
+Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/account.md) for session recovery.
 
 ## Next steps
 

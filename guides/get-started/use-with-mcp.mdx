@@ -1,25 +1,48 @@
 ---
 title: Use with MCP
-description: Connect LambdaDB to AI assistants via the Model Context Protocol. Configure MCP clients like Claude Desktop to search and manage collections.
+description: Connect coding agents through the LambdaDB CLI or configure MCP clients like Claude Desktop directly to search and manage a project.
 ---
 
 LambdaDB can be used from any **Model Context Protocol (MCP)** client through the **LambdaDB MCP server**. This makes the knowledge and memory stored in LambdaDB available to AI assistants that need to inspect collections, list documents, fetch records, or run search queries against a project.
 
-This guide shows a local setup flow using a **project API key**, **base URL**, and **project name** from LambdaDB Cloud.
+Use the [CLI setup](#connect-with-the-cli) to install a connection for supported coding agents, or follow the manual steps below to configure another MCP client, such as Claude Desktop.
+
+The MCP server works with one project per process and exposes 8 read tools, or 22 tools when writes are enabled, covering collections, documents, search, branches, tags, and aliases. Organization listing, project creation and selection, and usage reports are [CLI account commands](/guides/get-started/use-with-cli#manage-your-account-and-projects), not MCP tools.
 
 ## Before you start
 
-You will need:
+Both connection methods require Node.js **22.14.0 or later**, npm, and an MCP client. Account-based CLI setup also requires access to the OS credential store. For direct package setup, obtain:
 
 - A LambdaDB **project API key**
 - Your project's **base URL**
 - Your **project name**
-- Node.js **22.14.0 or later** and npm
-- An MCP client such as **Claude Desktop**
 
 <Note>
-  The LambdaDB MCP server is designed to connect to a single LambdaDB project per process. It uses a **project-scoped API key** and is **read-only by default** unless write tools are explicitly enabled.
+  The MCP package is **read-only by default**. Guided CLI `init` defaults to enabling write tools in its generated connection; disable them under **Change options** if you want read-only access.
 </Note>
+
+## Connect with the CLI
+
+Install the [LambdaDB CLI](/guides/get-started/use-with-cli#install), then run:
+
+```bash
+lambdadb init
+```
+
+Choose account login to select or create a project and explicitly issue a key, or reuse an existing connection. Select the agents, review the scope and write-tool setting, and approve the file plan. Supported agents include Codex, Claude Code, Cursor, VS Code, Gemini CLI, OpenCode, GitHub Copilot CLI, Kiro, and the Cline VS Code extension; see [agent setup](/guides/get-started/use-with-cli#connect-coding-agents) for their scope restrictions and non-interactive examples. Claude Desktop uses the manual steps below.
+
+CLI `0.1.8` generates a launch command pinned to that CLI version, which runs MCP `0.3.0` through `lambdadb mcp`. The bridge reads the selected OS credential or environment variable and forwards the project's base URL, name, and key to the MCP process. It adds no account-management tools and stores no key value in generated agent files. A saved OS credential needs the same OS user and access to the unlocked store; an environment-held key must be available to the agent process.
+
+| Launch method | Write-tool control |
+|:--------------|:-------------------|
+| Guided `lambdadb init` | Enabled by default in the reviewed agent setup; disable under **Change options** |
+| `lambdadb init --non-interactive` | Disabled unless `--write-tools` is supplied |
+| `lambdadb mcp` | Disabled unless `--write-tools` is supplied; the bridge overrides the inherited MCP write-tools environment variable |
+| Direct MCP package | Disabled unless `LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true` |
+
+Restart or reload the agent and [verify the connection](#step-4-verify-the-connection). After upgrading the CLI or changing its selected project, rerun `init` for the same agents and scope to update their pinned settings. Existing agent connections do not automatically follow `projects use`.
+
+The numbered steps below describe direct package setup, which supplies connection details through the MCP environment rather than the CLI bridge.
 
 ## Step 1: Get your LambdaDB connection details
 
@@ -65,7 +88,7 @@ Alternatively, install the same version globally with `npm install --global @fun
 | `LAMBDADB_PROJECT_API_KEY` | Required project API key |
 | `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` | Optional; defaults to `false`. Set `true` to expose write tools. |
 
-The installed package reads the process environment directly. It does not read the general CLI's config file or automatically load `.env` or `.env.local`. `LAMBDADB_ENV_FILE` is only for the source repository's development launchers. Set secrets through your client's protected local configuration or environment forwarding; do not put the key in command arguments.
+When launched directly, the installed package reads the process environment. It does not read the general CLI's config file or automatically load `.env` or `.env.local`; the [CLI bridge](#connect-with-the-cli) resolves CLI credentials and supplies this environment for you. `LAMBDADB_ENV_FILE` is only for the source repository's development launchers. Set secrets through your client's protected local configuration or environment forwarding; do not put the key in command arguments.
 
 ## Step 3: Add the server to your MCP client
 
@@ -200,11 +223,13 @@ A typical versioning workflow creates a branch from `main`, writes and evaluates
 
 Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the 10 MiB transport limit; the tool does not accept local paths or URLs.
 
-To enable them, change the environment value and restart the MCP server:
+For direct package setup, enable them by changing the environment value and restarting the MCP server:
 
 ```bash
 LAMBDADB_MCP_ENABLE_WRITE_TOOLS=true
 ```
+
+For CLI-generated connections, use the write-tool setting in `init` and restart the agent; `lambdadb mcp` uses its `--write-tools` flag rather than an inherited environment setting.
 
 <Warning>
   Enable write tools only in environments where document creation, updates, and deletion are intended. Start with a non-production project when testing write access from an MCP client.
