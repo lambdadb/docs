@@ -203,4 +203,4 @@ For full query examples, see [Vector query](/guides/search/vector).
 
 ## Bulk upsert
 
-[Bulk upsert](/guides/documents/bulk-upsert-data) never generates embeddings. Collections with native embedding fields can use it only when every document supplies the vector field directly. A document with a present source but no vector fails the whole bulk request before any documents are committed; empty image arrays are skipped. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.
+[Bulk upsert](/guides/documents/bulk-upsert-data) never generates embeddings. For each native embedding field, a document with no source values can omit the vector; a document with a present source must supply the vector directly. A document with a present source but no vector fails the whole bulk request before any documents are committed; empty image arrays are skipped. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.

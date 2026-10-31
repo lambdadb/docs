@@ -22,7 +22,7 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## Supported SDK versions
 
-The examples use these stable releases. They support the current API contract, including data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000:
+The examples use the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000. The tools listed below support their respective workflows; see their guides for available operations and limits:
 
 | Client or tool | Recommended release | Guide |
 | :------------- | :------------------ | :---- |
@@ -32,6 +32,8 @@ The examples use these stable releases. They support the current API contract, i
 | LambdaDB CLI | [0.1.8](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.8) | [Use with CLI](/guides/get-started/use-with-cli) |
 | LambdaDB MCP server | [0.3.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.3.0) | [Use with MCP](/guides/get-started/use-with-mcp) |
 | Migration CLI | [0.1.9](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9) | [Migrations](/guides/migrations/overview) |
+
+The LambdaDB CLI accepts up to 100 documents per `docs list` page; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
 
 Python SDK 0.14.1 requires Python **3.10–3.13**. Go SDK 0.8.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
 

@@ -301,7 +301,7 @@ No command accepts the raw API key as an argument. Config files are written atom
 
 Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
 
-The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion, which never generates native embeddings; every record must then contain the native vector fields directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
+The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
 ## Next steps
 

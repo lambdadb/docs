@@ -82,7 +82,7 @@ def display_results(results, title, description=""):
 
 <Tip>
 
-See [Hybrid query](/guides/search/hybrid) for scoring details. To try Bayesian fusion in the example below, replace the `rrf` key with `bayesian` and add `candidate_size=30` to `coll.query(...)`. Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 100`; `knn.k` remains independent. Keep exactly two unboosted subqueries. Bayesian fusion calibrates scores on the retained candidates, so changing the budget can change ranking. See [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query) for complete requests and reranking options.
+See [Hybrid query](/guides/search/hybrid) for scoring details. To try Bayesian fusion in the example below, replace the `rrf` key with `bayesian` and add `candidate_size=30` to `coll.query(...)`. Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 1000`; `knn.k` remains independent. Keep exactly two unboosted subqueries. Bayesian fusion calibrates scores on the retained candidates, so changing the budget can change ranking. See [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query) for complete requests and reranking options.
 
 </Tip>
 

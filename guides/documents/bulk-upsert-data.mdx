@@ -10,7 +10,7 @@ LambdaDB also supports bulk upsert operation to insert or update multiple docume
 
 <Warning>
 
-  Bulk upsert never generates [native embeddings](/guides/collections/native-embeddings#bulk-upsert). For a collection with native embedding vector fields, every document must supply those vectors directly; a document with a present source field and no vector fails the whole request before any documents are committed. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.
+  Bulk upsert never generates [native embeddings](/guides/collections/native-embeddings#bulk-upsert). For each native embedding field, a document with no source values can omit the vector. A document with a present source field must supply the vector directly or the whole request fails before any documents are committed; empty image arrays are skipped. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.
 
 </Warning>
 

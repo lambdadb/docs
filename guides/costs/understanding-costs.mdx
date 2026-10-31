@@ -67,7 +67,7 @@ Billing for these two meters starts with advance notice. Include them when estim
 
 ## Inference usage
 
-Inference usage applies when LambdaDB calls an inference provider on your behalf, such as native embedding generation during document writes, `knn.queryText` or `knn.queryInputs` searches on native embedding fields, or [native reranking](/guides/search/native-reranking). Writes and queries that supply vectors directly do not use inference.
+Inference usage applies when LambdaDB calls an inference provider on your behalf, such as native embedding generation during document writes, `knn.queryText` or `knn.queryInputs` searches on native embedding fields, or [native reranking](/guides/search/native-reranking). Supplying vectors directly skips embedding inference. A query that also requests reranking still incurs reranking inference usage.
 
 Inference usage is measured in **LIU** (LambdaDB Inference Unit) and billed at **$1.05 per 1M LIU**.
 
