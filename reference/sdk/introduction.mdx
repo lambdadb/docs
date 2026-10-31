@@ -22,15 +22,18 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## Supported SDK versions
 
-The examples use these stable releases, which include data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets#client-compatibility), [native reranking](/guides/search/native-reranking), [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), and [native embedding configuration](/guides/collections/native-embeddings#collection-schema):
+The examples use these stable releases. They support the current API contract, including data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000:
 
-| SDK | Recommended release | SDK guide |
-| :-- | :------------------ | :-------- |
-| Python | [0.12.1](https://pypi.org/project/lambdadb/0.12.1/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.12.1/docs/sdks/versioning/README.md) |
-| JavaScript/TypeScript | [0.8.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.8.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.8.1/docs/data-versioning.md) |
-| Go | [0.7.1](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.7.1) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.7.1/docs/sdks/versioning/README.md) |
+| Client or tool | Recommended release | Guide |
+| :------------- | :------------------ | :---- |
+| Python SDK | [0.14.0](https://pypi.org/project/lambdadb/0.14.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.0/docs/sdks/versioning/README.md) |
+| JavaScript/TypeScript SDK | [0.11.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.11.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/data-versioning.md) |
+| Go SDK | [0.8.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.8.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/sdks/versioning/README.md) |
+| LambdaDB CLI | [0.1.8](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.8) | [Use with CLI](/guides/get-started/use-with-cli) |
+| LambdaDB MCP server | [0.2.1](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.2.1) | [Use with MCP](/guides/get-started/use-with-mcp) |
+| Migration CLI | [0.1.9](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9) | [Migrations](/guides/migrations/overview) |
 
-Python SDK 0.12.1 requires Python **3.10–3.13**. Go SDK 0.7.1 requires Go **1.22 or later**.
+Python SDK 0.14.0 requires Python **3.10–3.13**. Go SDK 0.8.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
 
 ### Search and embedding configuration
 
@@ -43,17 +46,15 @@ For Bayesian queries, select the candidate budget field based on whether reranki
 | TypeScript SDK | Top-level `candidateSize` | `rerank.candidateSize` |
 | Go SDK | `QueryInput.CandidateSize` | `RerankConfig.CandidateSize` |
 
-Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 100`. With reranking, omit the top-level field; the rerank budget defaults to `max(50, size)` and must satisfy the same bounds. `knn.k` remains independent. See the [complete Bayesian requests](/guides/search/hybrid#bayesian-hybrid-query) for both forms. Existing search defaults are unchanged.
+Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 1000`. With reranking, omit the top-level field; the rerank budget defaults to `max(50, size)` and must satisfy the same bounds. `knn.k` remains independent. See the [complete Bayesian requests](/guides/search/hybrid#bayesian-hybrid-query) for both forms. Existing search defaults are unchanged.
 
-Configure [native embeddings](/guides/collections/native-embeddings#collection-schema) with an `embedding` block on a vector field.
+Configure [native embeddings](/guides/collections/native-embeddings#collection-schema) with an `embedding` block on a vector field. Its `sources` list holds `EmbeddingSource` objects in every SDK.
 
 TypeScript and Go provide `IndexConfigsNativeEmbeddingVector`; Go wraps this with `CreateIndexConfigsUnionNativeEmbeddingVector`.
 
 ## Data versioning support
 
 Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
-
-For analyzer support through the SDKs, CLI, and MCP server, see [analyzer SDK compatibility](/guides/collections/choose-text-analyzers#sdk-compatibility).
 
 REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps with datetime helpers such as `created_at_dt`; the TypeScript collection-scoped client returns `Date` values; Go provides time getters. Branch parent and snapshot fields can be null, so check them before accessing their fields.
 

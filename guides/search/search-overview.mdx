@@ -14,7 +14,7 @@ LambdaDB supports several search methods:
 * Vector search: use [dense vector queries](/guides/search/vector) with approximate nearest neighbor (ANN) retrieval, or [sparse vector queries](/guides/search/sparse-vector) with weighted terms or dimensions.
 * Hybrid search: combine two retrieval paths with [RRF, Min-Max, L2, or Bayesian fusion](/guides/search/hybrid).
 
-For dense vector fields, supply your own embeddings with `knn.queryVector`, or configure [native embeddings](/guides/collections/native-embeddings) and search with `knn.queryText` so LambdaDB generates the query vector with the field's model.
+For dense vector fields, supply your own embeddings with `knn.queryVector`, or configure [native embeddings](/guides/collections/native-embeddings) and search with `knn.queryText`, or `knn.queryInputs` for text and images, so LambdaDB generates the query vector with the field's model.
 
 To evaluate and reorder retrieved candidates with a model provided by LambdaDB, add query-level [native reranking](/guides/search/native-reranking). This is separate from vector retrieval and hybrid fusion.
 
@@ -24,9 +24,9 @@ Common parameters for the request body of a query are as follows:
 
 | Parameter      | Description                                                  | Type    | Required | Default |
 |:-------------- |:-------------------------------------------------------------|:------- |:-------- |:------- |
-| size           | The number of results to return (1–100, or 0 when at least one facet is requested). Omitted or `null` uses the default. | integer or null | | 10 |
+| size           | The number of results to return (1–1000, or 0 when at least one facet is requested). Omitted or `null` uses the default. | integer or null | | 10 |
 | query          | Query object (details in the [subsections](/guides/search/query-string)). Omit or use `null` to match all documents in the selected read scope. | object or null | | All documents |
-| candidateSize | Candidate budget for [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) without reranking; require `size <= candidateSize <= 100`. Omit for other queries or when using `rerank.candidateSize`. | integer | Bayesian without reranking | |
+| candidateSize | Candidate budget for [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) without reranking; require `size <= candidateSize <= 1000`. Omit for other queries or when using `rerank.candidateSize`. | integer | Bayesian without reranking | |
 | rerank | Optional native reranking after candidate merge; requires a scoring query and positive `size`, and cannot be combined with `sort`. Omitted or `null` preserves existing search behavior. | object or null | | |
 | facets         | Counts by keyword field value (see [Keyword facets](/guides/search/facets)). Supported with `queryString`, `bool` combinations of supported lexical queries, or no query. | object or null | | |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |

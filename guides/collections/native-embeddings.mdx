@@ -1,9 +1,9 @@
 ---
 title: Native embeddings
-description: Configure native embedding vector fields in LambdaDB, including supported providers, supported models, dimension rules, and query behavior.
+description: Configure native embedding vector fields in LambdaDB, including supported providers and models, text and image sources, dimension rules, write behavior, and query behavior.
 ---
 
-Native embeddings let LambdaDB generate vector values from a source text field and store them in a `vector` field.
+Native embeddings let LambdaDB generate vector values from fields in your documents and store them in a `vector` field. Sources can be text, or text and images with a multimodal model.
 
 Choose the provider and model in the field's `embedding` configuration. LambdaDB handles:
 
@@ -13,29 +13,21 @@ Choose the provider and model in the field's `embedding` configuration. LambdaDB
 
 Native embedding generation consumes **inference usage**. Inference usage is measured in LIU (LambdaDB Inference Unit). See [Understanding costs](/guides/costs/understanding-costs#inference-usage).
 
-## Supported providers
+## Supported providers and models
 
-LambdaDB currently supports the following embedding provider:
+| Provider | Model | Sources | Default dimensions | Dimensions parameter |
+|:---------|:------|:--------|:-------------------|:---------------------|
+| `openai` | `text-embedding-3-small` | Exactly one text source | `1536` | Optional, from `64` to `1536` |
+| `openai` | `text-embedding-3-large` | Exactly one text source | `3072` | Optional, from `64` to `3072` |
+| `openai` | `text-embedding-ada-002` | Exactly one text source | `1536` | Fixed at `1536` |
+| `cohere` | `embed-v5.0-pro` | 1–16 text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
+| `cohere` | `embed-v5.0-fast` | 1–16 text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
 
-| Provider | Status |
-|:---------|:-------|
-| `openai` | Supported |
-
-## Supported models
-
-The following OpenAI embedding models are currently supported for native embedding vector fields.
-
-| Model | Default dimensions | Dimensions parameter | Default similarity |
-|:------|:-------------------|:---------------------|:-----------|
-| `text-embedding-3-small` | `1536` | Optional, from `64` to `1536` | `cosine` |
-| `text-embedding-3-large` | `3072` | Optional, from `64` to `3072` | `cosine` |
-| `text-embedding-ada-002` | `1536` | Fixed at `1536` | `cosine` |
-
-LambdaDB requires at least 64 dimensions, even when the embedding provider accepts a smaller value. Optional `embedding.similarity` supports `cosine` and `euclidean`; the models above default to `cosine`.
+LambdaDB requires at least 64 dimensions, even when the embedding provider accepts a smaller value. Optional `embedding.similarity` supports `cosine` and `euclidean`; all models default to `cosine`.
 
 ## Collection schema
 
-Define a vector field with an `embedding` block to let LambdaDB generate its vectors.
+Define a vector field with an `embedding` block to let LambdaDB generate its vectors. `sources` lists the document fields to embed, in order, each with its `type`.
 
 ```json
 {
@@ -49,7 +41,31 @@ Define a vector field with an `embedding` block to let LambdaDB generate its vec
       "embedding": {
         "provider": "openai",
         "model": "text-embedding-3-small",
-        "sourceField": "body"
+        "sources": [{ "field": "body", "type": "text" }]
+      }
+    }
+  }
+}
+```
+
+A Cohere field can combine several text and image sources into one vector. Source fields do not need their own index configs; `photos` below is stored but not indexed:
+
+```json
+{
+  "indexConfigs": {
+    "title": {
+      "type": "text"
+    },
+    "embedding": {
+      "type": "vector",
+      "embedding": {
+        "provider": "cohere",
+        "model": "embed-v5.0-pro",
+        "dimensions": 1024,
+        "sources": [
+          { "field": "title", "type": "text" },
+          { "field": "photos", "type": "image" }
+        ]
       }
     }
   }
@@ -58,34 +74,27 @@ Define a vector field with an `embedding` block to let LambdaDB generate its vec
 
 ## Schema rules
 
-Use the recommended [SDK versions](/reference/sdk/introduction#supported-sdk-versions), [CLI](/guides/get-started/use-with-cli#install), [MCP server](/guides/get-started/use-with-mcp#step-2-choose-the-published-package), or [Migration CLI](/guides/migrations/overview#generate-embeddings-from-migrated-text) for native configuration.
+Use the recommended [SDK, CLI, MCP server, and Migration CLI releases](/reference/sdk/introduction#supported-sdk-versions) for native configuration.
 
-- `embedding.provider` is required
-- `embedding.model` is required
-- `embedding.sourceField` is required
-- `embedding.sourceField` must reference a `text` field in the same collection
-- native embedding vector fields must not use top-level `dimensions`
-- native embedding vector fields must not use top-level `similarity`
-- set optional `dimensions` and `similarity` inside `embedding`; omitted values use the model defaults
+- `embedding.provider`, `embedding.model`, and `embedding.sources` are required
+- `embedding.sources` holds 1–16 ordered `{ "field", "type" }` entries; `type` is `text` or `image`, and field paths must be unique
+- a source `field` is a dotted path in the stored document; it does not need an index config. If it is indexed, the leaf must be `text` or `keyword` and its ancestors must be `object` fields
+- OpenAI models accept exactly one `text` source; Cohere models accept text and image sources in any order
+- native embedding vector fields must not use top-level `dimensions` or `similarity`; set them inside `embedding`, where omitted values use the model defaults
 - LambdaDB resolves and stores the effective `embedding.dimensions` and `embedding.similarity`
 
 ## Write behavior
 
-For native embedding vector fields, send the source text field and let LambdaDB generate the vector value.
+Send the source fields and let LambdaDB generate the vector. You can also send the vector field directly; a supplied vector is stored as is and skips inference and image retrieval for that document.
 
-| Operation | Source text and vector behavior |
-|:----------|:--------------------------------|
-| Upsert | A supplied source string generates a vector. Omitting the source field stores the document without that generated vector. Upsert replaces the whole document, so omission does not preserve a previous vector |
-| Update | Changed source text generates a replacement vector. Unchanged source text, including an omitted source field, reuses the existing vector if one is present. If the stored source text has no vector yet, an update can generate it |
+| Operation | Behavior |
+|:----------|:---------|
+| Upsert | Present sources generate a vector. A supplied vector takes precedence over generation. Upsert replaces the whole document, so a document with neither sources nor a vector has no vector, even if the previous version had one |
+| Update | A supplied vector takes precedence. Otherwise, unchanged source input reuses the existing vector, changed source input regenerates it, and removing the last source removes a generated vector. Metadata-only updates keep a directly supplied vector when the source fields are unchanged |
 
-The source field must be a string when supplied. Explicit `null` and non-string values for the indexed source field return HTTP `400`. To omit a source field or remove it with a replacement upsert, leave out the JSON property rather than setting it to `null`.
+Text sources must be scalar strings. Image sources are a string or a flat array of strings; every array element is embedded with the other sources into one combined vector. Missing sources and empty image arrays are skipped; if no source is present, no vector is generated. Explicit `null`, arrays on text sources, objects, and other non-string values return HTTP `400` when inference is needed. To omit a source, leave out the JSON property rather than setting it to `null`.
 
-Do not send direct vector values for native embedding fields in:
-
-- [upsert](/guides/documents/upsert-data)
-- [update](/guides/documents/update-data)
-
-Example upsert payload:
+Example upsert payloads for the two schemas above:
 
 ```json
 {
@@ -98,11 +107,39 @@ Example upsert payload:
 }
 ```
 
-### Input limits
+```json
+{
+  "docs": [
+    {
+      "id": "shoe-1",
+      "title": "Red canvas running shoes",
+      "photos": [
+        "https://example.com/shoe-front.png",
+        "https://example.com/shoe-side.png"
+      ]
+    }
+  ]
+}
+```
 
-Use nonempty source text. The supported OpenAI models accept at most **8,192 tokens per input**, and OpenAI limits a provider request to **300,000 tokens across its inputs**. These limits apply to source text and query text, independently of LambdaDB's request and document byte limits. See the [OpenAI embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create).
+### Text input limits
 
-LambdaDB sends source strings to the provider without automatic chunking or truncation. Split long documents into separate records with stable chunk IDs before writing them, and count tokens using the selected model's tokenizer. When writing many long records, use smaller upsert or update batches to stay within the provider's combined token limit.
+Use nonempty source text. The supported OpenAI models accept at most **8,192 tokens per input**, and OpenAI limits a provider request to **300,000 tokens across its inputs**. See the [OpenAI embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create). Cohere inputs are limited by the model's context length; LambdaDB requests no truncation, so an input over the limit is rejected with HTTP `400`.
+
+These limits apply to source text and query text, independently of LambdaDB's request and document byte limits. LambdaDB sends source strings to the provider without automatic chunking or truncation. Split long documents into separate records with stable chunk IDs before writing them, and count tokens using the selected model's tokenizer. When writing many long records, use smaller upsert or update batches to stay within the provider's combined token limit.
+
+### Image inputs
+
+Image sources are available with Cohere models. Each value is either a public HTTPS URL that LambdaDB downloads, or a data URI with base64 content, such as `data:image/png;base64,...`. Supported formats are PNG, JPEG, GIF, and WebP. Images are downloaded and decoded while the write or query is prepared; they are not stored by LambdaDB, and the document keeps the original URL or data URI.
+
+| Limit | Value |
+|:------|:------|
+| Effective parts per input (text parts plus expanded image values) | 16 |
+| Images per input | 8 |
+| Decoded image bytes per input | 1 MiB |
+| Pixels per image | 4,194,304 |
+
+A failed download, an unsupported or mismatched format, or an input over these limits returns HTTP `400`.
 
 ### Failed embedding generation
 
@@ -110,7 +147,7 @@ Embedding generation completes before a write is submitted for indexing. If gene
 
 | Status | Meaning and next step |
 |:-------|:----------------------|
-| `400` | Invalid source or query input, including an empty string or provider token-limit rejection. Correct or split the input before retrying |
+| `400` | Invalid source or query input, including an empty string, an invalid image, or a provider token-limit rejection. Correct or split the input before retrying |
 | `403` | Project inference quota exceeded. Check plan usage before retrying |
 | `429` | Request or provider throttling. Retry with bounded backoff |
 | `500` | Provider failure, invalid response, or embedding transport failure. Retain the server message for troubleshooting |
@@ -119,12 +156,17 @@ Native embeddings have no `returnOriginal` fallback. The [reranking failure poli
 
 ## Query behavior
 
-For native embedding vector fields, use `knn.queryText` instead of `knn.queryVector`.
+A `knn` query on a native embedding vector field takes exactly one of:
 
-`queryText` must be nonblank and fit the input token limit above. LambdaDB generates the query vector with the field's configured model before retrieval; if that call fails, the query fails without returning search results.
+- `queryText`: text that LambdaDB embeds with the field's model
+- `queryInputs`: ordered parts, each `{ "type": "text" | "image", "value": "..." }`; Cohere fields accept mixed text and image parts, OpenAI fields accept one text part
+- `queryVector`: a vector you computed yourself, which skips inference
+
+Query text must be nonblank and fit the input limits above; query images follow the [image input limits](#image-inputs). LambdaDB prepares all inputs and generates the query vector before retrieval; if that fails, the query fails without returning search results.
 
 ```json
 {
+  "size": 10,
   "query": {
     "knn": {
       "field": "bodyEmbedding",
@@ -135,13 +177,30 @@ For native embedding vector fields, use `knn.queryText` instead of `knn.queryVec
 }
 ```
 
+```json
+{
+  "query": {
+    "knn": {
+      "field": "embedding",
+      "queryInputs": [
+        {
+          "type": "text",
+          "value": "red shoes"
+        },
+        {
+          "type": "image",
+          "value": "https://example.com/shoe.png"
+        }
+      ],
+      "k": 10
+    }
+  },
+  "size": 10
+}
+```
+
 For full query examples, see [Vector query](/guides/search/vector).
 
 ## Bulk upsert
 
-`bulk upsert` is not supported for collections that contain native embedding vector fields.
-
-Use the regular document write flow instead:
-
-- [Upsert data](/guides/documents/upsert-data)
-- [Update data](/guides/documents/update-data)
+[Bulk upsert](/guides/documents/bulk-upsert-data) never generates embeddings. Collections with native embedding fields can use it only when every document supplies the vector field directly. A document with a present source but no vector fails the whole bulk request before any documents are committed; empty image arrays are skipped. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.

@@ -67,11 +67,11 @@ Billing for these two meters starts with advance notice. Include them when estim
 
 ## Inference usage
 
-Inference usage applies when LambdaDB calls an inference provider on your behalf, such as native embedding generation during document writes, `knn.queryText` searches on native embedding fields, or [native reranking](/guides/search/native-reranking).
+Inference usage applies when LambdaDB calls an inference provider on your behalf, such as native embedding generation during document writes, `knn.queryText` or `knn.queryInputs` searches on native embedding fields, or [native reranking](/guides/search/native-reranking). Writes and queries that supply vectors directly do not use inference.
 
 Inference usage is measured in **LIU** (LambdaDB Inference Unit) and billed at **$1.05 per 1M LIU**.
 
-LambdaDB converts provider/model token usage into LIU using LambdaDB's internal rate card. For example, different models can have different LIU-per-token conversion rates. Usage is aggregated over the billing period before it is converted to the integer LIU quantity used for billing.
+LambdaDB converts provider/model token usage into LIU using LambdaDB's internal rate card. For example, different models can have different LIU-per-token conversion rates, and image inputs are metered as image tokens with their own rate. Usage is aggregated over the billing period before it is converted to the integer LIU quantity used for billing.
 
 If the aggregated LIU value is positive but less than 1, it is rounded up to **1 LIU** so non-zero native inference usage is not dropped.
 
@@ -81,11 +81,15 @@ See [Native embeddings](/guides/collections/native-embeddings) and [Native reran
 
 ### Native embedding rates
 
-| Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
-|:---------|:------|--------------------:|---------------------:|---------------------------------:|
-| `openai` | `text-embedding-3-small` | 0.02 | 0 | $0.021 |
-| `openai` | `text-embedding-3-large` | 0.13 | 0 | $0.1365 |
-| `openai` | `text-embedding-ada-002` | 0.1 | 0 | $0.105 |
+| Provider | Model | Text input LIU per token | Image input LIU per token | Approx. cost per 1M text input tokens |
+|:---------|:------|-------------------------:|--------------------------:|--------------------------------------:|
+| `openai` | `text-embedding-3-small` | 0.02 | — | $0.021 |
+| `openai` | `text-embedding-3-large` | 0.13 | — | $0.1365 |
+| `openai` | `text-embedding-ada-002` | 0.1 | — | $0.105 |
+| `cohere` | `embed-v5.0-pro` | 0.12 | 0.40 | $0.126 |
+| `cohere` | `embed-v5.0-fast` | 0.08 | 0.40 | $0.084 |
+
+Embedding models have no output tokens. Cohere image inputs are metered in image tokens reported by the provider; one million image tokens equal 400,000 LIU, or **\$0.42**.
 
 <a id="managed-reranking-rates" />
 
@@ -94,6 +98,8 @@ See [Native embeddings](/guides/collections/native-embeddings) and [Native reran
 | Provider | Model | Input LIU per token | Output LIU per token | Approx. cost per 1M input tokens |
 |:---------|:------|--------------------:|---------------------:|---------------------------------:|
 | `typesafe` | `jev-1.13.0` | 0.042 | 0 | $0.0441 |
+| `cohere` | `rerank-v5.0-pro` | 0.05 | 0 | $0.0525 |
+| `cohere` | `rerank-v5.0-fast` | 0.02 | 0 | $0.021 |
 
 At the \$1.05 per 1M LIU rate, one million Jev input tokens equal 42,000 LIU, or **\$0.0441** before plan allowances and integer-LIU rounding. Output tokens add zero LIU. Pricing is based on measured token usage, not provider request count.
 

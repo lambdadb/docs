@@ -224,7 +224,7 @@ LambdaDB also supports `multi-field vector search`, allowing you to perform kNN 
 
 ### Native embedding vector fields
 
-Add an `embedding` block to let LambdaDB generate vectors from a source text field.
+Add an `embedding` block to let LambdaDB generate vectors from text or image fields in the document.
 
 For supported models and configuration rules, see [Native embeddings](/guides/collections/native-embeddings).
 
@@ -241,7 +241,7 @@ For supported models and configuration rules, see [Native embeddings](/guides/co
         "embedding": {
             "provider": "openai",
             "model": "text-embedding-3-small",
-            "sourceField": "body"
+            "sources": [{"field": "body", "type": "text"}]
         }
     }
 }
@@ -258,7 +258,7 @@ For supported models and configuration rules, see [Native embeddings](/guides/co
         "embedding": {
             "provider": "openai",
             "model": "text-embedding-3-small",
-            "sourceField": "body"
+            "sources": [{ "field": "body", "type": "text" }]
         }
     }
 }
@@ -270,11 +270,11 @@ For supported models and configuration rules, see [Native embeddings](/guides/co
 
 For native embedding vector fields:
 
-- `embedding.provider`, `embedding.model`, and `embedding.sourceField` are required
-- `embedding.sourceField` must point to a `text` field in the same collection
-- do not send direct vector values for the generated field in upsert or update requests
-- use `knn.queryText` for search instead of `knn.queryVector`
-- `bulk upsert` is not supported for collections that contain native embedding fields
+- `embedding.provider`, `embedding.model`, and `embedding.sources` are required
+- source fields are dotted paths in the stored document and do not need their own index configs
+- set `dimensions` and `similarity` inside `embedding`, not at the top level of the field
+- search with `knn.queryText` or `knn.queryInputs`; `knn.queryVector` is also accepted and skips inference
+- [bulk upsert](/guides/collections/native-embeddings#bulk-upsert) never generates embeddings and requires the vector field in every document
 
 </Note>
 
@@ -446,7 +446,7 @@ complete_index_config = {
 
 ## Supported analyzers
 
-LambdaDB supports 49 fixed presets for `text` fields. See [SDK and tool compatibility](/guides/collections/choose-text-analyzers#sdk-compatibility) for versions that accept all 49 names.
+LambdaDB supports 49 fixed presets for `text` fields. The recommended [SDK, CLI, MCP server, and Migration CLI releases](/reference/sdk/introduction#supported-sdk-versions) accept all 49 names.
 
 | Analyzer | Description |
 |:---------|:------------|

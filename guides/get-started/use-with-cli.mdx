@@ -9,14 +9,14 @@ Use `lambdadb` for project-scoped collection management, JSONL imports, queries,
 
 ## Install
 
-The stable release covered by this guide is `0.1.4`. Choose one installation method and check `command -v lambdadb` before switching package managers.
+The stable release covered by this guide is `0.1.8`. Choose one installation method and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
     Requires Node.js **22.14.0 or later** and npm.
 
     ```bash
-    npm install --global @functional-systems/lambdadb-cli@0.1.4
+    npm install --global @functional-systems/lambdadb-cli@0.1.8
     lambdadb --version
     lambdadb --help
     ```
@@ -42,7 +42,7 @@ The stable release covered by this guide is `0.1.4`. Choose one installation met
     lambdadb --help
     ```
 
-    The public tap provides CLI `0.1.4` with its Node 24 runtime. No separate Node/npm setup is needed.
+    The public tap provides CLI `0.1.8` with its Node 24 runtime. No separate Node/npm setup is needed.
 
     ```bash
     brew update
@@ -82,7 +82,7 @@ lambdadb doctor
 
 ## Create a collection and import JSONL
 
-The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers#sdk-compatibility).
+The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers).
 
 For generated vectors, use the [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in the same field-to-index map. The CLI also supports `lambdadb collections update --collection NAME --index-config FILE` with that map format. Existing field-update constraints still apply; see [Configure a collection](/guides/collections/manage-collections#configure-a-collection).
 
@@ -180,14 +180,14 @@ Save the complete [Bayesian request](/guides/search/hybrid#bayesian-hybrid-query
 lambdadb query --collection semantic-docs --ref branch:main --file bayesian-query.json --json
 ```
 
-Without reranking, supply top-level `candidateSize` with `1 <= size <= candidateSize <= 100`. With reranking, omit that field and use `rerank.candidateSize`. No separate fusion flags are needed; existing search defaults are unchanged.
+Without reranking, supply top-level `candidateSize` with `1 <= size <= candidateSize <= 1000`. With reranking, omit that field and use `rerank.candidateSize`. No separate fusion flags are needed; existing search defaults are unchanged.
 
 ### Select collections and refs
 
 - Endpoint and project come from configuration, environment, or flags. `--collection` is required for collection-specific operations.
 - Import requires `--branch NAME`. Query and fetch require `--ref branch:NAME`, `--ref tag:NAME`, or `--ref alias:NAME`; the CLI does not silently select `main`.
-- Tags and aliases must already exist. The CLI does not create or manage refs. Branches and aliases can move between calls.
-- If a query file contains `ref`, it must match `--ref`. Query `size` is 1–100 for document results; `size: 0` requires nonempty `facets` for counts only. Fetch accepts up to 100 IDs.
+- Tags and aliases must already exist; create them with the `tags` and `aliases` commands or the API. Branches and aliases can move between calls.
+- If a query file contains `ref`, it must match `--ref`. Query `size` is 1–1000 for document results; `size: 0` requires nonempty `facets` for counts only. Fetch accepts up to 1000 IDs.
 
 List collections with `lambdadb collections list --json`. One page is returned by default; use `--page-token` with the returned `nextPageToken`, or `--all` to fetch all pages within the network budget.
 
@@ -222,7 +222,7 @@ No command accepts the raw API key as an argument. Config files are written atom
 
 Import reports `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
 
-The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion; it is unsupported for native embedding vector fields. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
+The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion, which never generates native embeddings; every record must then contain the native vector fields directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
 ## Next steps
 

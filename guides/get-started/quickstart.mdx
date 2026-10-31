@@ -54,21 +54,21 @@ Install one of the stable SDK versions used by these examples. See [SDK support]
 <CodeGroup>
 
 ```bash Python
-pip install lambdadb==0.12.1
+pip install lambdadb==0.14.0
 ```
 
 ```bash TypeScript
-npm install @functional-systems/lambdadb@0.8.1
+npm install @functional-systems/lambdadb@0.11.1
 ```
 
 ```bash Go
-go get github.com/lambdadb/go-lambdadb@v0.7.1
+go get github.com/lambdadb/go-lambdadb@v0.8.0
 ```
 
 </CodeGroup>
 
 <Tip>
-    Python SDK 0.12.1 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Go SDK 0.7.1 requires Go 1.22 or later.
+    Python SDK 0.14.0 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Go SDK 0.8.0 requires Go 1.22 or later.
 </Tip>
 
 ## 📚 Step 3: Create a collection
@@ -448,7 +448,7 @@ To try Bayesian fusion with the same documents, replace `l2` with `bayesian` in 
 - **TypeScript:** `candidateSize: 30`
 - **Go:** `CandidateSize: lambdadb.Int64(30)`
 
-Without reranking, this budget is required and must satisfy `1 <= size <= candidateSize <= 100`. It controls retrieval and score calibration depth for each path; `knn.k` remains independent. Changing the budget can change scores and ranking.
+Without reranking, this budget is required and must satisfy `1 <= size <= candidateSize <= 1000`. It controls retrieval and score calibration depth for each path; `knn.k` remains independent. Changing the budget can change scores and ranking.
 
 Keep exactly two unboosted subqueries and use `bayesian` only at the top level of `query`. The fused scores are heuristic scores, not relevance probabilities. For complete requests, constraints, and optional reranking, see [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query).
 

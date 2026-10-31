@@ -39,5 +39,13 @@ class GuideExampleTest(unittest.TestCase):
         validate(REQUEST["schema"], example)
 
     def test_native_embedding_guide_matches_spec(self):
-        example = blocks("guides/collections/native-embeddings.mdx")[0]
-        validate(SPEC["components"]["schemas"]["IndexConfigs"], example["indexConfigs"])
+        examples = blocks("guides/collections/native-embeddings.mdx")
+        schemas = [example["indexConfigs"] for example in examples if "indexConfigs" in example]
+        self.assertEqual(2, len(schemas))
+        for schema in schemas:
+            validate(SPEC["components"]["schemas"]["IndexConfigs"], schema)
+        queries = [example for example in examples if "query" in example]
+        self.assertEqual([REQUEST["examples"][name]["value"] for name in
+                          ("nativeEmbeddingKnnQuery", "cohereMultimodalKnnQuery")], queries)
+        for query in queries:
+            validate(REQUEST["schema"], query)
