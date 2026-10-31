@@ -1,11 +1,11 @@
 ---
 title: Use the CLI
-description: Install the LambdaDB CLI, configure a project, import JSONL, and query or fetch documents from your terminal.
+description: Install the LambdaDB CLI, configure a project, manage collections and refs, import JSONL, and query, list, update, or delete documents from your terminal.
 ---
 
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
-Use `lambdadb` for project-scoped collection management, JSONL imports, queries, and ID-based fetches. To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
+Use `lambdadb` for project-scoped collection management, JSONL imports, queries, ID-based fetches, document updates and deletes, and branch, tag, and alias management. To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
 
 ## Install
 
@@ -79,6 +79,8 @@ lambdadb doctor
 ```
 
 `configure` saves only the endpoint, project, and name of the key environment variable; it makes no service call. `doctor` checks authentication and collection-list access. Success does not prove write permission or search readiness.
+
+Alternatively, `lambdadb init` walks through account login, project selection, and key issuance in the browser, and can register the connection with coding agents; see the [CLI setup guide](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/setup.md). Neither path creates documents or collections.
 
 ## Create a collection and import JSONL
 
@@ -186,10 +188,87 @@ Without reranking, supply top-level `candidateSize` with `1 <= size <= candidate
 
 - Endpoint and project come from configuration, environment, or flags. `--collection` is required for collection-specific operations.
 - Import requires `--branch NAME`. Query and fetch require `--ref branch:NAME`, `--ref tag:NAME`, or `--ref alias:NAME`; the CLI does not silently select `main`.
-- Tags and aliases must already exist; create them with the `tags` and `aliases` commands or the API. Branches and aliases can move between calls.
+- Tags and aliases must already exist; see [Branches, tags, and aliases](#branches-tags-and-aliases). Branches and aliases can move between calls.
 - If a query file contains `ref`, it must match `--ref`. Query `size` is 1–1000 for document results; `size: 0` requires nonempty `facets` for counts only. Fetch accepts up to 1000 IDs.
 
+## List, update, and delete documents
+
+`docs list` pages through documents at a ref without ranking. `--size` accepts 1–100; use `--page-token` with the returned `nextPageToken`, or `--all` to follow pages to the end within the network budget. An optional `--file` holds `filter`, `partitionFilter`, and `fields`:
+
+```bash
+lambdadb docs list --collection cli-demo-docs --ref branch:main --size 5 --json
+
+cat > list-filter.json <<'JSON'
+{
+  "filter": { "queryString": { "query": "category:database" } },
+  "fields": { "include": ["id", "text", "category"] }
+}
+JSON
+
+lambdadb docs list --collection cli-demo-docs --ref branch:main --file list-filter.json --json
+```
+
+Use a tag for a stable export; a branch can advance and an alias can be retargeted between pages. List does not support consistent reads, and `total` counts the page, not the collection.
+
+`docs update` merges JSONL rows into existing documents. Every row needs a nonempty string `id` that already exists; omitted fields are kept, nested objects merge, arrays are replaced, and `null` is rejected for indexed fields. Batches run sequentially and stop at the first failure, with the same result fields and exit codes as import:
+
+```bash
+cat > updates.jsonl <<'JSONL'
+{"id":"doc-1","category":"database","metadata":{"reviewed":true}}
+{"id":"doc-2","category":"developer-tools"}
+JSONL
+
+lambdadb docs update --collection cli-demo-docs --branch main --file updates.jsonl --json
+```
+
+`docs delete` takes exactly one selector: `--ids`, or a `--file` with `ids` or a `filter` in the query DSL plus an optional `partitionFilter`. Deletion runs without confirmation and is reported as accepted; deleted documents can remain visible until the write commits. Preview a filter with `docs list --file` using the same `filter` first.
+
+```bash
+lambdadb docs delete --collection cli-demo-docs --branch main --ids doc-2 --json
+
+cat > delete-filter.json <<'JSON'
+{ "filter": { "queryString": { "query": "category:developer-tools" } } }
+JSON
+
+lambdadb docs delete --collection cli-demo-docs --branch main --file delete-filter.json --json
+```
+
+## Manage collections
+
 List collections with `lambdadb collections list --json`. One page is returned by default; use `--page-token` with the returned `nextPageToken`, or `--all` to fetch all pages within the network budget.
+
+`collections create` also accepts `--description`, repeated `--tag KEY=VALUE` metadata tags, `--partition-config` with a JSON object, and `--snapshot-retention-days`. `collections update` takes any combination of `--index-config`, `--description` (`""` clears it), `--tag` or `--clear-tags` (replacing the whole tag map), and `--snapshot-retention-days`, following the [collection update rules](/guides/collections/manage-collections#configure-a-collection):
+
+```bash
+lambdadb collections update --collection cli-demo-docs --description "Support articles" --tag team=search --json
+lambdadb collections update --collection cli-demo-docs --index-config index-config.json --json
+```
+
+`collections delete` permanently removes the collection with all documents, branches, tags, and aliases, without confirmation:
+
+```bash
+lambdadb collections delete --collection cli-demo-docs --json
+```
+
+## Branches, tags, and aliases
+
+The `branches`, `tags`, and `aliases` commands manage [data versioning refs](/guides/data-versioning/branches-tags-aliases). Sources and targets use the same `kind:NAME` form as `--ref`:
+
+```bash
+lambdadb branches list --collection cli-demo-docs --json
+lambdadb branches create --collection cli-demo-docs --branch candidate --json
+lambdadb branches create --collection cli-demo-docs --branch replay --source branch:main --as-of 2026-10-01T00:00:00Z --json
+lambdadb tags create --collection cli-demo-docs --tag release-one --source branch:candidate --json
+lambdadb aliases create --collection cli-demo-docs --alias production --target tag:release-one --json
+lambdadb aliases retarget --collection cli-demo-docs --alias production --target branch:main --json
+lambdadb aliases delete --collection cli-demo-docs --alias production --json
+lambdadb tags delete --collection cli-demo-docs --tag release-one --json
+lambdadb branches delete --collection cli-demo-docs --branch candidate --json
+```
+
+`branches create` copies the committed state of a branch (`--source branch:NAME`, default `main`); `tags create` pins the committed snapshot of a branch or tag. Pending writes are not included in either. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
+
+Deletes take effect without confirmation. The server refuses to delete `main` and refuses to delete a branch or tag while an alias references it (HTTP `409`); list aliases, then retarget or delete them first. Mutations are never retried; an unverifiable outcome exits with code `5`, so list the refs before retrying.
 
 ## Configuration and credentials
 
@@ -220,7 +299,7 @@ No command accepts the raw API key as an argument. Config files are written atom
 | `4` | Partial import: some accepted records, no unknown outcomes |
 | `5` | At least one write outcome is unknown; inspect before retrying |
 
-Import reports `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
+Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` counts plus batch line ranges. A timeout or disconnect after dispatch can mean an unknown outcome. There are no automatic write retries, durable checkpoints, or resume support in the general CLI. Inspect the target and report before constructing a retry.
 
 The shared network budget covers retries, pages, batches, and large-result downloads. Use `--timeout-ms 120000` for a longer operation. Optional `--mode bulk` uses bulk ingestion, which never generates native embeddings; every record must then contain the native vector fields directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
