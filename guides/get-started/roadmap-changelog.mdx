@@ -3,7 +3,7 @@ title: "Roadmap & Changelog"
 description: "Explore upcoming LambdaDB features and major product releases."
 ---
 
-Last updated: October 31, 2026
+Last updated: November 1, 2026
 
 ## Up Next
 
@@ -16,14 +16,10 @@ Last updated: October 31, 2026
 
 ### October 2026
 
-- Added [Cohere Embed 5 native embeddings](/guides/collections/native-embeddings) with ordered text and image `sources`, mixed text and image search with `knn.queryInputs`, and direct vectors on native embedding fields, including [bulk upsert](/guides/collections/native-embeddings#bulk-upsert) of precomputed vectors. Available through the API, SDKs, CLI, MCP server, and Migration CLI.
-- Added [Cohere Rerank 5 models](/guides/search/native-reranking#cohere-scoring) as a second native reranking provider, through the API, SDKs, CLI, and MCP server.
-- Raised the query `size`, `knn.k`, candidate budget, fetch, and list [limits](/guides/search/limits) to 1,000.
-- The [MCP server](/guides/get-started/use-with-mcp#step-2-choose-the-published-package) now limits its stdio receive buffer to 10 MiB and closes the connection on overflow; split large tool inputs into smaller calls.
-- Added [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) with explicit candidate budgets and optional reranking through the API, SDKs, CLI, and MCP server.
-- Simplified [native embedding configuration](/guides/collections/native-embeddings#collection-schema) to accept an `embedding` block without the legacy flag, with SDK, CLI, MCP, and [Migration CLI mapping support](/guides/migrations/overview#generate-embeddings-from-migrated-text).
-- Added query-level [native reranking](/guides/search/native-reranking) with default or custom relevance criteria and final/search score metadata, available through the API, SDKs, CLI, and MCP server.
-- Expanded support to all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers), including [Elasticsearch analyzer and index-default mapping](/guides/migrations/elasticsearch/migrate-from-elasticsearch#text-analyzer-presets) in the Migration CLI; source credentials now need read access to both mappings and settings.
+- Added [native reranking](/guides/search/native-reranking) and Cohere support for both reranking and [text and image embeddings](/guides/collections/native-embeddings).
+- Raised search, fetch, and list [limits](/guides/search/limits) to 1,000.
+- Added [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) to combine keyword and vector results with automatic score calibration.
+- Expanded support to 49 [text analyzer presets](/guides/collections/choose-text-analyzers), including analyzer mappings for Elasticsearch migrations.
 
 ### September 2026
 
