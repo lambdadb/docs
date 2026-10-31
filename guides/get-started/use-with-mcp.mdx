@@ -37,24 +37,24 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The stable npm package is `@functional-systems/lambdadb-mcp@0.2.1`. This guide pins that published version. No source checkout or build is required.
+The stable npm package is `@functional-systems/lambdadb-mcp@0.3.0`. This guide pins that published version. No source checkout or build is required.
 
 ```bash
 node --version
-npm view @functional-systems/lambdadb-mcp@0.2.1 version engines
+npm view @functional-systems/lambdadb-mcp@0.3.0 version engines
 ```
 
 With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-npx --yes @functional-systems/lambdadb-mcp@0.2.1
+npx --yes @functional-systems/lambdadb-mcp@0.3.0
 ```
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
 The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's API request limits.
 
-Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.2.1` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.3.0` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
 
 ### Environment variables
 
@@ -76,7 +76,7 @@ For **Claude Desktop**, open **Settings → Developer → Edit Config** and merg
   "mcpServers": {
     "lambdadb": {
       "command": "npx",
-      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.2.1"],
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.3.0"],
       "env": {
         "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
@@ -94,13 +94,16 @@ Fully quit and restart Claude Desktop. Other MCP clients can use the same comman
 
 ## Step 4: Verify the connection
 
-Open your client's server/tool list (in Claude Desktop, **Manage connectors → lambdadb**). A read-only connection should advertise these five tools:
+Open your client's server/tool list (in Claude Desktop, **Manage connectors → lambdadb**). A read-only connection should advertise these eight tools:
 
 - `lambdadb_list_collections`
 - `lambdadb_get_collection`
 - `lambdadb_query_collection`
 - `lambdadb_list_docs`
 - `lambdadb_fetch_docs`
+- `lambdadb_list_branches`
+- `lambdadb_list_tags`
+- `lambdadb_list_aliases`
 
 Tool discovery confirms the local MCP connection; it does not authenticate to LambdaDB. To check project access:
 
@@ -153,17 +156,19 @@ The MCP server accepts the [Bayesian request](/guides/search/hybrid#bayesian-hyb
 
 ## Optional: Enable write tools
 
-The LambdaDB MCP server can also expose write operations such as:
+The LambdaDB MCP server can also expose write operations:
 
-- `lambdadb_create_collection`
-- `lambdadb_upsert_docs`
-- `lambdadb_delete_docs`
+| Area | Tools |
+|:-----|:------|
+| Collections | `lambdadb_create_collection`, `lambdadb_update_collection`, `lambdadb_delete_collection` |
+| Documents | `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs`, `lambdadb_delete_docs` |
+| Data versioning | `lambdadb_create_branch`, `lambdadb_delete_branch`, `lambdadb_create_tag`, `lambdadb_delete_tag`, `lambdadb_create_alias`, `lambdadb_retarget_alias`, `lambdadb_delete_alias` |
 
 The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers) when creating collections.
 
-The create tool accepts an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema). The MCP server has no collection-schema update tool.
+The create and update tools accept an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema); schema updates follow the [collection update rules](/guides/collections/manage-collections#configure-a-collection).
 
-Upsert and delete accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`.
+Document writes accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`. Accepted writes do not establish committed search visibility, and bulk inputs remain subject to the 10 MiB transport limit.
 
 To enable them, change the environment value and restart the MCP server:
 
@@ -205,7 +210,7 @@ If the server cannot start:
 For development, use a release tag and Node.js 22.14.0 or later:
 
 ```bash
-git clone --branch v0.2.1 https://github.com/lambdadb/lambdadb-mcp
+git clone --branch v0.3.0 https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
 npm ci
 npm run build
