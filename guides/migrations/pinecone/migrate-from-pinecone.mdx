@@ -243,7 +243,9 @@ The Migration CLI generates this default metric mapping for dense vector fields:
 |:----------------|:--------------------|
 | `cosine` | `cosine` |
 | `euclidean` | `euclidean` |
-| `dotproduct` | The CLI generates `dot_product`, which is not supported for dense vectors. |
+| `dotproduct` | The CLI generates `dot_product`, which is not supported for dense vectors; the migration is rejected before any LambdaDB request. Sparse indexes keep `dotproduct` and migrate to sparse vector fields, which have no similarity setting. |
+
+The inventory reports each vector's generated `similarity` with the original `sourceSimilarity`, and `warnings` names every vector whose metric or dimensions LambdaDB cannot store. Migration runs, including `--migration.dry-run`, validate the mapping first and exit with an error naming the vector and metric; the CLI never converts a similarity on its own. To migrate such a vector, set `vectors.<source vector>.similarity` to `cosine` or `euclidean` in the mapping file and pass it with `--mapping-file`.
 
 Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `dotproduct` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either. Sparse-vector indexes continue to use `dot_product`.
 

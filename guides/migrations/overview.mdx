@@ -141,7 +141,27 @@ payload:
             type: text
 ```
 
-Each `sources` entry names a destination field after renaming; a Cohere model can list several text and image fields. Set `--migration.write-mode upsert`: bulk upsert never generates embeddings. Generation consumes inference usage, including possible repeated provider calls on retries.
+Each `sources` entry names a destination field after renaming; dotted paths select values inside stored objects. OpenAI models take exactly one text source. A Cohere model combines up to 16 text and image sources, where an image field holds a public HTTPS URL or data URI, or a flat array of them:
+
+```yaml
+payload:
+  indexConfigs:
+    generated_vector:
+      type: vector
+      embedding:
+        provider: cohere
+        model: embed-v5.0-fast
+        dimensions: 1024
+        sources:
+          - field: body
+            type: text
+          - field: image_url
+            type: image
+```
+
+Put explicit `dimensions` and `similarity` inside `embedding`; the CLI inserts no defaults and rejects top-level native `dimensions`/`similarity`, `embedding.dimensions` outside 64–4096, and unknown keys in a `sources` entry during mapping validation. Model, source type, and image limits remain server validations.
+
+Set `--migration.write-mode upsert`: bulk upsert never generates embeddings. Generation consumes inference usage, including possible repeated provider calls on retries.
 
 Generated inventories preserve stored vectors as ordinary vector fields. Keep those fields separate from generated vectors; a native payload index cannot replace a mapped source vector field. Existing target schemas are not updated or reconciled.
 
