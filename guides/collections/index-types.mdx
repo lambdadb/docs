@@ -274,7 +274,7 @@ For native embedding vector fields:
 - source fields are dotted paths in the stored document and do not need their own index configs
 - set `dimensions` and `similarity` inside `embedding`, not at the top level of the field
 - search with `knn.queryText` or `knn.queryInputs`; `knn.queryVector` is also accepted and skips inference
-- [bulk upsert](/guides/collections/native-embeddings#bulk-upsert) never generates embeddings and requires the vector field in every document
+- [bulk upsert](/guides/collections/native-embeddings#bulk-upsert) never generates embeddings; a document with a present source must supply the vector directly
 
 </Note>
 
