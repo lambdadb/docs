@@ -175,7 +175,7 @@ Every tool takes `collectionName`. The other inputs are:
 | Tool | Inputs and behavior |
 |:-----|:--------------------|
 | `lambdadb_create_collection` | Nonempty `indexConfigs`; optional `description`, metadata `tags`, `partitionConfig`, and `snapshotRetentionInDays` (1–31) |
-| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`; `null` clears the latter three. Index changes are additive |
+| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`. Omitted or `null` values leave settings unchanged; use `description: ""` or `tags: {}` to clear those fields. Retention must be 1–31 and cannot be cleared. Index changes are additive |
 | `lambdadb_delete_collection` | Deletes the collection with its documents, branches, tags, and aliases |
 | `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs` | `docs` and optional `branch`. Update rows need existing IDs and merge into stored documents; bulk runs the SDK upload workflow and never generates native embeddings |
 | `lambdadb_delete_docs` | Exactly one of a nonempty `ids` array or a `filter`, plus optional `partitionFilter` and `branch` |
