@@ -63,10 +63,10 @@ Installed copies do not update themselves. Pin an exact version for reproducible
 
 <CloudConnectionDetails />
 
-Use an existing development project and replace the placeholders below. The endpoint is your region's HTTPS API origin, without `/projects/...`. The CLI does not create projects or issue keys.
+Use an existing development project and replace the placeholders below. The endpoint is your region's HTTPS API origin, without `/projects/...`. This `configure` flow uses an existing project and key.
 
 ```bash
-lambdadb configure --endpoint YOUR_REGION_BASE_URL --project YOUR_PROJECT_NAME
+lambdadb configure --endpoint YOUR_REGION_BASE_URL --project YOUR_PROJECT_NAME --api-key-env LAMBDADB_API_KEY
 ```
 
 Supply the key through your shell or a CI secret manager. For example, in **Bash**, read it without putting the value in shell history:
@@ -78,9 +78,9 @@ export LAMBDADB_API_KEY
 lambdadb doctor
 ```
 
-`configure` saves only the endpoint, project, and name of the key environment variable; it makes no service call. `doctor` checks authentication and collection-list access. Success does not prove write permission or search readiness.
+This environment-variable setup saves the endpoint, project, and name of the key environment variable; `configure` makes no service call. Explicit `--api-key-env` selects environment mode even after an earlier `init` saved an OS credential reference. `doctor` checks authentication and collection-list access. Success does not prove write permission or search readiness.
 
-Alternatively, `lambdadb init` walks through account login, project selection, and key issuance in the browser, and can register the connection with coding agents; see the [CLI setup guide](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/setup.md). Neither path creates documents or collections.
+Alternatively, `lambdadb init` uses browser-based account login, then project selection or creation and key issuance in the terminal. Account setup stores keys in the OS credential store and saves a non-secret reference in the CLI configuration. It can also register the connection with coding agents; see the [CLI setup guide](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/setup.md). Neither path creates documents or collections.
 
 ## Create a collection and import JSONL
 
@@ -244,12 +244,6 @@ lambdadb collections update --collection cli-demo-docs --description "Support ar
 lambdadb collections update --collection cli-demo-docs --index-config index-config.json --json
 ```
 
-`collections delete` permanently removes the collection with all documents, branches, tags, and aliases, without confirmation:
-
-```bash
-lambdadb collections delete --collection cli-demo-docs --json
-```
-
 ## Branches, tags, and aliases
 
 The `branches`, `tags`, and `aliases` commands manage [data versioning refs](/guides/data-versioning/branches-tags-aliases). Sources and targets use the same `kind:NAME` form as `--ref`:
@@ -270,6 +264,14 @@ lambdadb branches delete --collection cli-demo-docs --branch candidate --json
 
 Deletes take effect without confirmation. The server refuses to delete `main` and refuses to delete a branch or tag while an alias references it (HTTP `409`); list aliases, then retarget or delete them first. Mutations are never retried; an unverifiable outcome exits with code `5`, so list the refs before retrying.
 
+### Clean up the example collection
+
+After completing the examples, use `collections delete` to permanently remove the collection with all documents, branches, tags, and aliases, without confirmation:
+
+```bash
+lambdadb collections delete --collection cli-demo-docs --json
+```
+
 ## Configuration and credentials
 
 The default config path is `${XDG_CONFIG_HOME:-$HOME/.config}/lambdadb/config.json`. It is user-local, not discovered from the working repository. The CLI does not load `.env` files.
@@ -279,13 +281,13 @@ The default config path is `${XDG_CONFIG_HOME:-$HOME/.config}/lambdadb/config.js
 | Endpoint | `--endpoint`, `LAMBDADB_ENDPOINT`, saved `endpoint` |
 | Project | `--project`, `LAMBDADB_PROJECT`, saved `project` |
 | Key variable name | `--api-key-env`, `LAMBDADB_API_KEY_ENV`, saved `apiKeyEnv`, default `LAMBDADB_API_KEY` |
-| Key value | Value of the selected environment variable only; no fallback to another key |
+| Key value | Explicit `--api-key-env` or `LAMBDADB_API_KEY_ENV` selects environment mode; otherwise use the saved OS credential reference when present, else the selected variable. An explicit OS reference in generated agent arguments stays bound to its store. No automatic fallback on read failure |
 | Config path | `--config`, `LAMBDADB_CONFIG`, default user path |
 | Network timeout | `--timeout-ms`, `LAMBDADB_TIMEOUT_MS`, default `30000` milliseconds |
 
-Explicit empty values fail validation. An explicitly selected missing config file fails except when `configure` creates it. `configure` uses the same precedence when saving settings. For a different secret variable, use `lambdadb configure --api-key-env MY_PROJECT_KEY`, then supply `MY_PROJECT_KEY` in the process environment.
+Explicit empty values fail validation. Data commands fail if an explicitly selected config file is missing; `configure` and `init` can create it. `configure` uses the same precedence when saving settings. For a different secret variable, use `lambdadb configure --api-key-env MY_PROJECT_KEY`, then supply `MY_PROJECT_KEY` in the process environment. Setting only the key value in an environment variable does not override a saved OS credential reference.
 
-No command accepts the raw API key as an argument. Config files are written atomically with mode `0600` on POSIX; only the variable name is persisted. Avoid shell tracing around secrets. The active key is redacted from output, but document contents remain visible. SDK debug logging is disabled even if `LAMBDADB_DEBUG` is set.
+No command accepts the raw API key as an argument. Config files are written atomically with mode `0600` on POSIX and contain connection settings and non-secret credential metadata, never the key value. Environment mode saves the variable name; account setup adds `credentialStore`, `credentialId`, `credentialKeyId`, and `credentialKeyName`. Avoid shell tracing around secrets. The active key is redacted from output, but document contents remain visible. SDK debug logging is disabled even if `LAMBDADB_DEBUG` is set.
 
 ## JSON output and failures
 
