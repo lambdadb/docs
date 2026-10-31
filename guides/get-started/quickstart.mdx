@@ -195,7 +195,7 @@ The underlying REST response is `201 Created` and includes the default branch:
 - **Vector field**: Synthetic 64-dimensional vectors using cosine similarity. For real embeddings, match the model's dimensions and [similarity requirements](/guides/collections/index-types#supported-similarity-metrics).
 - **Keyword field**: Added to support [exact match filtering](/guides/search/query-string#exact-keyword-match).
 
-To have LambdaDB generate embeddings from your text, choose a [native embedding configuration](/guides/collections/native-embeddings#collection-schema) when creating the collection. That flow writes source text instead of direct vector values and searches with `knn.queryText` instead of `knn.queryVector`; LambdaDB manages provider credentials. The examples below use caller-provided vectors.
+To have LambdaDB generate embeddings from your text or images, choose a [native embedding configuration](/guides/collections/native-embeddings#collection-schema) when creating the collection. That flow writes the source fields instead of direct vector values and searches with `knn.queryText` or `knn.queryInputs`; LambdaDB manages provider credentials. The examples below use caller-provided vectors.
 
 `201 Created` confirms collection creation, not query-serving readiness. If a subsequent operation encounters a loading or transient error, follow [Errors and retries](/reference/api/introduction#errors-and-retries); do not recreate the collection to wait for readiness.
 

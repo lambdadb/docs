@@ -182,7 +182,7 @@ A kNN search finds the k nearest vectors to a query vector, as measured by a sim
 LambdaDB supports two vector field modes:
 
 - vector fields with caller-provided values, where you send vector values directly
-- native embedding vector fields, where LambdaDB generates vector values from a source text field
+- native embedding vector fields, where LambdaDB generates vector values from text or image source fields
 
 LambdaDB also supports `multi-field vector search`, allowing you to perform kNN searches across multiple vector fields simultaneously within a single query. This enables complex semantic search scenarios where you can combine different types of embeddings (e.g., text embeddings, image embeddings) in one search operation.
 
