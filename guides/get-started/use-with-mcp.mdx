@@ -111,7 +111,9 @@ Tool discovery confirms the local MCP connection; it does not authenticate to La
 2. Call `lambdadb_get_collection` for a known collection.
 3. Run `lambdadb_query_collection` with a small query against that collection.
 
-Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Use `lambdadb_list_branches`, `lambdadb_list_tags`, and `lambdadb_list_aliases` to discover refs when `main` is not the intended target. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+
+Query `size` is 1–1000, fetch accepts up to 1000 IDs, and list accepts `size` 1–1000 plus optional `filter`, `fields`, `includeVectors`, and `partitionFilter`. The server does not cap result size, so keep `size` small while exploring and use `fields` to leave out large stored fields.
 
 For example, pass these arguments to `lambdadb_query_collection` for the sample collection created in the [CLI guide](/guides/get-started/use-with-cli):
 
@@ -168,7 +170,35 @@ The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/
 
 The create and update tools accept an `embedding` block in `indexConfigs` for [native embeddings](/guides/collections/native-embeddings#collection-schema); schema updates follow the [collection update rules](/guides/collections/manage-collections#configure-a-collection).
 
-Document writes accept an optional `branch`; omitting it writes to `main`. Creating a collection requires nonempty `indexConfigs`. Deleting documents requires exactly one of a nonempty `ids` array or a `filter`. Accepted writes do not establish committed search visibility, and bulk inputs remain subject to the 10 MiB transport limit.
+Every tool takes `collectionName`. The other inputs are:
+
+| Tool | Inputs and behavior |
+|:-----|:--------------------|
+| `lambdadb_create_collection` | Nonempty `indexConfigs`; optional `description`, metadata `tags`, `partitionConfig`, and `snapshotRetentionInDays` (1–31) |
+| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`; `null` clears the latter three. Index changes are additive |
+| `lambdadb_delete_collection` | Deletes the collection with its documents, branches, tags, and aliases |
+| `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs` | `docs` and optional `branch`. Update rows need existing IDs and merge into stored documents; bulk runs the SDK upload workflow and never generates native embeddings |
+| `lambdadb_delete_docs` | Exactly one of a nonempty `ids` array or a `filter`, plus optional `partitionFilter` and `branch` |
+| `lambdadb_create_branch` | `branchName`; optional `source: { "kind": "branch", "name": "...", "asOf"?: <epoch ms> }`, default `main`. Copies committed state only |
+| `lambdadb_create_tag` | `tagName`; optional branch source as above or `{ "kind": "tag", "name": "..." }`, default `main` |
+| `lambdadb_create_alias`, `lambdadb_retarget_alias` | `aliasName` and `target: { "kind": "branch" \| "tag", "name": "..." }`. Retargeting changes future alias reads, not write targets |
+| `lambdadb_delete_branch`, `lambdadb_delete_tag`, `lambdadb_delete_alias` | `branchName`, `tagName`, or `aliasName`. Deleting an alias does not delete its target |
+
+A typical versioning workflow creates a branch from `main`, writes and evaluates on it, pins a tag once the intended data is committed, and then retargets the serving alias:
+
+```json
+{ "collectionName": "memories", "branchName": "candidate", "source": { "kind": "branch", "name": "main" } }
+```
+
+```json
+{ "collectionName": "memories", "tagName": "reviewed", "source": { "kind": "branch", "name": "candidate" } }
+```
+
+```json
+{ "collectionName": "memories", "aliasName": "serving", "target": { "kind": "tag", "name": "reviewed" } }
+```
+
+Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the 10 MiB transport limit; the tool does not accept local paths or URLs.
 
 To enable them, change the environment value and restart the MCP server:
 
