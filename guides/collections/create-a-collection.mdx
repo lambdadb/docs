@@ -13,10 +13,10 @@ This page shows you how to create a collection with various configurations.
 |:----------|:-----|:---------|:------------|
 | collectionName | string | ✓ | Unique name within the project; 3 to 52 letters, numbers, underscores, or hyphens |
 | indexConfigs | object | ✓ | Nonempty field configuration for indexing |
-| description | string |  | Collection description, up to 255 characters |
+| description | string |  | Collection description; see [metadata limits](/guides/get-started/limits#collections-and-schema) |
 | tags | object |  | Up to five metadata key-value pairs |
 | partitionConfig | object |  | Partition configuration |
-| snapshotRetentionInDays | integer |  | Snapshot retention from 1 through 31 days; defaults to 30 |
+| snapshotRetentionInDays | integer |  | Snapshot retention in days; defaults to 30. See the [supported range](/guides/get-started/limits#collections-and-schema) |
 
 ## Create a collection from scratch
 
@@ -283,7 +283,7 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 
 ## Snapshot retention
 
-Every collection retains committed snapshots for 30 days by default. Set `snapshotRetentionInDays` to an integer from `1` through `31` when creating the collection, or change it later with the collection update API.
+Every collection retains committed snapshots for 30 days by default. Set `snapshotRetentionInDays` to an integer within the [retention range](/guides/get-started/limits#collections-and-schema) when creating the collection, or change it later with the collection update API.
 
 Snapshots pinned by an existing [tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) remain available even after this retention period expires. Use tags to preserve specific committed versions as long-term savepoints. A tag protects its pinned snapshot, not the collection's entire history. Collection metadata `tags` are labels and do not pin snapshots.
 
@@ -293,8 +293,4 @@ Point-in-time history is available by creating a branch rather than cloning anot
 
 ## Collection limits
 
-| Metric              | Limit  |
-|:------------------- |:------ |
-| Max number of collections    | unlimited    |
-| Snapshot retention | 1–31 days |
-| Metadata tags | 5 per collection |
+See [collection and schema limits](/guides/get-started/limits#collections-and-schema) for collection count, names, descriptions, metadata tags, partitions, vector dimensions, and snapshot retention.

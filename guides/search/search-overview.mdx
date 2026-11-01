@@ -24,9 +24,9 @@ Common parameters for the request body of a query are as follows:
 
 | Parameter      | Description                                                  | Type    | Required | Default |
 |:-------------- |:-------------------------------------------------------------|:------- |:-------- |:------- |
-| size           | The number of results to return (1–1000, or 0 when at least one facet is requested). Omitted or `null` uses the default. | integer or null | | 10 |
+| size           | The number of results to return, within the [query limit](/guides/get-started/limits#search-and-reads), or 0 when at least one facet is requested. Omitted or `null` uses the default. | integer or null | | 10 |
 | query          | Query object (details in the [subsections](/guides/search/query-string)). Omit or use `null` to match all documents in the selected read scope. | object or null | | All documents |
-| candidateSize | Candidate budget for [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) without reranking; require `size <= candidateSize <= 1000`. Omit for other queries or when using `rerank.candidateSize`. | integer | Bayesian without reranking | |
+| candidateSize | Candidate budget for [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) without reranking; require `candidateSize >= size` within the [candidate limit](/guides/get-started/limits#search-and-reads). Omit for other queries or when using `rerank.candidateSize`. | integer | Bayesian without reranking | |
 | rerank | Optional native reranking after candidate merge; requires a scoring query and positive `size`, and cannot be combined with `sort`. Omitted or `null` preserves existing search behavior. | object or null | | |
 | facets         | Counts by keyword field value (see [Keyword facets](/guides/search/facets)). Supported with `queryString`, `bool` combinations of supported lexical queries, or no query. | object or null | | |
 | includeVectors | Indicates whether vector values are included in the response | boolean |          | false   |

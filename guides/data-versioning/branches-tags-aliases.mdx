@@ -412,7 +412,7 @@ Supplying only one of `refKind` or `refName` is invalid.
 
 Query and fetch requests support `consistentRead: true` only when they directly select a branch. Tag and alias reads reject it, including an alias that currently targets a branch.
 
-Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload exceeds the limit, independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
+Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
 
 Page tokens record a search position, not a fixed snapshot. Branches can advance and aliases can move between pages. Use the same immutable tag on every page for a stable export, keeping filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
 

@@ -23,7 +23,7 @@ Use LambdaDB native APIs directly when:
 - You need LambdaDB-specific query features such as lexical plus vector hybrid search.
 - You want the clearest long-term API surface after migration.
 
-Dense vectors must have 64–4096 dimensions. Use Qdrant `Cosine` or `Euclid` for the supported LambdaDB metrics. The compatibility clients map `Dot` to `dot_product`, which the server rejects for dense fields; `max_inner_product` is not a native API workaround. Changing to cosine can change ranking when vector magnitudes carry information. See [dense-vector requirements](/guides/collections/index-types#vector).
+Dense vectors must fit the [dimension limits](/guides/get-started/limits#collections-and-schema). Use Qdrant `Cosine` or `Euclid` for the supported LambdaDB metrics. The compatibility clients map `Dot` to `dot_product`, which the server rejects for dense fields; `max_inner_product` is not a native API workaround. Changing to cosine can change ranking when vector magnitudes carry information. See [dense-vector requirements](/guides/collections/index-types#vector).
 
 ## Install
 

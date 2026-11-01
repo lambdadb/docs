@@ -53,7 +53,7 @@ Choose one or more [supported analyzers](#supported-analyzers) for each text fie
 
 <Note>
 
-LambdaDB does not index any string longer than 4096 characters.
+Keyword values longer than the [indexing limit](/guides/get-started/limits#collections-and-schema) remain stored but are not indexed for filtering, sorting, or facets. This applies to each value in an array and does not impose the same limit on `text` fields. See [Limits](/guides/get-started/limits#collections-and-schema) for character counting and other schema constraints.
 
 </Note>
 
@@ -177,7 +177,7 @@ print(dt.isoformat(timespec="seconds"))
 
 The `vector` type indexes dense vectors of numeric values. `vector` indexes are primarily used for k-nearest neighbor (kNN) search. The vector type does not support aggregations or sorting. You add a vector field as an array of numeric values.
 
-A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. Dense vector fields support **64 to 4096 dimensions** and the `cosine` and `euclidean` similarity metrics. For caller-provided vector fields, metric names are case-sensitive; omitting `similarity` selects `cosine`. Document and query vectors must match the field's dimensions and contain only finite numbers. Cosine vectors must have nonzero magnitude.
+A kNN search finds the k nearest vectors to a query vector, as measured by a similarity metric. Dense vector fields support the `cosine` and `euclidean` similarity metrics within the [dimension limits](/guides/get-started/limits#collections-and-schema). For caller-provided vector fields, metric names are case-sensitive; omitting `similarity` selects `cosine`. Document and query vectors must match the field's dimensions and contain only finite numbers. Cosine vectors must have nonzero magnitude.
 
 LambdaDB supports two vector field modes:
 

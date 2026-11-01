@@ -20,10 +20,10 @@ Native embedding generation consumes **inference usage**. Inference usage is mea
 | `openai` | `text-embedding-3-small` | Exactly one text source | `1536` | Optional, from `64` to `1536` |
 | `openai` | `text-embedding-3-large` | Exactly one text source | `3072` | Optional, from `64` to `3072` |
 | `openai` | `text-embedding-ada-002` | Exactly one text source | `1536` | Fixed at `1536` |
-| `cohere` | `embed-v5.0-pro` | 1–16 text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
-| `cohere` | `embed-v5.0-fast` | 1–16 text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
+| `cohere` | `embed-v5.0-pro` | Text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
+| `cohere` | `embed-v5.0-fast` | Text or image sources | `2048` | Optional: `256`, `512`, `768`, `1024`, `1536`, or `2048` |
 
-LambdaDB requires at least 64 dimensions, even when the embedding provider accepts a smaller value. Optional `embedding.similarity` supports `cosine` and `euclidean`; all models default to `cosine`.
+LambdaDB's [dimension limits](/guides/get-started/limits#collections-and-schema) also apply when the embedding provider accepts smaller values. Optional `embedding.similarity` supports `cosine` and `euclidean`; all models default to `cosine`.
 
 ## Collection schema
 
@@ -74,10 +74,12 @@ A Cohere field can combine several text and image sources into one vector. Sourc
 
 ## Schema rules
 
+See [Limits](/guides/get-started/limits#native-inference) for a summary of source, image, and request constraints.
+
 Use the recommended [SDK, CLI, MCP server, and Migration CLI releases](/reference/sdk/introduction#supported-sdk-versions) for native configuration.
 
 - `embedding.provider`, `embedding.model`, and `embedding.sources` are required
-- `embedding.sources` holds 1–16 ordered `{ "field", "type" }` entries; `type` is `text` or `image`, and field paths must be unique
+- `embedding.sources` holds a nonempty ordered list of `{ "field", "type" }` entries; `type` is `text` or `image`, and field paths must be unique
 - a source `field` is a dotted path in the stored document; it does not need an index config. If it is indexed, the leaf must be `text` or `keyword` and its ancestors must be `object` fields
 - OpenAI models accept exactly one `text` source; Cohere models accept text and image sources in any order
 - native embedding vector fields must not use top-level `dimensions` or `similarity`; set them inside `embedding`, where omitted values use the model defaults
@@ -124,7 +126,14 @@ Example upsert payloads for the two schemas above:
 
 ### Text input limits
 
-Use nonempty source text. The supported OpenAI models accept at most **8,192 tokens per input**, and OpenAI limits a provider request to **300,000 tokens across its inputs**. See the [OpenAI embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create). Cohere inputs are limited by the model's context length; LambdaDB requests no truncation, so an input over the limit is rejected with HTTP `400`.
+Use nonempty source text within the selected provider's input budget:
+
+| Provider | Text input limit |
+| :------- | :--------------- |
+| OpenAI | 8,192 tokens per input; 300,000 tokens across inputs in one provider request |
+| Cohere | Selected model's context length |
+
+OpenAI token budgets follow its [embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create). LambdaDB requests no truncation for Cohere, so an input over the model's context limit is rejected with HTTP `400`.
 
 These limits apply to source text and query text, independently of LambdaDB's request and document byte limits. LambdaDB sends source strings to the provider without automatic chunking or truncation. Split long documents into separate records with stable chunk IDs before writing them, and count tokens using the selected model's tokenizer. When writing many long records, use smaller upsert or update batches to stay within the provider's combined token limit.
 
@@ -132,12 +141,7 @@ These limits apply to source text and query text, independently of LambdaDB's re
 
 Image sources are available with Cohere models. Each value is either a public HTTPS URL that LambdaDB downloads, or a data URI with base64 content, such as `data:image/png;base64,...`. Supported formats are PNG, JPEG, GIF, and WebP. Images are downloaded and decoded while the write or query is prepared; they are not stored by LambdaDB, and the document keeps the original URL or data URI.
 
-| Limit | Value |
-|:------|:------|
-| Effective parts per input (text parts plus expanded image values) | 16 |
-| Images per input | 8 |
-| Decoded image bytes per input | 1 MiB |
-| Pixels per image | 4,194,304 |
+See [embedding limits](/guides/get-started/limits#embeddings) for the allowed number of parts and images, decoded image bytes, and pixel count.
 
 A failed download, an unsupported or mismatched format, or an input over these limits returns HTTP `400`.
 

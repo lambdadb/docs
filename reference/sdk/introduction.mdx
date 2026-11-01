@@ -24,7 +24,7 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## SDK and tool versions
 
-The examples cover the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000. The tools listed below support their respective workflows; see their guides for available operations and limits:
+The examples cover the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and the current [query, fetch, and list limits](/guides/get-started/limits#search-and-reads). The tools listed below support their respective workflows; see their guides for available operations and limits:
 
 | Client or tool | Release covered | Guide |
 | :------------- | :------------------ | :---- |
@@ -37,7 +37,7 @@ The examples cover the stable SDK releases below. These SDKs support data versio
 
 Installation guides use the latest stable releases; pin a version when reproducibility matters and verify compatibility before upgrading.
 
-The LambdaDB CLI accepts up to 100 documents per `docs list` page; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
+The LambdaDB CLI has a smaller [document-list page limit](/guides/get-started/use-with-cli#cli-limits) than the API; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
 
 Python SDK 0.14.1 requires Python **3.10–3.13**. Go SDK 0.8.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
 
@@ -52,7 +52,7 @@ For Bayesian queries, select the candidate budget field based on whether reranki
 | TypeScript SDK | Top-level `candidateSize` | `rerank.candidateSize` |
 | Go SDK | `QueryInput.CandidateSize` | `RerankConfig.CandidateSize` |
 
-Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize <= 1000`. With reranking, omit the top-level field; the rerank budget defaults to `max(50, size)` and must satisfy the same bounds. `knn.k` remains independent. See the [complete Bayesian requests](/guides/search/hybrid#bayesian-hybrid-query) for both forms. Existing search defaults are unchanged.
+Without reranking, the budget is required and must satisfy `1 <= size <= candidateSize` within the [candidate limit](/guides/get-started/limits#search-and-reads). With reranking, omit the top-level field; the rerank budget defaults to `max(50, size)` and must satisfy the same bounds. `knn.k` remains independent. See the [complete Bayesian requests](/guides/search/hybrid#bayesian-hybrid-query) for both forms. Existing search defaults are unchanged.
 
 Configure [native embeddings](/guides/collections/native-embeddings#collection-schema) with an `embedding` block on a vector field. Its `sources` list holds `EmbeddingSource` objects in every SDK.
 

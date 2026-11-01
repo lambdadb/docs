@@ -74,15 +74,15 @@ These parameters belong inside the `rerank` object.
 |:----------|:---------|
 | `provider` | Required: `typesafe` or `cohere` |
 | `model` | Required: `jev-1.13.0` for `typesafe`; `rerank-v5.0-pro` or `rerank-v5.0-fast` for `cohere`. Not inferred from an embedding model |
-| `queryText` | Required nonblank evaluation query, including for raw-vector or hybrid retrieval; at most 8 KiB UTF-8 |
-| `fields` | Required ordered list of 1–8 unique stored scalar string paths; nested paths use dots. Paths do not need index configs; if indexed, they must be `text` or `keyword` |
-| `candidateSize` | Optional/null: `max(50, size)`; must satisfy `size <= candidateSize <= 1000` |
+| `queryText` | Required nonblank evaluation query, including for raw-vector or hybrid retrieval |
+| `fields` | Required nonempty ordered list of unique stored scalar string paths; nested paths use dots. Paths do not need index configs; if indexed, they must be `text` or `keyword` |
+| `candidateSize` | Optional/null: `max(50, size)`; must be at least `size` and fit the [candidate budget](/guides/get-started/limits#reranking) |
 | `onFailure` | Optional/null: `error`; alternatively `returnOriginal` for eligible provider-stage failures |
-| `criteria` | `typesafe` only. Optional/null: default relevance criteria; otherwise 2–10 distinct nonblank descriptions ordered from lowest to highest relevance. `cohere` requires it omitted or `null` |
+| `criteria` | `typesafe` only. Optional/null: default relevance criteria; otherwise distinct nonblank descriptions ordered from lowest to highest relevance, within the [criteria budget](/guides/get-started/limits#reranking). `cohere` requires it omitted or `null` |
 
 Each candidate must contain nonblank text in at least one selected field. Missing or null individual values contribute no text. Arrays, objects, non-string selected values, or candidates with no nonblank selected text are validation errors; they are not silently dropped or handled by provider fallback.
 
-Only the named fields enter native reranking input. Top-level `fields` controls the public response projection and can exclude fields used for reranking. Rendered candidate text is limited to 16 KiB UTF-8 per candidate. Query text, all rendered candidates, and custom descriptions together are limited to 256 KiB. Inputs are rejected rather than silently truncated; model context limits also apply.
+Only the named fields enter native reranking input. Top-level `fields` controls the public response projection and can exclude fields used for reranking. See [reranking limits](/guides/get-started/limits#reranking) for field counts, individual text sizes, and the combined input budget. Inputs are rejected rather than silently truncated; model context limits also apply.
 
 ### Candidate counts
 
@@ -92,7 +92,7 @@ These three controls serve different purposes:
 |:--------|:--------|
 | `size` | Final number of documents returned; must be positive with reranking |
 | `knn.k` | Candidates requested from that particular dense-vector retrieval leg |
-| `rerank.candidateSize` | Retrieval planning depth and upper bound on the merged, deduplicated rerank pool before the final `size` limit; defaults to `max(50, size)`, with `size <= candidateSize <= 1000` |
+| `rerank.candidateSize` | Retrieval planning depth and upper bound on the merged, deduplicated rerank pool before the final `size` limit; must be at least `size` (see the parameter table above for the default) |
 
 For example, a vector-only query with `size: 10`, `knn.k: 20`, and `rerank.candidateSize: 50` can provide at most 20 vector candidates for reranking. Increase `k` explicitly if you want deeper vector retrieval; LambdaDB does not rewrite it. In a hybrid query, a vector leg with `k: 20` and lexical retrieval can together populate a larger merged pool. Sparse vector and lexical retrieval use the planned candidate depth without a separate `k`.
 
@@ -133,7 +133,7 @@ These scoring values are fixed for the default criteria version, not caller-conf
 
 ## Use custom criteria
 
-Supply descriptions in order from lowest to highest relevance. Each must be nonblank and distinct, with at most 2 KiB UTF-8 per description and 8 KiB total. Text is preserved exactly; choosing meaningful descriptions and their order is your responsibility.
+Supply descriptions in order from lowest to highest relevance. Each must be nonblank and distinct, and fit the [individual and combined criteria budgets](/guides/get-started/limits#reranking). Text is preserved exactly; choosing meaningful descriptions and their order is your responsibility.
 
 This three-level example replaces the default criteria for this request:
 

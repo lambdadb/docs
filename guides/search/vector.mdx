@@ -13,10 +13,10 @@ A vector query finds the k nearest vectors to a query vector or query text, as m
 | queryVector   | Query vector you computed yourself; on a native embedding field it skips inference | float[]  | Conditionally required |
 | queryText     | Query text that LambdaDB embeds with a native embedding field's model | string   | Conditionally required |
 | queryInputs   | Ordered text and image parts that LambdaDB embeds with a native embedding field's model | object[] | Conditionally required |
-| k             | Number of candidates requested from this vector retrieval leg, from 1 to 1000; top-level `size` limits final returned documents | integer  | ✓        |
+| k             | Number of candidates requested from this vector retrieval leg, within the [candidate limit](/guides/get-started/limits#search-and-reads); top-level `size` limits final returned documents | integer  | ✓        |
 | filter        | Query to filter the documents that can match        | object   |          |
 
-Provide exactly one of `queryVector`, `queryText`, or `queryInputs`. `queryText` and `queryInputs` require a native embedding vector field. Dense fields support 64–4096 dimensions and `cosine` or `euclidean` similarity. `queryVector` must match the field's dimensions and contain only finite numbers; cosine queries must have nonzero magnitude. The `nodeSize` parameter is not supported.
+Provide exactly one of `queryVector`, `queryText`, or `queryInputs`. `queryText` and `queryInputs` require a native embedding vector field. Dense fields support `cosine` or `euclidean` similarity and must fit the [dimension limits](/guides/get-started/limits#collections-and-schema). `queryVector` must match the field's dimensions and contain only finite numbers; cosine queries must have nonzero magnitude. The `nodeSize` parameter is not supported.
 
 The JSON examples below are query objects: place them under the request body's `query`, alongside options such as `size`. See [Search overview](/guides/search/search-overview) for complete SDK requests. When using [native reranking](/guides/search/native-reranking#candidate-counts), `rerank.candidateSize` limits the merged rerank pool and does not automatically increase `k`.
 

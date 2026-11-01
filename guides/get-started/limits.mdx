@@ -1,0 +1,90 @@
+---
+title: Limits
+description: Find limits enforced by the LambdaDB service for requests, documents, collections, search, and native inference, with guidance for requests that exceed them.
+---
+
+Use this page to size requests against the limits enforced by the LambdaDB service, including native embeddings, reranking, and facets. Plan quotas apply separately from per-request limits.
+
+`KiB`, `MiB`, and `GiB` mean 1,024, 1,048,576, and 1,073,741,824 bytes. Text byte limits use UTF-8. Character limits for document IDs, descriptions, metadata tag values, and keyword indexing count UTF-16 code units, so some characters, such as emoji, count as two.
+
+## Requests and documents
+
+| Resource | Limit | Behavior and guidance |
+| :------- | :---- | :-------------------- |
+| API request body, including regular upsert and update | 6,029,312 bytes (5.75 MiB), including the JSON envelope | Larger bodies return HTTP `413`. Split batches or use [bulk upsert](/guides/documents/bulk-upsert-data) |
+| Individual document | 5 MiB of serialized JSON | Oversized documents are rejected. An [update](/guides/documents/update-data) must also fit after merging with the stored document |
+| Document ID | 512 characters | Longer IDs are rejected. Assign stable IDs when you need to fetch, update, delete, or retry documents |
+| Bulk upload object | 200 MiB by default | Enforce the returned `sizeLimitBytes`; an oversized object is rejected when completing the import |
+| Gateway request processing | 29 seconds | Expiry returns HTTP `504`. A timed-out write may already have been applied; [verify its outcome before retrying](/reference/api/introduction#errors-and-retries) |
+
+The bulk limit applies to the uploaded object; individual documents must still fit their own limit. Bulk processing is asynchronous and continues after acceptance. [Bulk upsert never generates native embeddings](/guides/collections/native-embeddings#bulk-upsert): a document with a present embedding source must include its vector.
+
+## Collections and schema
+
+| Resource | Limit | Behavior and guidance |
+| :------- | :---- | :-------------------- |
+| Collections | No collection count limit | Usage quotas and request throttling still apply |
+| Collection name | 3–52 characters: ASCII letters, digits, `_`, `-` | Invalid names are rejected |
+| Collection description | 255 characters | Longer descriptions are rejected |
+| Collection metadata tags | 5 entries; keys 1–63 characters; values 1–127 characters | Keys use ASCII letters, digits, `_`, `.`, `-`; values must be nonblank and cannot contain `:`, `#`, or `,`. See [metadata tags](/guides/collections/manage-collections#configure-a-collection) |
+| Explicit `partitionConfig.numPartitions` | 2–1,024 | Applies when creating a [partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection); omit `partitionConfig` for an unpartitioned collection |
+| Snapshot retention | 1–31 days; default 30 | No unlimited-retention setting. Existing [data-versioning tags](/guides/data-versioning/branches-tags-aliases) keep their pinned snapshot beyond this window |
+| Dense vector dimensions | 64–4,096 | Must match the configured field. Native embedding models can impose narrower choices; see [index types](/guides/collections/index-types) and [supported models](/guides/collections/native-embeddings#supported-providers-and-models) |
+| Indexed keyword value | 4,096 characters per value | Longer values remain stored but are omitted from the keyword index, including sorting and facets. This is not a general text-field length limit |
+
+Schema updates are additive: preserve every existing field and its configuration. See [collection update rules](/guides/collections/manage-collections#configure-a-collection).
+
+## Search and reads
+
+| Resource | Limit | Behavior and guidance |
+| :------- | :---- | :-------------------- |
+| Query results, `size` | 1–1,000; default 10 | `size: 0` is allowed only with nonempty facets |
+| Vector candidates, `knn.k` | 1–1,000 | Independent of the final result count and rerank candidate budget |
+| Fetch IDs | 1–1,000 per request | Split larger ID sets into [fetch requests](/guides/documents/fetch-data) |
+| Document list page | 1–1,000; default 100 | Follow `nextPageToken` to [list more documents](/guides/documents/list-data) |
+| Collection list page | 1–100; default 10 | A page size is not a collection count limit |
+| Boolean query clauses | 4,096 | Queries exceeding the clause limit are rejected |
+| Sparse query vector | 1–4,096 term-weight entries; weights 0–64 | Applies to query input; see [sparse vector search](/guides/search/sparse-vector) |
+| Bayesian candidate budget | `1 <= size <= candidateSize <= 1000` | Exactly two unboosted signals. With reranking, use `rerank.candidateSize` instead; see [Bayesian request construction](/guides/search/hybrid#bayesian-hybrid-query) |
+| Facet request | Up to 5 fields; 1–100 returned buckets per field, default 10 | Aggregation also has distinct-value and memory budgets; see below |
+| Facet aggregation | 10,000 distinct `(field, value)` buckets and 256 KiB of distinct value bytes across requested fields | The same value on two fields counts twice. Exceeding either budget returns HTTP `400`; lowering returned bucket counts alone does not reduce aggregation work. See [facet handling](/guides/search/facets#limits-and-cost) |
+| Consistent-read pending payload | Less than 1 GiB by default, on the selected branch | Reaching the configured threshold returns HTTP `429`; wait for indexing to catch up |
+
+[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available only for query and fetch against a branch directly. They exclude pending bulk imports; tags, aliases, and list requests do not support them.
+
+Large query, fetch, and list results can return `isDocsInline: false` and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; it is not a total-result cap. Other processing and memory budgets still apply. Follow the [large-result download instructions](/guides/search/limits#large-results).
+
+## Native inference
+
+### Embeddings
+
+LambdaDB validates the following source and image limits before calling the embedding provider.
+
+| Resource | Limit | Behavior and guidance |
+| :------- | :---- | :-------------------- |
+| Embedding source mappings | 1–16 per vector field | OpenAI accepts exactly one text source; Cohere accepts text and image sources |
+| Cohere input parts | 16 text/image parts per input after expanding image arrays | Input is rejected when expansion exceeds the limit |
+| Cohere images | 8 per input; 1 MiB total decoded image bytes per input; 4,194,304 pixels per image | Applies to document and query inputs; see [image input rules](/guides/collections/native-embeddings#image-inputs) |
+
+Provider token and model context limits also apply. See [text input limits](/guides/collections/native-embeddings#text-input-limits) for those budgets and how to split long inputs.
+
+### Reranking
+
+| Resource | Limit | Behavior and guidance |
+| :------- | :---- | :-------------------- |
+| Candidate pool | `size <= rerank.candidateSize <= 1000`, with positive `size` | Default candidate budget is `max(50, size)`; each vector leg's `knn.k` remains independent |
+| Selected text fields | 1–8 unique stored scalar text paths | Select only the fields needed for reranking |
+| Query text | 8 KiB UTF-8 | Oversized input is rejected, not truncated |
+| Rendered candidate text | 16 KiB UTF-8 per candidate | Reduce selected fields or stored text |
+| Combined query, candidate text, and custom criteria | 256 KiB UTF-8 | Reduce candidate count or text size |
+| Custom criteria (`typesafe`) | 2–10 distinct nonblank descriptions; 2 KiB each and 8 KiB total | Provider model context limits also apply |
+
+See [native reranking](/guides/search/native-reranking) for supported inputs, provider restrictions, and failure handling. Input validation and inference quota failures are not bypassed by `onFailure: "returnOriginal"`.
+
+## Quotas and throttling
+
+Monthly usage allowances are separate from per-request limits. See [Understanding costs](/guides/costs/understanding-costs) for Free plan read, write, storage, and inference quotas. Moving to a paid plan does not remove document, request, or model input limits.
+
+HTTP `429` can mean request throttling, too much pending data for a consistent read, temporary facet memory exhaustion, or provider-call admission exhaustion. Follow the error message: waiting for indexing differs from reducing concurrency. Honor `Retry-After` when present. An individual facet request over its memory budget returns `400`; an inference quota failure returns `403`. See [Errors and retries](/reference/api/introduction#errors-and-retries).
+
+For tool-specific caps, see [CLI limits](/guides/get-started/use-with-cli#cli-limits) and the [MCP transport limit](/guides/get-started/use-with-mcp#transport-limit). Client limits apply in addition to service limits.

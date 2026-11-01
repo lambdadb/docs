@@ -22,6 +22,7 @@
               "guides/get-started/use-with-cli",
               "guides/get-started/use-with-mcp",
               "guides/get-started/architecture",
+              "guides/get-started/limits",
               "guides/get-started/roadmap-changelog"
             ]
           },
@@ -100,8 +101,7 @@
               },
               "guides/search/native-reranking",
               "guides/search/sort",
-              "guides/search/facets",
-              "guides/search/limits"
+              "guides/search/facets"
             ]
           },
           {

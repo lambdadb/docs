@@ -9,7 +9,7 @@ This page shows you how to upsert documents into a collection.
 
 The examples write to the default branch, `main`. The REST request accepts an optional `branch` field. To write to another branch, [create it first](/guides/data-versioning/branches-tags-aliases#create-and-list-branches), then include its name in `branch`; a tag or alias is not a valid write target.
 
-Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values. The dense examples use synthetic 64-dimensional vectors; configure `dense_vector` with `dimensions: 64`. For real data, send the full vectors from your embedding model, matching the field's dimensions (64–4096).
+Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values. The dense examples use synthetic 64-dimensional vectors; configure `dense_vector` with `dimensions: 64`. For real data, send the full vectors from your embedding model, matching the field's dimensions within the [supported range](/guides/get-started/limits#collections-and-schema).
 
 <Note>
 
@@ -167,12 +167,7 @@ If a request times out or the connection closes after dispatch, its outcome may 
 
 ## Upsert limits
 
-| Metric                       | Limit           |
-| :--------------------------- | :-------------- |
-| Max payload size             | 6MB             |
-| Max length for a document ID | 512 characters  |
-| Max vector dimensions        | 4,096           |
-| Max document size            | 5MB            |
+See [request and document limits](/guides/get-started/limits#requests-and-documents) for request size, document size, and ID length, and [schema limits](/guides/get-started/limits#collections-and-schema) for vector dimensions.
 
 When upserting larger amounts of data, it is recommended to use
 [bulk-upsert](/guides/documents/bulk-upsert-data) operation.
