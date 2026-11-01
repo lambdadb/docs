@@ -1,43 +1,25 @@
 ---
 title: Query limits
-description: Review LambdaDB query constraints, large-result downloads, request timeout, boolean clause limits, and sparse vector value caps per request.
+description: Find current query limits and learn how to download large query, fetch, and list results.
 ---
 
-For write, schema, native embedding, client, and quota limits, see [Limits](/guides/get-started/limits).
-
-| Metric              | Limit  |
-|:------------------- |:------ |
-| Max `size` value    | 1,000  |
-| Max `knn.k` value   | 1,000  |
-| Gateway request processing | 29 seconds; expiry returns HTTP `504` |
-| Max boolean clauses | 4,096  |
-| Dense vector dimensions | 64–4,096, matching the field configuration |
-| Max term-weight entries for sparse vector query | 4,096  |
-| Value range for sparse vector query | 0-64  |
-
-Dense vector fields support `cosine` and `euclidean`. Query vectors must contain only finite values; cosine query vectors must have nonzero magnitude. See [Vector query](/guides/search/vector) for request examples.
+Query counts, timeouts, vector constraints, and other numeric bounds are maintained on the [Limits page](/guides/get-started/limits#search-and-reads).
 
 ## Bayesian candidate limits
 
-[Bayesian fusion](/guides/search/hybrid#bayesian-hybrid-query) requires exactly two unboosted signals. Without reranking, supply top-level `candidateSize` with `1 <= size <= candidateSize <= 1000`. With reranking, omit the top-level field and use `rerank.candidateSize`. Each `knn.k` remains a separate retrieval limit.
+See [search limits](/guides/get-started/limits#search-and-reads) for the candidate budget and [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query) for choosing the budget field with or without reranking.
 
 ## Reranking limits
 
-[Native reranking](/guides/search/native-reranking#request-parameters) requires a positive `size`, 1–8 unique stored scalar text paths, and `size <= rerank.candidateSize <= 1000`. Omitted or null `rerank.candidateSize` uses `max(50, size)`.
-
-Custom criteria, available with the `typesafe` provider, contain 2–10 distinct nonblank descriptions, limited to 2 KiB UTF-8 each and 8 KiB total. Query text is limited to 8 KiB, rendered text to 16 KiB per candidate, and combined query/candidate/criteria input to 256 KiB. Inputs over these limits are rejected rather than truncated. Model context limits also apply; see the guide for query restrictions and failure handling.
+See [reranking limits](/guides/get-started/limits#reranking) for candidate, field, text, and criteria budgets, and [native reranking](/guides/search/native-reranking) for request construction and failure handling.
 
 ## Facet limits
 
-[Keyword facets](/guides/search/facets) support up to 5 fields per request and 1–100 returned buckets per field (default 10). `size: 0` is allowed only when at least one facet is requested.
-
-Aggregation is bounded by 10,000 distinct (field, value) buckets and 262,144 UTF-8 bytes of distinct values across all requested fields. The same value on two fields counts twice toward these limits. Exceeding either limit returns HTTP 400; reduce the matching population or request fewer fields. Lowering the returned bucket count alone does not reduce the aggregation population. Facets remain inline even when documents use `docsUrl`.
-
-Separate memory admission limits apply to aggregation work and distributed responses. An individual request over its estimated memory budget returns HTTP 400; reduce requested fields or selected partitions. Temporary budget exhaustion from concurrent requests returns HTTP 429; retry with backoff. See [Limits and cost](/guides/search/facets#limits-and-cost) for why narrowing a query may not reduce the memory estimate.
+See [search limits](/guides/get-started/limits#search-and-reads) for field, bucket, and aggregation budgets, and [Limits and cost](/guides/search/facets#limits-and-cost) for narrowing requests and handling memory admission failures.
 
 ## Large results
 
-When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; it is not a total-result cap. Other query limits still apply.
+When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The [inline threshold](/guides/get-started/limits#search-and-reads) is not a total-result cap. Other query limits still apply.
 
 For direct REST requests, check `isDocsInline` before reading `docs`. When it is `false`, send a `GET` request to the complete `docsUrl` without changing its query parameters or forwarding your LambdaDB API key. The downloaded JSON is an array of result items, not an object containing a `docs` field. An empty inline `docs` array in this case does not mean there are no results.
 

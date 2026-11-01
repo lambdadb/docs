@@ -153,7 +153,7 @@ payload:
             type: image
 ```
 
-Put explicit `dimensions` and `similarity` inside `embedding`; the CLI inserts no defaults and rejects top-level native `dimensions`/`similarity`, `embedding.dimensions` outside 64–4096, and unknown keys in a `sources` entry during mapping validation. Model, source type, and image limits remain server validations.
+Put explicit `dimensions` and `similarity` inside `embedding`; the CLI inserts no defaults and rejects top-level native `dimensions`/`similarity`, `embedding.dimensions` outside the [supported range](/guides/get-started/limits#collections-and-schema), and unknown keys in a `sources` entry during mapping validation. Model, source type, and image limits remain server validations.
 
 Set `--migration.write-mode upsert`: bulk upsert never generates embeddings. Generation consumes inference usage, including possible repeated provider calls on retries.
 

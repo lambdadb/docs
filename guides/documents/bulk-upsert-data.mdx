@@ -1,11 +1,11 @@
 ---
 title: Bulk upsert data
-description: Upload up to 200 MiB of documents at once using the LambdaDB bulk upsert workflow with presigned URLs. Includes SDK and API code examples.
+description: Upload large batches of documents using the LambdaDB bulk upsert workflow with presigned URLs. Includes SDK and API code examples.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 
-Regular upsert has a [5.75 MiB request-body limit](/guides/get-started/limits#requests-and-documents). Bulk upsert uploads documents separately and supports up to 200 MiB per upload by default. Always enforce the returned `sizeLimitBytes`; the individual document limit still applies.
+Use bulk upsert for batches that exceed the regular [request-body limit](/guides/get-started/limits#requests-and-documents). It uploads documents separately through a presigned URL. Enforce the returned `sizeLimitBytes`; the individual document limit still applies.
 
 <Warning>
 
@@ -15,9 +15,9 @@ Regular upsert has a [5.75 MiB request-body limit](/guides/get-started/limits#re
 
 ## Recommended: One-step bulk upsert
 
-The easiest way to bulk upsert is to use the SDK's one-step method. The client uploads your documents to the presigned URL and completes the bulk upsert for you (up to 200 MiB).
+The easiest way to bulk upsert is to use the SDK's one-step method. The client uploads your documents to the presigned URL and completes the bulk upsert for you.
 
-Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values. The dense examples use synthetic 64-dimensional vectors; configure `dense_vector` with `dimensions: 64`. For real data, send the full vectors from your embedding model, matching the field's dimensions (64–4096).
+Document field names are preserved as supplied in every SDK. The examples use `dense_vector` and `sparse_vector`; configure indexes with those same names to search these values. The dense examples use synthetic 64-dimensional vectors; configure `dense_vector` with `dimensions: 64`. For real data, send the full vectors from your embedding model, matching the field's dimensions within the [supported range](/guides/get-started/limits#collections-and-schema).
 
 <CodeGroup>
 

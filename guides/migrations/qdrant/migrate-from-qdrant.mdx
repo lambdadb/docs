@@ -185,9 +185,9 @@ The Migration CLI generates this default distance mapping for dense vector field
 
 The inventory reports each vector's generated `similarity` with the original `sourceSimilarity`, and `warnings` names every vector whose metric or dimensions LambdaDB cannot store. Migration runs, including `--migration.dry-run`, validate the mapping first and exit with an error naming the vector and metric; the CLI never converts a similarity on its own. To migrate such a vector, set `vectors.<source vector>.similarity` to `cosine` or `euclidean` in the mapping file and pass it with `--mapping-file`.
 
-Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): 64–4096 dimensions and `cosine` or `euclidean`. `Dot` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either.
+Review generated mappings against the [dense-vector requirements](/guides/collections/index-types#vector): the [supported dimension range](/guides/get-started/limits#collections-and-schema) and `cosine` or `euclidean`. `Dot` has no direct dense-vector mapping. Use `cosine` only after establishing that the changed metric preserves your intended ranking; vector magnitudes can carry information that cosine discards. Edit the mapping before collection creation and validate scores and ranking. Dense `max_inner_product` is not supported either.
 
-The following field-mapping examples use synthetic 64-dimensional vectors. Preserve the full vectors and dimensions of your actual data when migrating; supported dense fields have 64–4096 dimensions.
+The following field-mapping examples use synthetic 64-dimensional vectors. Preserve the full vectors and dimensions of your actual data when migrating; dense fields must fit the [dimension limits](/guides/get-started/limits#collections-and-schema).
 
 For a Qdrant point with a single dense vector:
 
@@ -546,7 +546,7 @@ You can also combine lexical and vector relevance:
 - **IDs**: LambdaDB document IDs are strings. Numeric Qdrant IDs are converted to strings during migration.
 - **Field names**: LambdaDB field names cannot contain dots. The generated mapping renames dotted Qdrant payload keys, such as `metadata.url` to `metadata_url`.
 - **Schema**: Qdrant can store payload without deciding every searchable field up front. In LambdaDB, decide which fields need indexes before migration.
-- **Bulk writes**: Regular upsert accepts request bodies up to 5.75 MiB. Bulk upsert accepts uploaded objects up to 200 MiB by default; enforce the returned `sizeLimitBytes`. Bulk does not generate native embeddings: documents with a present embedding source must supply the vector. See [request limits](/guides/get-started/limits#requests-and-documents) and [bulk embedding rules](/guides/collections/native-embeddings#bulk-upsert).
+- **Bulk writes**: Choose regular or bulk upsert based on the [request and document limits](/guides/get-started/limits#requests-and-documents); enforce the returned `sizeLimitBytes` for bulk uploads. Bulk does not generate native embeddings: documents with a present embedding source must supply the vector. See [bulk embedding rules](/guides/collections/native-embeddings#bulk-upsert).
 - **Sparse vectors**: Qdrant sparse vectors use separate `indices` and `values`; LambdaDB uses object key-value pairs.
 - **Multi-vectors**: Qdrant multi-vectors store matrices for late-interaction models. Plan and validate these workloads separately.
 - **Consistency**: LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches. For bulk upsert, allow time for documents to become visible after indexing completes.

@@ -45,9 +45,9 @@ Schema updates are additive: preserve every existing field and its configuration
 | Collection list page | 1–100; default 10 | A page size is not a collection count limit |
 | Boolean query clauses | 4,096 | Queries exceeding the clause limit are rejected |
 | Sparse query vector | 1–4,096 term-weight entries; weights 0–64 | Applies to query input; see [sparse vector search](/guides/search/sparse-vector) |
-| Bayesian candidate budget | `1 <= size <= candidateSize <= 1000` | Exactly two unboosted signals. With reranking, use `rerank.candidateSize` instead; see [Bayesian limits](/guides/search/limits#bayesian-candidate-limits) |
+| Bayesian candidate budget | `1 <= size <= candidateSize <= 1000` | Exactly two unboosted signals. With reranking, use `rerank.candidateSize` instead; see [Bayesian request construction](/guides/search/hybrid#bayesian-hybrid-query) |
 | Facet request | Up to 5 fields; 1–100 returned buckets per field, default 10 | Aggregation also has distinct-value and memory budgets; see below |
-| Facet aggregation | 10,000 distinct `(field, value)` buckets and 256 KiB of distinct value bytes across requested fields | Exceeding either budget returns HTTP `400`; lowering returned bucket counts alone does not reduce aggregation work. See [facet limits](/guides/search/limits#facet-limits) |
+| Facet aggregation | 10,000 distinct `(field, value)` buckets and 256 KiB of distinct value bytes across requested fields | The same value on two fields counts twice. Exceeding either budget returns HTTP `400`; lowering returned bucket counts alone does not reduce aggregation work. See [facet handling](/guides/search/facets#limits-and-cost) |
 | Consistent-read pending payload | Less than 1 GiB by default, on the selected branch | Reaching the configured threshold returns HTTP `429`; wait for indexing to catch up |
 
 [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available only for query and fetch against a branch directly. They exclude pending bulk imports; tags, aliases, and list requests do not support them.
@@ -66,7 +66,7 @@ Large query, fetch, and list results can return `isDocsInline: false` and a pres
 | OpenAI text input | 8,192 tokens per input; 300,000 tokens across inputs in one provider request | Provider limits apply in addition to API byte limits; use smaller batches for long records |
 | Cohere text input | Selected model's context length | Over-limit input is rejected with HTTP `400` |
 
-LambdaDB does not automatically chunk or truncate source text. See [text input limits](/guides/collections/native-embeddings#text-input-limits) for token counting and provider details.
+LambdaDB does not automatically chunk or truncate source text. See [text input limits](/guides/collections/native-embeddings#text-input-limits) for token counting and provider details. OpenAI token budgets follow its [embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create).
 
 ### Reranking
 

@@ -75,7 +75,7 @@ npx --yes @functional-systems/lambdadb-mcp@latest
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's [API request limits](/guides/get-started/limits#requests-and-documents).
+Exceeding the [stdio receive-buffer limit](/guides/get-started/limits#cli-and-mcp) closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's [API request limits](/guides/get-started/limits#requests-and-documents).
 
 Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.3.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
 
@@ -136,7 +136,7 @@ Tool discovery confirms the local MCP connection; it does not authenticate to La
 
 Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Use `lambdadb_list_branches`, `lambdadb_list_tags`, and `lambdadb_list_aliases` to discover refs when `main` is not the intended target. Strongly consistent reads are available only for query/fetch against a branch directly, including the default `main` branch. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
-Query `size` is 1–1000, fetch accepts up to 1000 IDs, and list accepts `size` 1–1000 plus optional `filter`, `fields`, `includeVectors`, and `partitionFilter`. The server does not cap result size, so keep `size` small while exploring and use `fields` to leave out large stored fields.
+Query, fetch, and list follow the [service result and ID limits](/guides/get-started/limits#search-and-reads). List also accepts optional `filter`, `fields`, `includeVectors`, and `partitionFilter`. Keep `size` small while exploring and use `fields` to leave out large stored fields.
 
 For example, pass these arguments to `lambdadb_query_collection` for the sample collection created in the [CLI guide](/guides/get-started/use-with-cli):
 
@@ -197,8 +197,8 @@ Every tool takes `collectionName`. The other inputs are:
 
 | Tool | Inputs and behavior |
 |:-----|:--------------------|
-| `lambdadb_create_collection` | Nonempty `indexConfigs`; optional `description`, metadata `tags`, `partitionConfig`, and `snapshotRetentionInDays` (1–31) |
-| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`. Omitted or `null` values leave settings unchanged; use `description: ""` or `tags: {}` to clear those fields. Retention must be 1–31 and cannot be cleared. Index changes are additive |
+| `lambdadb_create_collection` | Nonempty `indexConfigs`; optional `description`, metadata `tags`, `partitionConfig`, and `snapshotRetentionInDays` (see [collection limits](/guides/get-started/limits#collections-and-schema)) |
+| `lambdadb_update_collection` | At least one non-null `indexConfigs`, `description`, `tags`, or `snapshotRetentionInDays`. Omitted or `null` values leave settings unchanged; use `description: ""` or `tags: {}` to clear those fields. Retention must fit the [supported range](/guides/get-started/limits#collections-and-schema) and cannot be cleared. Index changes are additive |
 | `lambdadb_delete_collection` | Deletes the collection with its documents, branches, tags, and aliases |
 | `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs` | `docs` and optional `branch`. Update rows need existing IDs and merge into stored documents; bulk runs the SDK upload workflow and never generates native embeddings |
 | `lambdadb_delete_docs` | Exactly one of a nonempty `ids` array or a `filter`, plus optional `partitionFilter` and `branch` |
@@ -221,7 +221,7 @@ A typical versioning workflow creates a branch from `main`, writes and evaluates
 { "collectionName": "memories", "aliasName": "serving", "target": { "kind": "tag", "name": "reviewed" } }
 ```
 
-Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the 10 MiB transport limit; the tool does not accept local paths or URLs.
+Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the [transport limit](/guides/get-started/limits#cli-and-mcp); the tool does not accept local paths or URLs.
 
 For direct package setup, enable them by changing the environment value and restarting the MCP server:
 

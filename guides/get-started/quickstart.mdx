@@ -450,7 +450,7 @@ To try Bayesian fusion with the same documents, replace `l2` with `bayesian` in 
 - **TypeScript:** `candidateSize: 30`
 - **Go:** `CandidateSize: lambdadb.Int64(30)`
 
-Without reranking, this budget is required and must satisfy `1 <= size <= candidateSize <= 1000`. It controls retrieval and score calibration depth for each path; `knn.k` remains independent. Changing the budget can change scores and ranking.
+Without reranking, this budget is required and must satisfy `1 <= size <= candidateSize` within the [candidate limit](/guides/get-started/limits#search-and-reads). It controls retrieval and score calibration depth for each path; `knn.k` remains independent. Changing the budget can change scores and ranking.
 
 Keep exactly two unboosted subqueries and use `bayesian` only at the top level of `query`. The fused scores are heuristic scores, not relevance probabilities. For complete requests, constraints, and optional reranking, see [Bayesian hybrid query](/guides/search/hybrid#bayesian-hybrid-query).
 

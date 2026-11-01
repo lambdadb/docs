@@ -101,8 +101,7 @@
               },
               "guides/search/native-reranking",
               "guides/search/sort",
-              "guides/search/facets",
-              "guides/search/limits"
+              "guides/search/facets"
             ]
           },
           {
