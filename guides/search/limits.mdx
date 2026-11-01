@@ -1,13 +1,15 @@
 ---
 title: Query limits
-description: Review LambdaDB query constraints, large-result downloads, execution timeout, boolean clause limits, and sparse vector value caps per request.
+description: Review LambdaDB query constraints, large-result downloads, request timeout, boolean clause limits, and sparse vector value caps per request.
 ---
+
+For write, schema, native embedding, client, and quota limits, see [Limits](/guides/get-started/limits).
 
 | Metric              | Limit  |
 |:------------------- |:------ |
 | Max `size` value    | 1,000  |
 | Max `knn.k` value   | 1,000  |
-| Max execution time  | 30s    |
+| Gateway request processing | 29 seconds; expiry returns HTTP `504` |
 | Max boolean clauses | 4,096  |
 | Dense vector dimensions | 64–4,096, matching the field configuration |
 | Max term-weight entries for sparse vector query | 4,096  |
@@ -35,7 +37,7 @@ Separate memory admission limits apply to aggregation work and distributed respo
 
 ## Large results
 
-Query results do not have a hard 6 MB total-result limit. When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; other query limits still apply.
+When a response reaches the inline payload threshold, LambdaDB stores the returned documents separately and responds with HTTP `200`, `isDocsInline: false`, an empty `docs` array, and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; it is not a total-result cap. Other query limits still apply.
 
 For direct REST requests, check `isDocsInline` before reading `docs`. When it is `false`, send a `GET` request to the complete `docsUrl` without changing its query parameters or forwarding your LambdaDB API key. The downloaded JSON is an array of result items, not an object containing a `docs` field. An empty inline `docs` array in this case does not mean there are no results.
 

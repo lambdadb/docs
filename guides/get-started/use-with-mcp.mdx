@@ -75,7 +75,7 @@ npx --yes @functional-systems/lambdadb-mcp@latest
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's API request limits.
+The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's [API request limits](/guides/get-started/limits#requests-and-documents).
 
 Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.3.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
 

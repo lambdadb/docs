@@ -506,7 +506,7 @@ Use field types intentionally:
 - **Field names**: LambdaDB field names cannot contain dots. Dotted Pinecone metadata keys are normalized during migration, such as `metadata.url` to `metadata_url`.
 - **Integrated embeddings**: Pinecone hosted model configuration is not migrated. The CLI migrates stored vector values. Use [LambdaDB native embeddings](/guides/migrations/overview#generate-embeddings-from-migrated-text) when you want LambdaDB to generate embeddings from migrated text or image fields.
 - **Hybrid shape**: Pinecone supports multiple hybrid patterns. Validate whether your workload uses a single dense index with `sparse_values`, separate dense and sparse indexes, or a document-schema index before choosing the target LambdaDB schema.
-- **Bulk writes**: Regular upsert accepts request payloads up to 6 MB. Bulk upsert accepts up to 200 MB, but not for collections with native embeddings.
+- **Bulk writes**: Regular upsert accepts request bodies up to 5.75 MiB. Bulk upsert accepts uploaded objects up to 200 MiB by default; enforce the returned `sizeLimitBytes`. Bulk does not generate native embeddings: documents with a present embedding source must supply the vector. See [request limits](/guides/get-started/limits#requests-and-documents) and [bulk embedding rules](/guides/collections/native-embeddings#bulk-upsert).
 - **Consistency**: Pinecone is eventually consistent for freshly written data. LambdaDB uses eventual reads by default, but supports `consistentRead` for strong read-after-write checks. The CLI validation uses strongly consistent sample fetches; use query overlap checks before cutover.
 
 ## Next steps

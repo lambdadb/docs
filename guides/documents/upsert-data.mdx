@@ -167,12 +167,7 @@ If a request times out or the connection closes after dispatch, its outcome may 
 
 ## Upsert limits
 
-| Metric                       | Limit           |
-| :--------------------------- | :-------------- |
-| Max payload size             | 6MB             |
-| Max length for a document ID | 512 characters  |
-| Max vector dimensions        | 4,096           |
-| Max document size            | 5MB            |
+See [request and document limits](/guides/get-started/limits#requests-and-documents) for request size, document size, and ID length, and [schema limits](/guides/get-started/limits#collections-and-schema) for vector dimensions.
 
 When upserting larger amounts of data, it is recommended to use
 [bulk-upsert](/guides/documents/bulk-upsert-data) operation.
