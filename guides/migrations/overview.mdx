@@ -36,7 +36,7 @@ The CLI validates and forwards all 49 [fixed analyzer presets](/guides/collectio
 
 ## Install the CLI
 
-The current stable release is [**v0.1.9**](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9). The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
+This guide covers [**v0.1.9**](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9). Install the latest stable release below. The executable is `lambdadb-migration`; the [general LambdaDB CLI](/guides/get-started/use-with-cli) uses `lambdadb` for JSONL imports and everyday queries.
 
 <Tabs>
   <Tab title="Homebrew">
@@ -61,15 +61,15 @@ The current stable release is [**v0.1.9**](https://github.com/lambdadb/lambdadb-
     brew uninstall lambdadb/tap/lambdadb-migration
     ```
 
-    The tap currently provides `0.1.9`. Future GitHub releases may reach the tap later, after the formula is updated.
+    New GitHub releases may reach the tap later, after the formula is updated.
   </Tab>
   <Tab title="Standalone installer">
-    Download the installer to a scratch directory and inspect it before running. This example pins both the installer and the binary release:
+    Download the release-tagged installer to a scratch directory and inspect it before running. This example pins the installer and selects the latest release binary:
 
     ```bash
     curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/v0.1.9/install.sh
     less install.sh
-    sh install.sh --version v0.1.9 --install-dir "$HOME/.local/bin"
+    sh install.sh --version latest --install-dir "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     lambdadb-migration --version
     lambdadb-migration --help
@@ -77,13 +77,7 @@ The current stable release is [**v0.1.9**](https://github.com/lambdadb/lambdadb-
 
     The installer checks the release archive against `checksums.txt`. It requires `curl`, `tar`, and `sha256sum` or `shasum`. No Go or Node runtime is required. Without `--install-dir`, it uses `/usr/local/bin` and may request `sudo`.
 
-    To install or update to the latest GitHub release with the current installer:
-
-    ```bash
-    curl -fsSLo install.sh https://raw.githubusercontent.com/lambdadb/lambdadb-migration/main/install.sh
-    less install.sh
-    sh install.sh --install-dir "$HOME/.local/bin"
-    ```
+    Run the same commands to update. For a reproducible binary version, pass `--version v0.1.9`; choose an installer tag and binary version suitable for your workflow.
 
     To remove a standalone installation, use its original directory:
 
@@ -93,7 +87,7 @@ The current stable release is [**v0.1.9**](https://github.com/lambdadb/lambdadb-
   </Tab>
 </Tabs>
 
-Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Choose the archive matching your operating system and architecture when downloading a binary directly from the [release page](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9).
+Release binaries are available for **macOS and Linux, amd64 and arm64**. Windows binaries are not provided. Choose the archive matching your operating system and architecture when downloading a binary directly from the [releases page](https://github.com/lambdadb/lambdadb-migration/releases).
 
 Before switching installation methods, inspect `type -a lambdadb-migration` and identify which binary is on PATH. Remove only the old installation using its original method. Do not force-overwrite a Homebrew symlink or run the standalone installer against a Homebrew-managed path. Uninstalling the binary does not remove mappings, checkpoints, or credentials.
 

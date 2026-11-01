@@ -1,11 +1,11 @@
 ---
-title: Use with MCP
+title: Use the MCP server
 description: Connect coding agents through the LambdaDB CLI or configure MCP clients like Claude Desktop directly to search and manage a project.
 ---
 
 LambdaDB can be used from any **Model Context Protocol (MCP)** client through the **LambdaDB MCP server**. This makes the knowledge and memory stored in LambdaDB available to AI assistants that need to inspect collections, list documents, fetch records, or run search queries against a project.
 
-Use the [CLI setup](#connect-with-the-cli) to install a connection for supported coding agents, or follow the manual steps below to configure another MCP client, such as Claude Desktop.
+For a guided first search with a coding agent, see [Start with an AI agent](/guides/get-started/with-an-agent). Use the [CLI setup](#connect-with-the-cli) to connect supported coding agents, or follow the manual steps below for another MCP client, such as Claude Desktop.
 
 The MCP server works with one project per process and exposes 8 read tools, or 22 tools when writes are enabled, covering collections, documents, search, branches, tags, and aliases. Organization listing, project creation and selection, and usage reports are [CLI account commands](/guides/get-started/use-with-cli#manage-your-account-and-projects), not MCP tools.
 
@@ -31,7 +31,7 @@ lambdadb init
 
 Choose account login to select or create a project and explicitly issue a key, or reuse an existing connection. Select the agents, review the scope and write-tool setting, and approve the file plan. Supported agents include Codex, Claude Code, Cursor, VS Code, Gemini CLI, OpenCode, GitHub Copilot CLI, Kiro, and the Cline VS Code extension; see [agent setup](/guides/get-started/use-with-cli#connect-coding-agents) for their scope restrictions and non-interactive examples. Claude Desktop uses the manual steps below.
 
-CLI `0.1.8` generates a launch command pinned to that CLI version, which runs MCP `0.3.0` through `lambdadb mcp`. The bridge reads the selected OS credential or environment variable and forwards the project's base URL, name, and key to the MCP process. It adds no account-management tools and stores no key value in generated agent files. A saved OS credential needs the same OS user and access to the unlocked store; an environment-held key must be available to the agent process.
+CLI `0.1.9` generates a launch command pinned to that CLI version, which runs MCP `0.3.0` through `lambdadb mcp`. The bridge reads the selected OS credential or environment variable and forwards the project's base URL, name, and key to the MCP process. It adds no account-management tools and stores no key value in generated agent files. A saved OS credential needs the same OS user and access to the unlocked store; an environment-held key must be available to the agent process.
 
 | Launch method | Write-tool control |
 |:--------------|:-------------------|
@@ -60,24 +60,24 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The stable npm package is `@functional-systems/lambdadb-mcp@0.3.0`. This guide pins that published version. No source checkout or build is required.
+The npm package is `@functional-systems/lambdadb-mcp`. This guide covers version `0.3.0`; the commands below use the latest stable release. No source checkout or build is required.
 
 ```bash
 node --version
-npm view @functional-systems/lambdadb-mcp@0.3.0 version engines
+npm view @functional-systems/lambdadb-mcp@latest version engines
 ```
 
 With the required environment variables supplied, an MCP client can launch:
 
 ```bash
-npx --yes @functional-systems/lambdadb-mcp@0.3.0
+npx --yes @functional-systems/lambdadb-mcp@latest
 ```
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
 The stdio receive buffer is limited to **10 MiB**; exceeding it closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's API request limits.
 
-Alternatively, install the same version globally with `npm install --global @functional-systems/lambdadb-mcp@0.3.0` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves. To update a global install, run `npm install --global @functional-systems/lambdadb-mcp@latest`; to remove it, run `npm uninstall --global @functional-systems/lambdadb-mcp`. For pinned client configurations, review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and change the version explicitly. `@dev` is an opt-in prerelease channel.
+Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.3.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
 
 ### Environment variables
 

@@ -5,27 +5,23 @@ description: Set up LambdaDB, list organizations, manage projects, view usage, c
 
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
-Use `lambdadb` to sign in, list organizations, create and select projects, view usage, connect coding agents, and manage collections, documents, branches, tags, and aliases. To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
+Use `lambdadb` to sign in, list organizations, create and select projects, view usage, connect coding agents, and manage collections, documents, branches, tags, and aliases. For a guided first search with a coding agent, see [Start with an AI agent](/guides/get-started/with-an-agent). To transfer data from Qdrant, Pinecone, or Elasticsearch with inventory, mappings, and checkpoints, use the separate [Migration CLI](/guides/migrations/overview).
 
 ## Install
 
-The stable release covered by this guide is `0.1.8`. Choose one installation method and check `command -v lambdadb` before switching package managers.
+This guide covers CLI `0.1.9`. Install the latest stable release using one method, and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
     Requires Node.js **22.14.0 or later** and npm.
 
     ```bash
-    npm install --global @functional-systems/lambdadb-cli@0.1.8
+    npm install --global @functional-systems/lambdadb-cli@latest
     lambdadb --version
     lambdadb --help
     ```
 
-    To update to the current stable channel:
-
-    ```bash
-    npm install --global @functional-systems/lambdadb-cli@latest
-    ```
+    Run the same command again to update an existing installation.
 
     To remove:
 
@@ -42,7 +38,7 @@ The stable release covered by this guide is `0.1.8`. Choose one installation met
     lambdadb --help
     ```
 
-    The public tap provides CLI `0.1.8` with its Node 24 runtime. No separate Node/npm setup is needed.
+    The public tap provides the CLI with its Node 24 runtime. No separate Node/npm setup is needed; a new release may reach the tap after npm.
 
     ```bash
     brew update
@@ -57,7 +53,7 @@ The stable release covered by this guide is `0.1.8`. Choose one installation met
   </Tab>
 </Tabs>
 
-Installed copies do not update themselves. Pin an exact version for reproducible npm installs; `@dev` is a separate prerelease channel. See [CLI releases](https://github.com/lambdadb/lambdadb-cli/releases) and the [public tap](https://github.com/lambdadb/homebrew-tap) for availability.
+Installed copies do not update themselves. Pin an exact version for reproducible npm installs. See [CLI releases](https://github.com/lambdadb/lambdadb-cli/releases) and the [public tap](https://github.com/lambdadb/homebrew-tap) for availability.
 
 ## Guided setup
 
@@ -207,9 +203,9 @@ lambdadb init --non-interactive --agents codex,claude --scope project \
 
 Supply the key securely before running. Non-interactive setup applies the requested file plan without prompts; it does not log in or issue a key. In a non-TTY session or with `--json`, `init` requires `--non-interactive`.
 
-Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.1.8` launches MCP `0.3.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
+Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.1.9` launches MCP `0.3.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
 
-After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/agents.md) for configuration paths and per-agent reload instructions.
+After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. If a sandboxed CLI reports `CREDENTIAL_STORE_ERROR`, no server request was made. The agent can use the configured MCP connection after confirming that its endpoint and project match the CLI target; server authentication and permission failures must not be bypassed by switching connections. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.9/docs/agents.md) for configuration paths and per-agent reload instructions.
 
 To launch the bridge directly from an MCP client's command configuration, use `lambdadb mcp`, adding `--write-tools` if needed. It is read-only by default and reserves stdout for MCP protocol traffic, so `--json` is not supported. The flag controls writes even if `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` is set in the parent environment. See [MCP connection methods](/guides/get-started/use-with-mcp#connect-with-the-cli) for the distinction from launching the MCP package directly.
 
@@ -436,11 +432,11 @@ Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` cou
 
 For data commands, the shared network budget covers retries, pages, batches, and large-result downloads. Account, project, and usage commands apply `--timeout-ms` to each HTTP request; it does not bound browser approval, prompts, or project provisioning. Use `--timeout-ms 120000` for a longer request budget. Optional `--mode bulk` on `docs import` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
-Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.8/docs/account.md) for session recovery.
+Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.9/docs/account.md) for session recovery.
 
 ## Next steps
 
 - [Search overview](/guides/search/search-overview) for query types
-- [Use with MCP](/guides/get-started/use-with-mcp) for assistant-driven access
+- [Use the MCP server](/guides/get-started/use-with-mcp) for assistant-driven access
 - [Migration CLI](/guides/migrations/overview) for transfers from other databases
 - [CLI repository](https://github.com/lambdadb/lambdadb-cli) for source builds and maintainer documentation
