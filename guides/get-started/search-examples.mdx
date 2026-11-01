@@ -16,14 +16,14 @@ Before running these examples, ensure you have:
 
 <Tip>
 
-Create a **project API key** in [LambdaDB Cloud](https://app.lambdadb.ai): open your project's **API Keys** tab and select **Create key**. Save the full key value when it is shown, and copy the project's **base URL** and **project name**. Project creation does not automatically issue a key. This guide assumes the `cohere-wikipedia-en-100k` collection already exists in that project with `title`, `url`, `text`, and `vector` fields. For signup, permissions, and key setup, see the [Quickstart](/guides/get-started/quickstart).
+Create a **project API key** in [LambdaDB Cloud](https://app.lambdadb.ai): open your project's **API Keys** tab and select **Create key**. Save the full key value when it is shown, and copy the project's **base URL** and **project name**. Project creation does not automatically issue a key. This guide assumes the `cohere-wikipedia-en-100k` collection already exists in that project with `title`, `url`, `text`, and `vector` fields. For signup, permissions, and key setup, see the [Start with an SDK](/guides/get-started/quickstart).
 
 </Tip>
 
 **Installation:**
 
 ```bash
-pip install cohere lambdadb==0.14.1
+pip install --upgrade cohere lambdadb
 ```
 
 Python SDK 0.14.1 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).

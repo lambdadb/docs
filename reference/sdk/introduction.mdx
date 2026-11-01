@@ -1,6 +1,6 @@
 ---
-title: SDK reference
-description: Use the official Python, TypeScript, and Go SDKs to store, version, and retrieve AI knowledge and memory in LambdaDB.
+title: Overview
+description: Explore the official LambdaDB SDKs, CLI, MCP server, and migration tools.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
@@ -20,18 +20,22 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 </CardGroup>
 
-## Supported SDK versions
+<a id="supported-sdk-versions" />
 
-The examples use the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000. The tools listed below support their respective workflows; see their guides for available operations and limits:
+## SDK and tool versions
 
-| Client or tool | Recommended release | Guide |
+The examples cover the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and query, fetch, and list limits of 1000. The tools listed below support their respective workflows; see their guides for available operations and limits:
+
+| Client or tool | Release covered | Guide |
 | :------------- | :------------------ | :---- |
 | Python SDK | [0.14.1](https://pypi.org/project/lambdadb/0.14.1/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.1/docs/sdks/versioning/README.md) |
 | JavaScript/TypeScript SDK | [0.11.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.11.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/data-versioning.md) |
 | Go SDK | [0.8.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.8.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/sdks/versioning/README.md) |
-| LambdaDB CLI | [0.1.8](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.8) | [Use with CLI](/guides/get-started/use-with-cli) |
-| LambdaDB MCP server | [0.3.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.3.0) | [Use with MCP](/guides/get-started/use-with-mcp) |
+| LambdaDB CLI | [0.1.9](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.9) | [Use the CLI](/guides/get-started/use-with-cli) |
+| LambdaDB MCP server | [0.3.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.3.0) | [Use the MCP server](/guides/get-started/use-with-mcp) |
 | Migration CLI | [0.1.9](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9) | [Migrations](/guides/migrations/overview) |
+
+Installation guides use the latest stable releases; pin a version when reproducibility matters and verify compatibility before upgrading.
 
 The LambdaDB CLI accepts up to 100 documents per `docs list` page; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
 
@@ -73,7 +77,7 @@ REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps w
 If you want to use LambdaDB from an MCP client such as Claude Desktop, see the MCP guide:
 
 <CardGroup cols={1}>
-  <Card title="Use with MCP" icon="robot" href="/guides/get-started/use-with-mcp">
+  <Card title="Use the MCP server" icon="robot" href="/guides/get-started/use-with-mcp">
   </Card>
 </CardGroup>
 

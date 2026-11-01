@@ -17,10 +17,11 @@
             "group": "Get started",
             "pages": [
               "guides/get-started/overview",
+              "guides/get-started/with-an-agent",
               "guides/get-started/quickstart",
-              "guides/get-started/architecture",
               "guides/get-started/use-with-cli",
               "guides/get-started/use-with-mcp",
+              "guides/get-started/architecture",
               "guides/get-started/roadmap-changelog"
             ]
           },
@@ -171,7 +172,7 @@
             ]
           },
           {
-            "group": "SDKs",
+            "group": "SDKs and tools",
             "pages": [
               "reference/sdk/introduction"
             ]

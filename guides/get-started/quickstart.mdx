@@ -1,10 +1,12 @@
 ---
-title: Quickstart
+title: Start with an SDK
 description: Get started with LambdaDB in minutes. Create a searchable knowledge collection and retrieve its documents with full-text and vector search.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
+
+To connect a coding agent first, see [Start with an AI agent](/guides/get-started/with-an-agent).
 
 This guide walks you through getting a **project API key**, installing an SDK, creating your first searchable knowledge collection, and running hybrid search queries. You'll store source documents with text, keyword, and dense vector fields, then combine lexical matching with vector similarity to retrieve relevant knowledge.
 
@@ -49,26 +51,26 @@ To replace a key, create a new one, update your application's credentials, and v
 
 ## 🚀 Step 2: Install the SDK
 
-Install one of the stable SDK versions used by these examples. See [SDK support](/reference/sdk/introduction#supported-sdk-versions) for the language-specific guides.
+Install the latest stable SDK for your language. See [SDK support](/reference/sdk/introduction#supported-sdk-versions) for supported releases and runtime requirements. Pin a version in your application for reproducible builds.
 
 <CodeGroup>
 
 ```bash Python
-pip install lambdadb==0.14.1
+pip install --upgrade lambdadb
 ```
 
 ```bash TypeScript
-npm install @functional-systems/lambdadb@0.11.1
+npm install @functional-systems/lambdadb@latest
 ```
 
 ```bash Go
-go get github.com/lambdadb/go-lambdadb@v0.8.0
+go get github.com/lambdadb/go-lambdadb@latest
 ```
 
 </CodeGroup>
 
 <Tip>
-    Python SDK 0.14.1 requires Python 3.10–3.13. Use a virtual environment to keep dependencies separate. Go SDK 0.8.0 requires Go 1.22 or later.
+    Python SDK 0.14.1 requires Python 3.10–3.13; use a virtual environment to keep dependencies separate. Go SDK 0.8.0 requires Go 1.22 or later. Check the selected release for its runtime requirements.
 </Tip>
 
 ## 📚 Step 3: Create a collection
@@ -479,7 +481,7 @@ if err != nil { log.Fatal(err) }
 ## 🚀 Next steps
 
 - **CLI**: Import JSONL and search from your terminal with the [LambdaDB CLI](/guides/get-started/use-with-cli)
-- **MCP**: Connect an AI assistant using [Use with MCP](/guides/get-started/use-with-mcp)
+- **MCP**: Connect an AI assistant using [Use the MCP server](/guides/get-started/use-with-mcp)
 
 - **Advanced Queries**: Explore complex patterns in our [Query Guide](/guides/search/search-overview)
 - **Bulk Operations**: Learn about large-scale data ingestion in our [Bulk Operations Guide](/guides/documents/bulk-upsert-data)

@@ -1,0 +1,68 @@
+---
+title: Start with an AI agent
+description: Set up the LambdaDB CLI and connect your coding agent to a project, then run your first search.
+---
+
+Connect your coding agent to LambdaDB, then use it to explore and search your data. The LambdaDB CLI guides you through account and project setup and configures the agent's MCP connection and LambdaDB skill.
+
+## Before you start
+
+You need Node.js **22.14.0 or later**, npm, and a [supported coding agent](/guides/get-started/use-with-cli#connect-coding-agents). Account-based setup also needs an accessible OS credential store and a browser for sign-in and CLI approval.
+
+## Let your agent help you set up
+
+Open your project in your coding agent and paste this prompt:
+
+```text
+Help me get started with LambdaDB in this project.
+
+1. Check for the LambdaDB CLI. If needed, install or upgrade it by running:
+   npm install --global @functional-systems/lambdadb-cli@latest
+   If global installation fails due to permissions, use
+   npx --yes @functional-systems/lambdadb-cli@latest instead; do not use sudo.
+2. Help me run lambdadb init in an interactive terminal (or use the npx
+   command above). Let me complete browser sign-in and CLI approval, select or
+   create a project, choose my coding agent, and review the configuration
+   before applying it. If you cannot hand me an interactive terminal, give me
+   the command to run myself.
+3. Help me reload the agent configuration if needed. Never ask me to paste
+   API keys into chat or print them.
+4. Verify the selected connection. Inspect an existing collection and run a
+   small search using its actual indexed fields. If the project has no suitable
+   data, create a clearly named sample collection and sample documents, then
+   wait for indexing and search them. Show me the result, the commands to
+   repeat the search, and how to remove the sample collection.
+5. Suggest a next step for using LambdaDB in this project.
+```
+
+`init` requires an interactive terminal for account setup. Approve sign-in in the browser, then return to the terminal to select your organization and project. New project creation and key issuance require confirmation. Select your agent with **Space**, then use **Enter** to continue. Review the displayed file changes, scope, and write-tool setting before applying them. The guided setup defaults to user scope and enables MCP write tools; choose **Change options** to change either setting.
+
+Reload or restart your agent when prompted. The CLI checks authentication and collection-list access during setup; it does not create collections or documents, and a successful check does not establish search readiness. If the agent's CLI cannot access its OS credential store, it can verify the configured MCP connection targets the same endpoint and project and continue through MCP. See [CLI agent setup](/guides/get-started/use-with-cli#connect-coding-agents). The prompt asks your agent to demonstrate a search after setup. If you use an existing collection, choose the intended collection and read ref when asked. Sample data consumes project resources. Writes are asynchronous, so wait for indexing before searching; the agent should identify what it creates and how to clean it up.
+
+## Prefer to run setup yourself?
+
+From your project directory, run:
+
+```bash
+npx --yes @functional-systems/lambdadb-cli@latest init
+```
+
+Complete the browser and terminal steps above, then reload your agent and send:
+
+```text
+Help me search with LambdaDB. Inspect an existing collection and run a small
+search using its indexed fields. If there is no suitable data, create a clearly
+named sample collection and sample documents, wait for indexing, and search
+them. Show me the result, how to repeat the search, and how to remove the sample.
+```
+
+This command runs the CLI without installing a global `lambdadb` command. Use `npx --yes @functional-systems/lambdadb-cli@latest` in place of `lambdadb` for later CLI commands, or see the [CLI installation options](/guides/get-started/use-with-cli#install) if you prefer a persistent command.
+
+For SSH or a machine without a browser, run `npx --yes @functional-systems/lambdadb-cli@latest init --no-browser` and open the printed approval URL on another device. Browser approval is still required. For an existing project key or CI, see [CLI configuration](/guides/get-started/use-with-cli#configure-a-project) and [non-interactive agent setup](/guides/get-started/use-with-cli#connect-coding-agents).
+
+## Next steps
+
+- [Start with an SDK](/guides/get-started/quickstart) to create a collection and search from your application.
+- [Use the CLI](/guides/get-started/use-with-cli) for account, project, and data commands.
+- [Use the MCP server](/guides/get-started/use-with-mcp) for manual client configuration and troubleshooting.
+- [Migrate existing data](/guides/migrations/overview) from a supported source.
