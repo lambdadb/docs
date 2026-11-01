@@ -126,7 +126,14 @@ Example upsert payloads for the two schemas above:
 
 ### Text input limits
 
-Use nonempty source text within the [provider input budgets](/guides/get-started/limits#embeddings). Cohere inputs are limited by the model's context length; LambdaDB requests no truncation, so an input over the limit is rejected with HTTP `400`.
+Use nonempty source text within the selected provider's input budget:
+
+| Provider | Text input limit |
+| :------- | :--------------- |
+| OpenAI | 8,192 tokens per input; 300,000 tokens across inputs in one provider request |
+| Cohere | Selected model's context length |
+
+OpenAI token budgets follow its [embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create). LambdaDB requests no truncation for Cohere, so an input over the model's context limit is rejected with HTTP `400`.
 
 These limits apply to source text and query text, independently of LambdaDB's request and document byte limits. LambdaDB sends source strings to the provider without automatic chunking or truncation. Split long documents into separate records with stable chunk IDs before writing them, and count tokens using the selected model's tokenizer. When writing many long records, use smaller upsert or update batches to stay within the provider's combined token limit.
 

@@ -1,9 +1,9 @@
 ---
 title: Limits
-description: Find LambdaDB request, document, collection, search, native inference, CLI, and MCP limits, with guidance for requests that exceed them.
+description: Find limits enforced by the LambdaDB service for requests, documents, collections, search, and native inference, with guidance for requests that exceed them.
 ---
 
-Use this page to size requests and find the limits that apply to your workflow. Service limits, client limits, and plan quotas apply independently; a larger client buffer does not increase an API limit.
+Use this page to size requests against the limits enforced by the LambdaDB service, including native embeddings, reranking, and facets. Plan quotas apply separately from per-request limits.
 
 `KiB`, `MiB`, and `GiB` mean 1,024, 1,048,576, and 1,073,741,824 bytes. Text byte limits use UTF-8. Character limits for document IDs, descriptions, metadata tag values, and keyword indexing count UTF-16 code units, so some characters, such as emoji, count as two.
 
@@ -58,15 +58,15 @@ Large query, fetch, and list results can return `isDocsInline: false` and a pres
 
 ### Embeddings
 
+LambdaDB validates the following source and image limits before calling the embedding provider.
+
 | Resource | Limit | Behavior and guidance |
 | :------- | :---- | :-------------------- |
 | Embedding source mappings | 1–16 per vector field | OpenAI accepts exactly one text source; Cohere accepts text and image sources |
 | Cohere input parts | 16 text/image parts per input after expanding image arrays | Input is rejected when expansion exceeds the limit |
 | Cohere images | 8 per input; 1 MiB total decoded image bytes per input; 4,194,304 pixels per image | Applies to document and query inputs; see [image input rules](/guides/collections/native-embeddings#image-inputs) |
-| OpenAI text input | 8,192 tokens per input; 300,000 tokens across inputs in one provider request | Provider limits apply in addition to API byte limits; use smaller batches for long records |
-| Cohere text input | Selected model's context length | Over-limit input is rejected with HTTP `400` |
 
-LambdaDB does not automatically chunk or truncate source text. See [text input limits](/guides/collections/native-embeddings#text-input-limits) for token counting and provider details. OpenAI token budgets follow its [embedding input contract](https://developers.openai.com/api/reference/resources/embeddings/methods/create).
+Provider token and model context limits also apply. See [text input limits](/guides/collections/native-embeddings#text-input-limits) for those budgets and how to split long inputs.
 
 ### Reranking
 
@@ -81,23 +81,10 @@ LambdaDB does not automatically chunk or truncate source text. See [text input l
 
 See [native reranking](/guides/search/native-reranking) for supported inputs, provider restrictions, and failure handling. Input validation and inference quota failures are not bypassed by `onFailure: "returnOriginal"`.
 
-## CLI and MCP
-
-These client limits apply to the [documented tool releases](/reference/sdk/introduction#supported-sdk-versions), in addition to service limits.
-
-| Client operation | Limit | Behavior and guidance |
-| :--------------- | :---- | :-------------------- |
-| CLI `docs import` and `docs update` input | 64 MiB per JSONL file; 100,000 documents | The whole file is validated before sending batches; split larger files |
-| CLI import/update `--batch-size` | 1–10,000 documents; default 1,000 | The byte cap can make a batch smaller |
-| CLI upsert/update `--batch-bytes` | 64–4,000,000 bytes; default 4,000,000 | Serialized request cap, including the envelope |
-| CLI bulk `--batch-bytes` | 64–64,000,000 bytes; default 16,000,000 | Serialized upload cap; this is lower than the service bulk limit |
-| CLI `docs list --size` | 1–100; default 20 | Use pagination or `--all` for more |
-| MCP stdio receive buffer | 10 MiB | Overflow closes the connection. Split tool inputs; bulk tools accept document arrays, not local paths or URLs |
-
-See [Use the CLI](/guides/get-started/use-with-cli) and [Use the MCP server](/guides/get-started/use-with-mcp) for examples.
-
 ## Quotas and throttling
 
 Monthly usage allowances are separate from per-request limits. See [Understanding costs](/guides/costs/understanding-costs) for Free plan read, write, storage, and inference quotas. Moving to a paid plan does not remove document, request, or model input limits.
 
 HTTP `429` can mean request throttling, too much pending data for a consistent read, temporary facet memory exhaustion, or provider-call admission exhaustion. Follow the error message: waiting for indexing differs from reducing concurrency. Honor `Retry-After` when present. An individual facet request over its memory budget returns `400`; an inference quota failure returns `403`. See [Errors and retries](/reference/api/introduction#errors-and-retries).
+
+For tool-specific caps, see [CLI limits](/guides/get-started/use-with-cli#cli-limits) and the [MCP transport limit](/guides/get-started/use-with-mcp#transport-limit). Client limits apply in addition to service limits.

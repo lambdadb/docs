@@ -75,9 +75,11 @@ npx --yes @functional-systems/lambdadb-mcp@latest
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-Exceeding the [stdio receive-buffer limit](/guides/get-started/limits#cli-and-mcp) closes the connection. Split large tool inputs into smaller calls. This transport limit does not increase LambdaDB's [API request limits](/guides/get-started/limits#requests-and-documents).
-
 Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.3.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
+
+### Transport limit
+
+The [documented MCP server release](/reference/sdk/introduction#supported-sdk-versions) has a **10 MiB** stdio receive-buffer limit (10,485,760 bytes). Exceeding it closes the connection. Split large tool inputs into smaller calls; bulk tools accept document arrays, not local paths or URLs. This transport limit does not increase LambdaDB's [API request limits](/guides/get-started/limits#requests-and-documents).
 
 ### Environment variables
 
@@ -221,7 +223,7 @@ A typical versioning workflow creates a branch from `main`, writes and evaluates
 { "collectionName": "memories", "aliasName": "serving", "target": { "kind": "tag", "name": "reviewed" } }
 ```
 
-Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the [transport limit](/guides/get-started/limits#cli-and-mcp); the tool does not accept local paths or URLs.
+Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch sources cannot be tags or aliases, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Accepted writes do not establish committed search visibility, so a branch or tag created right after a write may not include it. Bulk inputs must fit the [transport limit](#transport-limit); the tool does not accept local paths or URLs.
 
 For direct package setup, enable them by changing the environment value and restarting the MCP server:
 
