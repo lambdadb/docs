@@ -31,7 +31,7 @@ Document field names are preserved as supplied in every SDK. The examples use `d
   ) as client:
       coll = client.collection("my_collection")
       docs = [
-          {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [(i + 1) / 64 for i in range(64)], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
+          {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... ", "dense_vector": [(i + 1) / 64 for i in range(64)], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
           {"id": "bulk_2", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp", "text": "Winamp is a media player for Windows, macOS and Android ...", "dense_vector": [(i + 11) / 64 for i in range(64)]},
       ]
       coll.docs.bulk_upsert_docs(docs=docs)
@@ -49,7 +49,7 @@ Document field names are preserved as supplied in every SDK. The examples use `d
   });
   const collection = client.collection("my_collection");
   const docs = [
-    { id: "bulk_1", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", dense_vector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64), sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+    { id: "bulk_1", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is a serverless search database ... ", dense_vector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64), sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
     { id: "bulk_2", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp", text: "Winamp is a media player for Windows, macOS and Android ...", dense_vector: Array.from({ length: 64 }, (_, i) => (i + 11) / 64) },
   ];
   await collection.docs.bulkUpsertDocs({ docs });
@@ -78,7 +78,7 @@ Document field names are preserved as supplied in every SDK. The examples use `d
       return values
     }
     docs := []map[string]interface{}{
-      {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": demoVector(1)},
+      {"id": "bulk_1", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... ", "dense_vector": demoVector(1)},
       {"id": "bulk_2", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp", "text": "Winamp is a media player for Windows, macOS and Android ...", "dense_vector": demoVector(11)},
     }
     _, err := coll.Docs().BulkUpsertDocuments(ctx, lambdadb.UpsertDocsInput{Docs: docs})
@@ -184,7 +184,7 @@ For the manual Python upload, also install `requests` with `pip install requests
   from lambdadb import LambdaDB
 
   docs = [
-      {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [(i + 1) / 64 for i in range(64)], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
+      {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... ", "dense_vector": [(i + 1) / 64 for i in range(64)], "sparse_vector": {"LambdaDB": 0.83, "is": 0.1, "a": 0.1, "AI": 0.7}},
   ]
   with LambdaDB(
       project_api_key="YOUR_API_KEY",
@@ -207,7 +207,7 @@ For the manual Python upload, also install `requests` with `pip install requests
 
   ```typescript TypeScript
   const docs = [
-    { id: "bulk_33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... ", dense_vector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64), sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
+    { id: "bulk_33201222", url: "https://en.wikipedia.org/wiki/LambdaDB", title: "LambdaDB", text: "LambdaDB is a serverless search database ... ", dense_vector: Array.from({ length: 64 }, (_, i) => (i + 1) / 64), sparse_vector: { LambdaDB: 0.83, is: 0.1, a: 0.1, AI: 0.7 } },
   ];
   // Upload to presigned URL
   const uploadRes = await fetch(info.url, {
@@ -231,7 +231,7 @@ For the manual Python upload, also install `requests` with `pip install requests
     return values
   }
   docs := []map[string]interface{}{
-    {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": demoVector(1)},
+    {"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... ", "dense_vector": demoVector(1)},
   }
   payload, _ := json.Marshal(map[string]interface{}{"docs": docs})
   req, _ := http.NewRequestWithContext(ctx, "PUT", info.URL, bytes.NewReader(payload))
@@ -260,7 +260,7 @@ For the manual Python upload, also install `requests` with `pip install requests
   curl --fail -X PUT "<provided_url>" \
     -H 'Content-Type: application/json' \
     -H 'If-None-Match: *' \
-    -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... ", "dense_vector": [
+    -d '{"docs": [{"id": "bulk_33201222", "url": "https://en.wikipedia.org/wiki/LambdaDB", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... ", "dense_vector": [
         0.015625, 0.03125, 0.046875, 0.0625, 0.078125, 0.09375, 0.109375, 0.125,
         0.140625, 0.15625, 0.171875, 0.1875, 0.203125, 0.21875, 0.234375, 0.25,
         0.265625, 0.28125, 0.296875, 0.3125, 0.328125, 0.34375, 0.359375, 0.375,
