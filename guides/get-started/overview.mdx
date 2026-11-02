@@ -1,25 +1,29 @@
 ---
 title: LambdaDB overview
-description: Learn how LambdaDB, the vector lake for AI memory, stores, searches, and versions AI knowledge and memory without managing servers.
+description: Search your data with LambdaDB and use built-in data versioning to test, pin, and switch between versions.
 ---
 
-LambdaDB is **the vector lake for AI memory**. Store, search, and version AI knowledge and memory, from small experiments to production, without managing servers.
+LambdaDB is a **serverless search database with built-in data versioning**. Use vector, full-text, and hybrid search to find relevant data, and manage the data versions your applications read.
 
-Documents, vectors, and indexes live in durable object storage. [Independently scalable compute](/guides/get-started/architecture) handles indexing and retrieval, with [usage-based pricing](/guides/costs/understanding-costs).
+## Store and search your data
 
-## Store your knowledge and memory
+Organize documents, embeddings, and metadata in [collections](/guides/collections/collection-overview), and choose [index types](/guides/collections/index-types) for the fields you want to search or filter. Bring your own vectors or use [native embeddings](/guides/collections/native-embeddings) to generate document and query vectors from text and images.
 
-Organize source documents, embeddings, and metadata in [collections](/guides/collections/collection-overview). Choose [index types](/guides/collections/index-types) for the fields your application needs to search or filter. Supply your own vectors, or use [native embeddings](/guides/collections/native-embeddings) to generate document and query vectors from text and images with provider credentials managed by LambdaDB.
+Search with [full-text](/guides/search/query-string), [dense vector](/guides/search/vector), or [sparse vector](/guides/search/sparse-vector) queries. Combine retrieval paths with [hybrid search](/guides/search/hybrid), narrow matches with [filters](/guides/search/boolean), and optionally use [native reranking](/guides/search/native-reranking) to reorder retrieved results. See the [search overview](/guides/search/search-overview) for query options, including keyword facets.
 
-## Search with the right signals
+## Test and version your data
 
-Find relevant documents using [full-text](/guides/search/query-string), [dense vector](/guides/search/vector), or [sparse vector](/guides/search/sparse-vector) search. Combine retrieval paths with [hybrid search](/guides/search/hybrid), then optionally apply [native reranking](/guides/search/native-reranking) to evaluate the retrieved text against your question.
+Use [branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) to manage changes to a collection:
 
-Use [filters](/guides/search/boolean) to narrow matches and [keyword facets](/guides/search/facets) to show counts alongside supported lexical queries. The [search overview](/guides/search/search-overview) covers query options and links to each search method's detailed guide.
+- **Branch** to isolate changes and test them without changing what applications read from another branch.
+- **Tag** a committed snapshot to pin a data version for evaluation or later use.
+- **Use an alias** to select a branch or tag for reads and switch the target when ready.
 
-## Version and recover your data
+You can also create a [point-in-time branch](/guides/data-versioning/branches-tags-aliases#point-in-time-branches) from retained committed history to inspect or recover an earlier state. Snapshot retention defaults to 30 days and is [configurable](/guides/collections/create-a-collection#snapshot-retention); a tag preserves its pinned snapshot while the tag exists.
 
-Use [branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases) to isolate changes, pin datasets for evaluation, and switch application reads between versions. Collections retain committed snapshots for 30 days by default, with [configurable retention](/guides/collections/create-a-collection#snapshot-retention). Create a [point-in-time branch](/guides/data-versioning/branches-tags-aliases#point-in-time-branches) from retained history to inspect or recover an earlier state.
+## Run without managing servers
+
+Documents, vectors, and indexes live in durable object storage, while [compute scales independently](/guides/get-started/architecture) for indexing and search. LambdaDB meters storage, reads, writes, and managed inference, with no compute charge between requests. See [usage and pricing](/guides/costs/understanding-costs) for plan allowances and charges.
 
 ## Get started
 

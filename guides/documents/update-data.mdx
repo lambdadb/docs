@@ -27,7 +27,7 @@ The examples write to the default branch, `main`. The REST request accepts an op
   ) as client:
       coll = client.collection("my_collection")
       docs = [
-          {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... "},
+          {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... "},
           {"id": "33201223", "url": "https://en.wikipedia.org/wiki/Winamp", "title": "Winamp v2", "text": "Winamp v2 is a media player for Windows, macOS and Android, originally developed by Nullsoft."},
       ]
       coll.docs.update(docs=docs)
@@ -45,7 +45,7 @@ The examples write to the default branch, `main`. The REST request accepts an op
   });
   await client.collection("my_collection").docs.update({
     docs: [
-      { id: "33201222", title: "LambdaDB", text: "LambdaDB is the vector lake for AI memory ... " },
+      { id: "33201222", title: "LambdaDB", text: "LambdaDB is a serverless search database ... " },
       { id: "33201223", url: "https://en.wikipedia.org/wiki/Winamp", title: "Winamp v2", text: "Winamp v2 is a media player for Windows, macOS and Android." },
     ],
   });
@@ -68,7 +68,7 @@ The examples write to the default branch, `main`. The REST request accepts an op
       lambdadb.WithAPIKey("YOUR_API_KEY"),
     )
     docs := []map[string]interface{}{
-      {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is the vector lake for AI memory ... "},
+      {"id": "33201222", "title": "LambdaDB", "text": "LambdaDB is a serverless search database ... "},
       {"id": "33201223", "title": "Winamp v2", "text": "Winamp v2 is a media player for Windows, macOS and Android."},
     }
     _, err := client.Collection("my_collection").Docs().Update(ctx, lambdadb.UpdateDocsInput{Docs: docs})
@@ -93,7 +93,7 @@ The examples write to the default branch, `main`. The REST request accepts an op
         {
           "id": "33201222",
           "title": "LambdaDB",
-          "text": "LambdaDB is the vector lake for AI memory ... "
+          "text": "LambdaDB is a serverless search database ... "
         },
         {
           "id": "33201223",
