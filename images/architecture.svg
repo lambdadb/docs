@@ -13,7 +13,6 @@
     </g>
   </defs>
 
-  <rect width="1000" height="1010" rx="20" fill="#ffffff"/>
   <text x="40" y="48" fill="#123629" font-size="30" font-weight="650">Data plane</text>
 
   <rect x="417" y="82" width="166" height="48" rx="24" fill="#e2ebe5"/>

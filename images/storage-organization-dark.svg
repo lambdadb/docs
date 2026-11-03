@@ -7,7 +7,6 @@
     </marker>
   </defs>
 
-  <rect width="1000" height="550" rx="20" fill="#101917"/>
   <text x="40" y="48" fill="#edf6f1" font-size="30" font-weight="650">Storage organization</text>
 
   <rect x="24" y="90" width="320" height="210" rx="22" fill="#15231f" stroke="#3d6253" stroke-dasharray="7 7"/>
