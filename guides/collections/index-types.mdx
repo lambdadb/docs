@@ -6,8 +6,48 @@ description: Reference for LambdaDB's nine index types — text, keyword, vector
 LambdaDB currently supports nine types of indexes. Note that the whole document is stored as is regardless of its existence in index configurations, but being stored does not necessarily mean it is searchable.
 
 <Warning>
-The dot (.) character cannot be used as a field name, and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported.
+The dot (.) character cannot be used as a field name, and you can only add indexes to existing collections. Modifying or deleting existing indexes is not supported; only a field's optional [`description`](#field-descriptions) can change after creation.
 </Warning>
+
+## Field descriptions
+
+Every index type, including each nested field under `objectIndexConfigs`, accepts an optional `description` string of up to 255 characters. It records what the field holds so that agents and SDK users can discover field meanings from a collection read. It never affects indexing or search, and it is the only setting of an existing field that can be added, changed, or cleared later; see [Configure a collection](/guides/collections/manage-collections#field-descriptions). Collection reads return `description` only when one is set, and the server-managed `id` field does not accept one.
+
+<CodeGroup>
+
+```python Python
+{
+    "title": {
+        "type": "text",
+        "analyzers": ["english"],
+        "description": "Product title shown in search results"
+    },
+    "metadata": {
+        "type": "object",
+        "objectIndexConfigs": {
+            "sku": {"type": "keyword", "description": "Vendor stock-keeping unit"}
+        }
+    }
+}
+```
+
+```json JSON
+{
+    "title": {
+        "type": "text",
+        "analyzers": ["english"],
+        "description": "Product title shown in search results"
+    },
+    "metadata": {
+        "type": "object",
+        "objectIndexConfigs": {
+            "sku": {"type": "keyword", "description": "Vendor stock-keeping unit"}
+        }
+    }
+}
+```
+
+</CodeGroup>
 
 ## text
 

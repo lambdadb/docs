@@ -9,7 +9,7 @@ Use `lambdadb` to sign in, list organizations, create and select projects, view 
 
 ## Install
 
-This guide covers CLI `0.1.9`. Install the latest stable release using one method, and check `command -v lambdadb` before switching package managers.
+This guide covers CLI `0.4.1`. Install the latest stable release using one method, and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
@@ -203,9 +203,9 @@ lambdadb init --non-interactive --agents codex,claude --scope project \
 
 Supply the key securely before running. Non-interactive setup applies the requested file plan without prompts; it does not log in or issue a key. In a non-TTY session or with `--json`, `init` requires `--non-interactive`.
 
-Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.1.9` launches MCP `0.3.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
+Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.4.1` launches MCP `0.5.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
 
-After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. If a sandboxed CLI reports `CREDENTIAL_STORE_ERROR`, no server request was made. The agent can use the configured MCP connection after confirming that its endpoint and project match the CLI target; server authentication and permission failures must not be bypassed by switching connections. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.9/docs/agents.md) for configuration paths and per-agent reload instructions.
+After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. If a sandboxed CLI reports `CREDENTIAL_STORE_ERROR`, no server request was made. The agent can use the configured MCP connection after confirming that its endpoint and project match the CLI target; server authentication and permission failures must not be bypassed by switching connections. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.4.1/docs/agents.md) for configuration paths and per-agent reload instructions.
 
 To launch the bridge directly from an MCP client's command configuration, use `lambdadb mcp`, adding `--write-tools` if needed. It is read-only by default and reserves stdout for MCP protocol traffic, so `--json` is not supported. The flag controls writes even if `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` is set in the parent environment. See [MCP connection methods](/guides/get-started/use-with-mcp#connect-with-the-cli) for the distinction from launching the MCP package directly.
 
@@ -213,14 +213,14 @@ To launch the bridge directly from an MCP client's command configuration, use `l
 
 The CLI supports all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers).
 
-For generated vectors, use the [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in the same field-to-index map. The CLI also supports `lambdadb collections update --collection NAME --index-config FILE` with that map format. Existing field-update constraints still apply; see [Configure a collection](/guides/collections/manage-collections#configure-a-collection).
+For generated vectors, use the [native embedding configuration](/guides/collections/native-embeddings#collection-schema) in the same field-to-index map. The CLI also supports `lambdadb collections update --collection NAME --index-config FILE` with that map format. Existing field-update constraints still apply; see [Configure a collection](/guides/collections/manage-collections#configure-a-collection). Each field in the map, including nested `objectIndexConfigs` children, accepts an optional [`description`](/guides/collections/index-types#field-descriptions); it is the only setting of an existing field that `collections update` can change.
 
 Choose a new collection name in your development project. Run these examples in a scratch directory. Create an index configuration file containing the field-to-index map, without an `indexConfigs` wrapper:
 
 ```bash
 cat > index-config.json <<'JSON'
 {
-  "text": { "type": "text", "analyzers": ["english"] },
+  "text": { "type": "text", "analyzers": ["english"], "description": "Document body" },
   "category": { "type": "keyword" }
 }
 JSON
@@ -228,6 +228,8 @@ JSON
 lambdadb collections create --collection cli-demo-docs --index-config index-config.json
 lambdadb collections describe --collection cli-demo-docs
 ```
+
+`collections describe` lists each field with its type, settings, and a `DESCRIPTION` column; nested fields appear as dotted paths such as `metadata.author`.
 
 Create and import a UTF-8 JSONL file:
 
@@ -272,7 +274,7 @@ For eligible pending ordinary writes, fetch can use:
 lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --consistent-read --json
 ```
 
-For query, set `"consistentRead": true` in the request file. These reads require a direct branch ref, exclude pending bulk imports, and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+For query, set `"consistentRead": true` in the request file. Both forms accept `--ref branch:NAME` or `--ref alias:NAME` when the alias currently targets a branch; `--ref tag:NAME` is rejected before any request is sent, and the server rejects an alias that targets a tag. These reads exclude pending bulk imports and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
 The CLI also accepts [keyword facets](/guides/search/facets) and an omitted `query` for match-all requests. Use `size: 0` with nonempty facets for counts without document results.
 
@@ -364,7 +366,7 @@ lambdadb docs delete --collection cli-demo-docs --branch main --file delete-filt
 
 List collections with `lambdadb collections list --json`. One page is returned by default; use `--page-token` with the returned `nextPageToken`, or `--all` to fetch all pages within the network budget.
 
-`collections create` also accepts `--description`, repeated `--tag KEY=VALUE` metadata tags, `--partition-config` with a JSON object, and `--snapshot-retention-days`. `collections update` takes any combination of `--index-config`, `--description` (`""` clears it), `--tag` or `--clear-tags` (replacing the whole tag map), and `--snapshot-retention-days`, following the [collection update rules](/guides/collections/manage-collections#configure-a-collection):
+`collections create` also accepts `--description`, repeated `--tag KEY=VALUE` metadata tags, `--partition-config` with a JSON object, and `--snapshot-retention-days`. `collections update` takes any combination of `--index-config` (the full field map; a changed field `description` is applied without reindexing), `--description` (`""` clears it), `--tag` or `--clear-tags` (replacing the whole tag map), and `--snapshot-retention-days`, following the [collection update rules](/guides/collections/manage-collections#configure-a-collection):
 
 ```bash
 lambdadb collections update --collection cli-demo-docs --description "Support articles" --tag team=search --json
@@ -444,7 +446,7 @@ Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` cou
 
 For data commands, the shared network budget covers retries, pages, batches, and large-result downloads. Account, project, and usage commands apply `--timeout-ms` to each HTTP request; it does not bound browser approval, prompts, or project provisioning. Use `--timeout-ms 120000` for a longer request budget. Optional `--mode bulk` on `docs import` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
-Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.1.9/docs/account.md) for session recovery.
+Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.4.1/docs/account.md) for session recovery.
 
 ## Next steps
 

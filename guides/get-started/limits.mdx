@@ -26,13 +26,14 @@ The bulk limit applies to the uploaded object; individual documents must still f
 | Collections | No collection count limit | Usage quotas and request throttling still apply |
 | Collection name | 3–52 characters: ASCII letters, digits, `_`, `-` | Invalid names are rejected |
 | Collection description | 255 characters | Longer descriptions are rejected |
+| Index field description | 255 characters per field | Optional metadata on each `indexConfigs` field, including nested fields; it never affects indexing. See [field descriptions](/guides/collections/index-types#field-descriptions) |
 | Collection metadata tags | 5 entries; keys 1–63 characters; values 1–127 characters | Keys use ASCII letters, digits, `_`, `.`, `-`; values must be nonblank and cannot contain `:`, `#`, or `,`. See [metadata tags](/guides/collections/manage-collections#configure-a-collection) |
 | Explicit `partitionConfig.numPartitions` | 2–1,024 | Applies when creating a [partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection); omit `partitionConfig` for an unpartitioned collection |
 | Snapshot retention | 1–31 days; default 30 | No unlimited-retention setting. Existing [data-versioning tags](/guides/data-versioning/branches-tags-aliases) keep their pinned snapshot beyond this window |
 | Dense vector dimensions | 64–4,096 | Must match the configured field. Native embedding models can impose narrower choices; see [index types](/guides/collections/index-types) and [supported models](/guides/collections/native-embeddings#supported-providers-and-models) |
 | Indexed keyword value | 4,096 characters per value | Longer values remain stored but are omitted from the keyword index, including sorting and facets. This is not a general text-field length limit |
 
-Schema updates are additive: preserve every existing field and its configuration. See [collection update rules](/guides/collections/manage-collections#configure-a-collection).
+Schema updates are additive: preserve every existing field and its configuration; only a field's `description` can change afterward. See [collection update rules](/guides/collections/manage-collections#configure-a-collection).
 
 ## Search and reads
 
