@@ -24,22 +24,22 @@ import GoClientLifecycleNote from '/snippets/go-client-lifecycle-note.mdx';
 
 ## SDK and tool versions
 
-The examples cover the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, and the current [query, fetch, and list limits](/guides/get-started/limits#search-and-reads). The tools listed below support their respective workflows; see their guides for available operations and limits:
+The examples cover the stable SDK releases below. These SDKs support data versioning, all 49 [text analyzer presets](/guides/collections/choose-text-analyzers), [keyword facets](/guides/search/facets), [native reranking](/guides/search/native-reranking) with the `typesafe` and `cohere` providers, [Bayesian hybrid search](/guides/search/hybrid#bayesian-hybrid-query), [native embeddings](/guides/collections/native-embeddings) with text and image `sources`, [index field descriptions](/guides/collections/index-types#field-descriptions), [consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) through an alias that targets a branch, and the current [query, fetch, and list limits](/guides/get-started/limits#search-and-reads). The tools listed below support their respective workflows; see their guides for available operations and limits:
 
 | Client or tool | Release covered | Guide |
 | :------------- | :------------------ | :---- |
-| Python SDK | [0.14.1](https://pypi.org/project/lambdadb/0.14.1/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.1/docs/sdks/versioning/README.md) |
-| JavaScript/TypeScript SDK | [0.11.1](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.11.1) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/data-versioning.md) |
-| Go SDK | [0.8.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.8.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/sdks/versioning/README.md) |
-| LambdaDB CLI | [0.1.9](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.1.9) | [Use the CLI](/guides/get-started/use-with-cli) |
-| LambdaDB MCP server | [0.3.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.3.0) | [Use the MCP server](/guides/get-started/use-with-mcp) |
+| Python SDK | [0.15.0](https://pypi.org/project/lambdadb/0.15.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.15.0/docs/sdks/versioning/README.md) |
+| JavaScript/TypeScript SDK | [0.12.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.12.0) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.12.0/docs/data-versioning.md) |
+| Go SDK | [0.9.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.9.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.9.0/docs/sdks/versioning/README.md) |
+| LambdaDB CLI | [0.4.1](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.4.1) | [Use the CLI](/guides/get-started/use-with-cli) |
+| LambdaDB MCP server | [0.5.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.5.0) | [Use the MCP server](/guides/get-started/use-with-mcp) |
 | Migration CLI | [0.1.9](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9) | [Migrations](/guides/migrations/overview) |
 
 Installation guides use the latest stable releases; pin a version when reproducibility matters and verify compatibility before upgrading.
 
 The LambdaDB CLI has a smaller [document-list page limit](/guides/get-started/use-with-cli#cli-limits) than the API; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
 
-Python SDK 0.14.1 requires Python **3.10–3.13**. Go SDK 0.8.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
+Python SDK 0.15.0 requires Python **3.10–3.13**. Go SDK 0.9.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
 
 ### Search and embedding configuration
 
@@ -57,6 +57,12 @@ Without reranking, the budget is required and must satisfy `1 <= size <= candida
 Configure [native embeddings](/guides/collections/native-embeddings#collection-schema) with an `embedding` block on a vector field. Its `sources` list holds `EmbeddingSource` objects in every SDK.
 
 TypeScript and Go provide `IndexConfigsNativeEmbeddingVector`; Go wraps this with `CreateIndexConfigsUnionNativeEmbeddingVector`.
+
+### Field descriptions and consistent reads
+
+Every index config type carries an optional [field description](/guides/collections/index-types#field-descriptions): Python exposes `description` on the `IndexConfigs`, `IndexConfigsText`, `IndexConfigsVector`, and `IndexConfigsObject` models and their TypedDicts; TypeScript types it as `FieldDescription` (`description?: string | null`) on every variant; Go adds `Description *string` to every `IndexConfigs*` struct, and `lambdadb.String("")` clears a stored description on update.
+
+[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) accept a branch ref or an alias ref in every SDK. Python (`consistent_read=True`) raises a `ValueError` for a tag ref and TypeScript (`consistentRead: true`) rejects a tag ref before sending a request; Go sends the request and surfaces the server's `400`. An alias that targets a tag is rejected by the server in every SDK.
 
 ## Data versioning support
 

@@ -154,7 +154,8 @@ The REST response wraps the collection details in `collection`. SDK convenience 
     "indexConfigs": {
       "title": {
         "type": "text",
-        "analyzers": ["standard", "korean"]
+        "analyzers": ["standard", "korean"],
+        "description": "Product title shown in search results"
       },
       "embedding": {
         "type": "vector",
@@ -175,7 +176,7 @@ The REST response wraps the collection details in `collection`. SDK convenience 
 }
 ```
 
-Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds.
+Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds. A field's `description` appears in `indexConfigs` only when one is set; see [Field descriptions](/guides/collections/index-types#field-descriptions).
 
 ## Configure a collection
 
@@ -201,9 +202,34 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 | `description` | Replaces the description; `""` clears it. See [metadata limits](/guides/get-started/limits#collections-and-schema). |
 | `tags` | Replaces the entire metadata map, rather than merging keys; `{}` clears it. |
 | `snapshotRetentionInDays` | Integer within the [supported retention range](/guides/get-started/limits#collections-and-schema); there is no unlimited-retention value for this setting. Snapshots pinned by an existing tag remain available beyond this period; see [Snapshot retention](/guides/collections/create-a-collection#snapshot-retention). |
-| `indexConfigs` | Nonempty full schema, preserving existing fields and their settings while adding top-level or nested fields. |
+| `indexConfigs` | Nonempty full schema, preserving existing fields and their settings while adding top-level or nested fields. A field's `description` is the only existing setting that can change. |
 
 New fields can be added under existing objects at any depth. Include all existing fields in the submitted schema, including nested children, and preserve their types and settings. For example, adding `profile.city` is supported when `profile.name` and its settings are retained. Removing an existing field or changing its type, analyzers, vector settings, or embedding configuration is rejected. `partitionConfig` and `defaultBranchName` cannot be changed with PATCH.
+
+### Field descriptions
+
+Every field in `indexConfigs`, including nested `objectIndexConfigs` children, accepts an optional `description` of up to 255 characters. It is metadata only: it never affects indexing, and changing it does not reindex the field. On create, omitting it, `null`, or `""` means no description. On PATCH, omitting a field's `description` or sending `null` keeps the stored value, `""` clears it, and any other string replaces it. The server-managed `id` field does not accept a description. See [Field descriptions](/guides/collections/index-types#field-descriptions) for examples on every index type.
+
+To change only a description, resend the full schema with the new value and every other setting unchanged:
+
+```bash
+curl -i -X PATCH \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "indexConfigs": {
+      "title": {
+        "type": "text",
+        "analyzers": ["standard", "korean"],
+        "description": "Localized product title shown in search results"
+      },
+      "embedding": { "type": "vector", "dimensions": 768, "similarity": "cosine" }
+    }
+  }'
+```
+
+The response returns the updated `collection`, and the `title` field keeps its analyzers and indexed data.
 
 Described and listed collections include the server-managed top-level `id` field as `{"type": "keyword"}`. You can send a described `indexConfigs` back unchanged, with that `id` entry, or omit it; any other `id` configuration, an `id` inside an object field, or another reserved field name is rejected.
 

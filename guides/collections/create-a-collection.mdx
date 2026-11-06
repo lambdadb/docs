@@ -12,7 +12,7 @@ This page shows you how to create a collection with various configurations.
 | Parameter | Type | Required | Description |
 |:----------|:-----|:---------|:------------|
 | collectionName | string | ✓ | Unique name within the project; 3 to 52 letters, numbers, underscores, or hyphens |
-| indexConfigs | object | ✓ | Nonempty field configuration for indexing |
+| indexConfigs | object | ✓ | Nonempty field configuration for indexing; each field accepts an optional [`description`](/guides/collections/index-types#field-descriptions) |
 | description | string |  | Collection description; see [metadata limits](/guides/get-started/limits#collections-and-schema) |
 | tags | object |  | Up to five metadata key-value pairs |
 | partitionConfig | object |  | Partition configuration |
@@ -22,7 +22,7 @@ This page shows you how to create a collection with various configurations.
 
 The simplest way to create a collection is to provide the collection name and the field [index configurations](/guides/collections/index-types).
 
-These examples explicitly select Japanese, Korean, and English analyzers for `content`. Select the analyzers that fit your data using [Choose text analyzers](/guides/collections/choose-text-analyzers); omitting `analyzers` uses `["standard"]`.
+These examples explicitly select Japanese, Korean, and English analyzers for `content`. Select the analyzers that fit your data using [Choose text analyzers](/guides/collections/choose-text-analyzers); omitting `analyzers` uses `["standard"]`. The optional `description` on `content` documents what the field holds and does not affect indexing; see [Field descriptions](/guides/collections/index-types#field-descriptions).
 
 <CodeGroup>
 
@@ -40,6 +40,7 @@ with LambdaDB(
         "content": {
             "type": "text",
             "analyzers": ["japanese", "korean", "english"],
+            "description": "Article body in Japanese, Korean, or English",
         },
     }
     client.collections.create(collection_name="example-collection", index_configs=basic_config)
@@ -60,7 +61,11 @@ await client.createCollection({
   indexConfigs: {
     url: { type: "keyword" },
     author: { type: "keyword" },
-    content: { type: "text", analyzers: ["japanese", "korean", "english"] },
+    content: {
+      type: "text",
+      analyzers: ["japanese", "korean", "english"],
+      description: "Article body in Japanese, Korean, or English",
+    },
   },
 });
 ```
@@ -91,6 +96,7 @@ func main() {
       "content": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
         Type: components.TypeTextText,
         Analyzers: []components.Analyzer{components.AnalyzerJapanese, components.AnalyzerKorean, components.AnalyzerEnglish},
+        Description: lambdadb.String("Article body in Japanese, Korean, or English"),
       }),
     },
   })
@@ -114,7 +120,11 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
         "indexConfigs": {
           "url": { "type": "keyword" },
           "author": { "type": "keyword" },
-          "content": { "type": "text", "analyzers": ["japanese", "korean", "english"] }
+          "content": {
+            "type": "text",
+            "analyzers": ["japanese", "korean", "english"],
+            "description": "Article body in Japanese, Korean, or English"
+          }
         }
       }'
 ```
