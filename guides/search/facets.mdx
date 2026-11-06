@@ -52,7 +52,7 @@ Use facets with `queryString`, `bool` combinations of supported queries, or no q
 
 Adding [native reranking](/guides/search/native-reranking) preserves these restrictions. For supported scoring lexical queries with positive `size`, counts still cover all matches and are unchanged by reranking or fallback; they are not counts of the reranked candidate pool. Facet-only `size: 0` requests cannot rerank.
 
-The existing `partitionFilter`, `ref`, and `consistentRead` rules apply. Counts use the selected Branch, Tag, or Alias and the same pending-write visibility as document results. `consistentRead: true` requires a direct Branch read (or the default main Branch when `ref` is omitted); Tags and Aliases reject it. Facets do not introduce a stronger global snapshot guarantee.
+The existing `partitionFilter`, `ref`, and `consistentRead` rules apply. Counts use the selected Branch, Tag, or Alias and the same pending-write visibility as document results. `consistentRead: true` requires a Branch read, either directly (including the default main Branch when `ref` is omitted) or through an Alias that currently targets a Branch; Tags and Aliases that target a Tag reject it. Facets do not introduce a stronger global snapshot guarantee.
 
 ## Limits and cost
 

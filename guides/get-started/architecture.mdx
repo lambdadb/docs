@@ -94,7 +94,7 @@ The WAL records pending changes separately; Builder incorporates those changes i
 
 By default, reads use the selected committed snapshot, so newly acknowledged writes may not be visible immediately. For a branch query or fetch with `consistentRead: true`, Writer combines the committed snapshot with eligible pending changes, including updates and deletes.
 
-Consistent reads require a direct branch selector; tags and aliases do not support them. Pending bulk imports remain invisible until Builder commits them to a snapshot. A consistent read can return `429` when its pending payload exceeds the supported limit. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
+Consistent reads require a branch target, selected directly or through an alias that currently targets a branch; tags and aliases that target a tag do not support them. Pending bulk imports remain invisible until Builder commits them to a snapshot. A consistent read can return `429` when its pending payload exceeds the supported limit. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
 
 Query coordination merges and deduplicates candidates before returning results. When requested, [native reranking](/guides/search/native-reranking) evaluates globally merged candidates before the final `size` limit.
 
