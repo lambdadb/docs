@@ -410,7 +410,7 @@ Supplying only one of `refKind` or `refName` is invalid.
 
 ### Consistent reads
 
-Query and fetch requests support `consistentRead: true` only when they directly select a branch. Tag and alias reads reject it, including an alias that currently targets a branch.
+Query and fetch requests support `consistentRead: true` when they select a branch directly or through an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject it with `400`.
 
 Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
 

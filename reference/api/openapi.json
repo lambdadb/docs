@@ -364,6 +364,15 @@
           }
         ]
       },
+      "FieldDescription": {
+        "title": "FieldDescription",
+        "type": [
+          "string",
+          "null"
+        ],
+        "maxLength": 255,
+        "description": "Optional free-form explanation of what the field holds, returned in collection reads so agents and SDK users can discover field meanings. It never affects indexing and can be added, changed, or cleared on an existing field without reindexing. On PATCH, omitting it or sending null keeps the stored description, an empty string clears it, and any other value replaces it. Not accepted on the server-managed id field."
+      },
       "IndexConfigs": {
         "title": "IndexConfigs",
         "type": "object",
@@ -439,6 +448,9 @@
                   "default": [
                     "standard"
                   ]
+                },
+                "description": {
+                  "$ref": "#/components/schemas/FieldDescription"
                 }
               },
               "additionalProperties": false,
@@ -475,6 +487,9 @@
                     "euclidean"
                   ],
                   "default": "cosine"
+                },
+                "description": {
+                  "$ref": "#/components/schemas/FieldDescription"
                 }
               },
               "additionalProperties": false,
@@ -500,6 +515,9 @@
                 },
                 "embedding": {
                   "$ref": "#/components/schemas/EmbeddingConfig"
+                },
+                "description": {
+                  "$ref": "#/components/schemas/FieldDescription"
                 }
               },
               "additionalProperties": false,
@@ -520,6 +538,9 @@
                     "boolean",
                     "sparseVector"
                   ]
+                },
+                "description": {
+                  "$ref": "#/components/schemas/FieldDescription"
                 }
               },
               "description": "Types that do not need additional parameters.",
@@ -539,6 +560,9 @@
                 "objectIndexConfigs": {
                   "type": "object",
                   "additionalProperties": true
+                },
+                "description": {
+                  "$ref": "#/components/schemas/FieldDescription"
                 }
               },
               "additionalProperties": false,
@@ -550,7 +574,7 @@
           ]
         },
         "minProperties": 1,
-        "description": "Nonempty full schema. Collection updates preserve all existing fields and their settings while allowing new top-level fields and nested children at any depth. Removing or changing an existing field is rejected. Collection responses include the server-managed top-level id field as {\"type\":\"keyword\"}. Requests may omit it or send exactly that configuration, so returned indexConfigs can be sent back unchanged; any other id configuration, id inside an object field, or other reserved internal field name is rejected."
+        "description": "Nonempty full schema. Collection updates preserve all existing fields and their settings while allowing new top-level fields and nested children at any depth. Removing or changing an existing field is rejected; only the optional description of a field may change. Collection responses include the server-managed top-level id field as {\"type\":\"keyword\"}. Requests may omit it or send exactly that configuration, so returned indexConfigs can be sent back unchanged; any other id configuration, id inside an object field, or other reserved internal field name is rejected."
       },
       "PartitionConfig": {
         "title": "PartitionConfig",
@@ -730,7 +754,7 @@
         "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
-        "description": "Overlay eligible pending writes on a directly selected branch's committed data. Defaults to false. Tag and alias reads reject true. Pending bulk imports are excluded. Returns 429 if the pending payload exceeds the consistent-read limit."
+        "description": "Overlay eligible pending writes on the selected branch's committed data. Defaults to false. Allowed when ref selects a branch directly or an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject true with 400. Pending bulk imports are excluded. Returns 429 if the pending payload exceeds the consistent-read limit."
       },
       "IncludeVectors": {
         "title": "IncludeVectors",
@@ -1587,7 +1611,8 @@
                               "type": "text",
                               "analyzers": [
                                 "english"
-                              ]
+                              ],
+                              "description": "Book title as printed on the cover"
                             },
                             "category": {
                               "type": "keyword"
@@ -1788,7 +1813,8 @@
                         "type": "text",
                         "analyzers": [
                           "english"
-                        ]
+                        ],
+                        "description": "Book title as printed on the cover"
                       },
                       "category": {
                         "type": "keyword"
@@ -2115,7 +2141,8 @@
                             "type": "text",
                             "analyzers": [
                               "english"
-                            ]
+                            ],
+                            "description": "Book title as printed on the cover"
                           },
                           "category": {
                             "type": "keyword"
@@ -2258,7 +2285,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema; the server-managed id field may be included as returned or omitted. New fields may be added at any object depth while retaining existing fields and their settings.",
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema; the server-managed id field may be included as returned or omitted. New fields may be added at any object depth while retaining existing fields and their settings. Field descriptions are the exception: an omitted field description keeps the stored one, an empty string clears it, and a new value replaces it without reindexing.",
                 "properties": {
                   "indexConfigs": {
                     "anyOf": [
@@ -2418,7 +2445,8 @@
                             "type": "text",
                             "analyzers": [
                               "english"
-                            ]
+                            ],
+                            "description": "Book title as printed on the cover"
                           },
                           "category": {
                             "type": "keyword"
@@ -4237,7 +4265,10 @@
                     "ref": {
                       "properties": {
                         "kind": {
-                          "const": "branch"
+                          "enum": [
+                            "branch",
+                            "alias"
+                          ]
                         }
                       }
                     }
@@ -4573,7 +4604,10 @@
                     "ref": {
                       "properties": {
                         "kind": {
-                          "const": "branch"
+                          "enum": [
+                            "branch",
+                            "alias"
+                          ]
                         }
                       }
                     }

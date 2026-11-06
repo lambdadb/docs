@@ -50,7 +50,7 @@ Schema updates are additive: preserve every existing field and its configuration
 | Facet aggregation | 10,000 distinct `(field, value)` buckets and 256 KiB of distinct value bytes across requested fields | The same value on two fields counts twice. Exceeding either budget returns HTTP `400`; lowering returned bucket counts alone does not reduce aggregation work. See [facet handling](/guides/search/facets#limits-and-cost) |
 | Consistent-read pending payload | Less than 1 GiB by default, on the selected branch | Reaching the configured threshold returns HTTP `429`; wait for indexing to catch up |
 
-[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available only for query and fetch against a branch directly. They exclude pending bulk imports; tags, aliases, and list requests do not support them.
+[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available only for query and fetch against a branch, selected directly or through an alias that currently targets a branch. They exclude pending bulk imports; tags, aliases that target a tag, and list requests do not support them.
 
 Large query, fetch, and list results can return `isDocsInline: false` and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; it is not a total-result cap. Other processing and memory budgets still apply. Follow the [large-result download instructions](/guides/search/limits#large-results).
 
