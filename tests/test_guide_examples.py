@@ -49,3 +49,32 @@ class GuideExampleTest(unittest.TestCase):
                           ("nativeEmbeddingKnnQuery", "cohereMultimodalKnnQuery")], queries)
         for query in queries:
             validate(REQUEST["schema"], query)
+
+    def test_data_versioning_guide_matches_spec(self):
+        base = "/collections/{collectionName}"
+
+        def body(path, method, code=None):
+            operation = SPEC["paths"][base + path][method]
+            content = operation["requestBody"] if code is None else operation["responses"][code]
+            return content["content"]["application/json"]["schema"]
+
+        examples = blocks("guides/data-versioning/branches-tags-aliases.mdx")
+        for key, path in (("branch", "/branches/{branchName}"), ("tag", "/tags/{tagName}"),
+                          ("alias", "/aliases/{aliasName}")):
+            responses = [example for example in examples if isinstance(example.get(key), dict)]
+            self.assertEqual(1, len(responses), key)
+            # One ref has one shape: its read, its creation and each entry of its listing.
+            validate(body(path, "get", "200"), responses[0])
+            validate(body("/" + key + ("es" if key != "tag" else "s"), "post", "201"), responses[0])
+        creations = [example for example in examples if "branchName" in example]
+        self.assertEqual(2, len(creations))
+        for creation in creations:
+            validate(body("/branches", "post"), creation)
+
+    def test_collection_creation_guide_matches_spec(self):
+        created = [example for example in blocks("guides/collections/create-a-collection.mdx")
+                   if "projectName" in example.get("collection", {})]
+        self.assertEqual(1, len(created))
+        validate(SPEC["paths"]["/collections"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
+                 created[0])
+
