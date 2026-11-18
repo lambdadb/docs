@@ -33,7 +33,7 @@ The bulk limit applies to the uploaded object; individual documents must still f
 | Dense vector dimensions | 64–4,096 | Must match the configured field. Native embedding models can impose narrower choices; see [index types](/guides/collections/index-types) and [supported models](/guides/collections/native-embeddings#supported-providers-and-models) |
 | Indexed keyword value | 4,096 characters per value | Longer values remain stored but are omitted from the keyword index, including sorting and facets. This is not a general text-field length limit |
 
-Schema updates are additive: preserve every existing field and its configuration; only a field's `description` can change afterward. See [collection update rules](/guides/collections/manage-collections#configure-a-collection).
+Schema updates are additive and apply to one branch: preserve every existing field and its configuration; only a field's `description` can change afterward. See [schema update rules](/guides/collections/manage-collections#update-the-index-schema).
 
 ## Search and reads
 
@@ -44,6 +44,7 @@ Schema updates are additive: preserve every existing field and its configuration
 | Fetch IDs | 1–1,000 per request | Split larger ID sets into [fetch requests](/guides/documents/fetch-data) |
 | Document list page | 1–1,000; default 100 | Follow `nextPageToken` to [list more documents](/guides/documents/list-data) |
 | Collection list page | 1–100; default 10 | A page size is not a collection count limit |
+| Branch, tag, and alias list page | 1–100; default 10 | Follow `nextPageToken` to [list more refs](/guides/data-versioning/branches-tags-aliases#page-through-ref-lists) |
 | Boolean query clauses | 4,096 | Queries exceeding the clause limit are rejected |
 | Sparse query vector | 1–4,096 term-weight entries; weights 0–64 | Applies to query input; see [sparse vector search](/guides/search/sparse-vector) |
 | Bayesian candidate budget | `1 <= size <= candidateSize <= 1000` | Exactly two unboosted signals. With reranking, use `rerank.candidateSize` instead; see [Bayesian request construction](/guides/search/hybrid#bayesian-hybrid-query) |

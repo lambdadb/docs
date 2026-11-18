@@ -113,7 +113,11 @@ func versioningExample(ctx context.Context, client *lambdadb.Client) error {
 
 </CodeGroup>
 
-This fetch includes eligible pending writes on `candidate`; it does not prove that a snapshot has committed. Before creating a tag, verify the intended committed data with `consistentRead: false`. See [Consistent reads](#consistent-reads) for limits and the bulk-import exclusion.
+This fetch includes eligible pending writes on `candidate`; it does not prove that a snapshot has committed. See [Consistent reads](#consistent-reads) for limits and the bulk-import exclusion.
+
+<Note>
+The SDK versions listed under [supported SDK versions](/reference/sdk/introduction#supported-sdk-versions) create, list, and delete refs. The individual ref routes, branch schema updates, ref list pagination, and tag sources for branches described below are REST operations those versions do not include; call the REST API for them.
+</Note>
 
 The SDK functions below take an initialized client and use the same `knowledge-base` collection. Call Python functions inside the client's `with LambdaDB(...) as client:` block, before it closes. Each example states its required refs and data; they are not an automatic sequence after the write above.
 
@@ -132,9 +136,11 @@ curl -i -X POST \
   }'
 ```
 
-Omit `source` to use `main`. A branch can be created only from another branch in the same collection; tag and alias sources return `400 BadRequest`. A branch created from an empty source has explicitly `null` `headSnapshot` and `parentSnapshot`, but `parentBranch` still identifies the source branch.
+Omit `source` to use `main`. A branch can be created from another branch or from a tag in the same collection; an alias source returns `400 BadRequest`. A branch created from an empty source branch has explicitly `null` `headSnapshot` and `parentSnapshot`, but `parentBranch` still identifies the source branch.
 
-Branch creation copies the source's committed state. It does not copy pending writes. Schema and retention updates remain collection-scoped; tag reads use their pinned schema.
+Without `source.asOf`, the new branch starts from the source's committed snapshot and also takes over the writes that were still pending on the source at creation time. Those writes are not part of its snapshot yet: ordinary reads of the new branch see them after its own build commits them, and a [consistent read](#consistent-reads) on the branch includes the eligible ones immediately. Writes that reach the source afterward do not appear on the new branch.
+
+The new branch also inherits its source's index schema and owns it from then on; see [Branch index schemas](#branch-index-schemas). Retention remains collection-scoped.
 
 ```json
 {
@@ -152,10 +158,31 @@ Branch creation copies the source's committed state. It does not copy pending wr
       "snapshotId": "<snapshot-id>",
       "snapshotCommittedAt": 1788335940000
     },
+    "indexConfigs": {
+      "title": { "type": "text" },
+      "id": { "type": "keyword" }
+    },
+    "numDocs": 1250,
+    "dataUpdatedAt": 1788335940000,
     "createdAt": 1788336000000
   }
 }
 ```
+
+### Create a branch from a tag
+
+Set `source.kind` to `tag` to start a writable branch from a tag:
+
+```json
+{
+  "branchName": "hotfix",
+  "source": { "kind": "tag", "name": "validated-2026-09" }
+}
+```
+
+The branch inherits the tag's snapshot, its pinned index schema, and the writes the tag captured when it was created. Writes made to the tag's original branch after the tag was created are excluded. `parentBranch` is `null` for a branch created from a tag, and `parentSnapshot` is the tag's snapshot at creation. `source.asOf` is not allowed with a tag source.
+
+### List and describe branches
 
 List branches:
 
@@ -165,19 +192,48 @@ curl -i \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
-The response contains a `branches` array with the same fields as the create response:
+The response contains a `branches` array, one page at a time in name order; see [Page through ref lists](#page-through-ref-lists). Each entry has the same fields as the create response. Read one branch with `GET .../branches/{branchName}`, which wraps the same object in `branch`; a name that is not a branch returns `404`.
 
 | Field | Meaning |
 | :---- | :------ |
-| `parentBranch` | Fixed direct source branch at creation time, with `branchId` and `name`. Explicitly `null` for `main` or when no parent was recorded. |
+| `parentBranch` | Fixed direct source branch at creation time, with `branchId` and `name`. Explicitly `null` for `main`, for a branch created from a tag, or when no parent was recorded. |
 | `headSnapshot` | Current committed head, or `null` before a committed head exists. |
 | `parentSnapshot` | Fixed snapshot from which the branch was created, not the previous head. `null` for `main` and branches created from an empty source, even after their first commit. |
 | `snapshotCommittedAt` | Snapshot commit time in Unix epoch milliseconds, inside each non-null snapshot object alongside `snapshotId`. |
+| `indexConfigs` | The branch's own index schema. |
+| `numDocs` | Document count in the branch's committed head; `0` for an empty branch. |
+| `dataUpdatedAt` | Last data update of the committed head in Unix epoch milliseconds; `null` for an empty branch. |
 | `createdAt` | Branch creation time in Unix epoch milliseconds, independent of snapshot commit times. |
 
 When created from a nonempty source, a branch initially has matching head and parent snapshots. The head can advance while the parent stays fixed. Parent metadata does not guarantee that the original snapshot remains available beyond retention. Branch responses do not have a top-level `snapshotId`.
 
 `parentBranch` records the requested source branch, not the branch where the selected snapshot originated. For example, a branch created from `dev` records `dev` even if its snapshot originated on `main`, including when selected through `asOf`. This historical metadata does not prevent deleting the parent branch. Deleting the parent or recreating its name does not change the recorded identity.
+
+## Branch index schemas
+
+A branch owns its index schema. It inherits the schema when it is created: the source branch's current schema, the tag's pinned schema, or, with `source.asOf`, the schema of the selected snapshot. After that, a schema update changes only the branch it targets. Updating another branch, including `main`, does not change it.
+
+Add fields to one branch with `PATCH .../branches/{branchName}`. The body takes `indexConfigs` only:
+
+```bash
+curl -i -X PATCH \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches/candidate" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "indexConfigs": {
+      "title": { "type": "text" },
+      "category": { "type": "keyword" }
+    }
+  }'
+```
+
+The response is the updated `branch` object. The same additive rules as a [collection schema update](/guides/collections/manage-collections#update-the-index-schema) apply within the branch: send the branch's complete existing schema, preserve every existing field and its settings, and add new fields at any depth. A field's `description` is the only existing setting that can change. Concurrent additive updates of the same branch are merged.
+
+- Updating `main` this way also updates the `indexConfigs` shown on the collection, which mirror `main`.
+- Only a branch can be updated. Naming a tag or an alias returns `400 BadRequest`; a name that does not exist returns `404`.
+- To bring a schema change from a branch to `main`, apply the same additive change to `main`. There is no automatic promotion.
+- An alias can be retargeted between branches whose schemas differ; the server does not check it. Read the alias with `GET .../aliases/{aliasName}` to see which schema its readers currently get.
 
 ## Point-in-time branches
 
@@ -241,7 +297,7 @@ func createHistoricalBranch(ctx context.Context, client *lambdadb.Client, cutoff
 
 ## Create and list tags
 
-A tag pins one committed snapshot and cannot be retargeted:
+A tag is a fixed, read-only name for the state of its source at creation. It cannot be retargeted:
 
 ```bash
 curl -i -X POST \
@@ -254,13 +310,15 @@ curl -i -X POST \
   }'
 ```
 
-Omit `source` to pin the current `main` snapshot. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array.
+Omit `source` to tag the current state of `main`. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../tags/{tagName}` returns one `tag`. A name that is not a tag returns `404`.
 
-A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag pins the same snapshot; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
+A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag copies the same fixed state; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
+
+Without `source.asOf`, a tag pins the source's committed snapshot together with the writes that were still pending on the source at that moment. Query and fetch reads of the tag include those captured writes, except pending bulk imports, which appear after a background build materializes them. Document listing shows captured writes once a background build has published them into the tag's snapshot. With `source.asOf`, the tag pins only the selected committed snapshot. A tag never accepts writes, and its captured state does not change when the source moves on.
 
 As long as the tag exists, its pinned snapshot remains available even beyond the collection's [snapshot retention period](/guides/collections/create-a-collection#snapshot-retention). For example, with a 30-day retention period, a tagged snapshot remains readable through the tag after 30 days. This makes tags suitable for long-term savepoints, such as a data version associated with a code release. The tag preserves that snapshot, not all earlier snapshots.
 
-Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds.
+Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs`, `numDocs`, `dataUpdatedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds. `indexConfigs` is the schema the tag pins, and `numDocs` and `dataUpdatedAt` describe its pinned snapshot.
 
 ```json
 {
@@ -268,12 +326,18 @@ Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, and `createdA
     "name": "validated-2026-09",
     "snapshotId": "<snapshot-id>",
     "snapshotCommittedAt": 1788335940000,
+    "indexConfigs": {
+      "title": { "type": "text" },
+      "id": { "type": "keyword" }
+    },
+    "numDocs": 1250,
+    "dataUpdatedAt": 1788335940000,
     "createdAt": 1788336060000
   }
 }
 ```
 
-A tag cannot be created from an empty head. Verify the intended committed data with `consistentRead: false` before creating a release tag; a read that includes pending writes does not prove those writes will be captured by the tag. Ref lists are unpaginated, and there are no individual branch, tag, or alias GET routes.
+A tag cannot be created from an empty head.
 
 ## Create, retarget, and list aliases
 
@@ -302,11 +366,32 @@ curl -i -X PATCH \
   }'
 ```
 
-`GET .../aliases` returns an `aliases` array. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
+`GET .../aliases` returns an `aliases` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../aliases/{aliasName}` returns one `alias`. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, `indexConfigs`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
+
+`indexConfigs` on an alias is the schema its readers currently get: the target branch's current schema or the target tag's pinned schema. Create and retarget responses carry it too, so a retarget shows the schema the alias now serves.
+
+```json
+{
+  "alias": {
+    "aliasId": "<alias-id>",
+    "aliasName": "production-read",
+    "targetKind": "TAG",
+    "targetName": "validated-2026-09",
+    "targetId": "<tag-id>",
+    "aliasRevision": 0,
+    "dangling": false,
+    "indexConfigs": {
+      "title": { "type": "text" },
+      "id": { "type": "keyword" }
+    },
+    "createdAt": 1788336120000
+  }
+}
+```
 
 Deleting a non-default branch or a tag that is referenced by any alias returns `409 Conflict`. Delete or retarget every referencing alias before deleting the target; retrying the same deletion without changing those references will not resolve the conflict. Deleting an alias does not delete its target.
 
-Aliases bind to the target's identity, not just its name. The response retains a `dangling` field for a missing target; if such a state is encountered, reads return `400 BadRequest`. It is not the normal result of target deletion, which is blocked while aliases reference it. Recreating a target name does not repair the old identity binding. Selecting a ref that does not exist returns `404 ResourceNotFound`.
+Aliases bind to the target's identity, not just its name. The response retains a `dangling` field for a missing target; if such a state is encountered, document reads through the alias return `400 BadRequest`, while `GET .../aliases/{aliasName}` still returns the alias with `dangling: true` and `indexConfigs: null`. It is not the normal result of target deletion, which is blocked while aliases reference it. Recreating a target name does not repair the old identity binding. Selecting a ref that does not exist returns `404 ResourceNotFound`.
 
 ### Publish a tag through an alias with the SDKs
 
@@ -383,6 +468,28 @@ func publishTag(ctx context.Context, client *lambdadb.Client) error {
 
 </CodeGroup>
 
+## Page through ref lists
+
+The branch, tag, and alias lists page the same way as the collection list. Each returns up to `size` entries in name order and, when more entries follow, a `nextPageToken`:
+
+```bash
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches?size=20" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+# Next page (use nextPageToken from the previous response)
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches?size=20&pageToken=YOUR_PAGE_TOKEN" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+| Parameter | Description | Default |
+| :-------- | :---------- | :------ |
+| `size` | Entries per page, from 1 to 100. | 10 |
+| `pageToken` | Opaque token from the previous page. Omit it for the first page. | |
+
+`nextPageToken` is absent on the last page. Treat it as opaque and return it unchanged to the same list. An empty or malformed `pageToken`, a `size` outside the range, or any other query parameter returns `400 BadRequest`. A client that reads only the first response sees at most `size` entries, so follow `nextPageToken` until it is absent to see every ref.
+
 ## Read from a ref
 
 Query, fetch, and extended list request bodies accept:
@@ -412,7 +519,7 @@ Supplying only one of `refKind` or `refName` is invalid.
 
 Query and fetch requests support `consistentRead: true` when they select a branch directly or through an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject it with `400`.
 
-Consistent reads overlay eligible pending writes on committed data. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`.
+Consistent reads overlay eligible pending writes, including those a branch took over from its source at creation, on the branch's committed snapshot; ordinary branch reads use only the snapshot. Query and fetch reads of a tag already include the writes the tag captured, without the flag. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`: on every ref, document listing reads only the published snapshot.
 
 Page tokens record a search position, not a fixed snapshot. Branches can advance and aliases can move between pages. Use the same immutable tag on every page for a stable export, keeping filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
 

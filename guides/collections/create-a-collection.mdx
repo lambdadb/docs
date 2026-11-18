@@ -136,19 +136,33 @@ A successful REST request returns `201 Created`. Collection creation also create
 ```json
 {
   "collection": {
+    "projectName": "your-project",
     "collectionName": "example-collection",
+    "indexConfigs": {
+      "url": { "type": "keyword" },
+      "author": { "type": "keyword" },
+      "content": {
+        "type": "text",
+        "analyzers": ["japanese", "korean", "english"],
+        "description": "Article body in Japanese, Korean, or English"
+      },
+      "id": { "type": "keyword" }
+    },
     "description": "Articles searchable by URL, author, and content",
     "tags": { "environment": "production" },
+    "numPartitions": 1,
+    "numDocs": 0,
     "defaultBranchName": "main",
     "snapshotRetentionInDays": 30,
-    "createdAt": 1788336000000
+    "createdAt": 1788336000000,
+    "updatedAt": 1788336000000
   }
 }
 ```
 
 Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch milliseconds.
 
-The create response is intentionally compact. Use describe or list to retrieve `indexConfigs`, document counts, and the full collection model. `201` confirms catalog creation; it does not guarantee query-serving readiness or completed indexing. Handle loading and retry states using actual operations; there is no collection-status readiness field to poll.
+The create response has the same shape as [describing the collection](/guides/collections/manage-collections#describe-a-collection): it includes the normalized `indexConfigs` of `main`, with the server-managed `id` field, so no second request is needed to read the schema that was stored. `dataUpdatedAt` is absent until the first snapshot commits. `201` confirms catalog creation; it does not guarantee query-serving readiness or completed indexing. Handle loading and retry states using actual operations; there is no collection-status readiness field to poll.
 
 <a id="create-a-collection-with-managed-embeddings" />
 

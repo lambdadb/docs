@@ -38,7 +38,7 @@ These CRUD-like operations can take place at both individual document level and 
 
 Every collection has a default branch named `main`. Data versioning adds three kinds of named ref within that collection:
 
-- A **branch** is a writable line of history and can be created only from another branch in the same collection.
+- A **branch** is a writable line of history with its own index schema. It can be created from another branch or from a tag in the same collection.
 - A **tag** is an immutable name for one committed snapshot.
 - An **alias** is a mutable read name that points to a branch or tag.
 
@@ -63,7 +63,7 @@ This feature is particularly useful when you want to:
 
 <Info>
 
-Changes written to one branch do not change another branch. Schema updates, metadata tags, partitioning, and retention are configured at the collection level. Branches are not independent schema-editing environments; tag reads retain the schema pinned with their snapshot.
+Changes written to one branch do not change another branch. Each branch also owns its index schema: it inherits the schema when it is created, and a schema update changes only the branch it targets. Metadata tags, partitioning, and retention are configured at the collection level. Tag reads retain the schema pinned with the tag.
 
 </Info>
 

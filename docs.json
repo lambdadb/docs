@@ -140,12 +140,16 @@
                 "pages": [
                   "reference/api/endpoint/branch-create",
                   "reference/api/endpoint/branch-list",
+                  "reference/api/endpoint/branch-describe",
+                  "reference/api/endpoint/branch-configure",
                   "reference/api/endpoint/branch-delete",
                   "reference/api/endpoint/tag-create",
                   "reference/api/endpoint/tag-list",
+                  "reference/api/endpoint/tag-describe",
                   "reference/api/endpoint/tag-delete",
                   "reference/api/endpoint/alias-create",
                   "reference/api/endpoint/alias-list",
+                  "reference/api/endpoint/alias-describe",
                   "reference/api/endpoint/alias-retarget",
                   "reference/api/endpoint/alias-delete"
                 ]

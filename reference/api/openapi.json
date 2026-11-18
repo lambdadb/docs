@@ -3,7 +3,7 @@
   "info": {
     "title": "LambdaDB API",
     "summary": "LambdaDB Open API Spec",
-    "version": "1.1.1"
+    "version": "1.3.0"
   },
   "tags": [
     {
@@ -665,7 +665,8 @@
             "description": "Collection name."
           },
           "indexConfigs": {
-            "$ref": "#/components/schemas/IndexConfigs"
+            "$ref": "#/components/schemas/IndexConfigs",
+            "description": "Index schema of the default main branch, as a read-only summary like numDocs and dataUpdatedAt. Other branches carry their own schema: read it from GET /collections/{collectionName}/branches/{branchName}."
           },
           "description": {
             "type": "string",
@@ -754,7 +755,7 @@
         "title": "ConsistentRead",
         "type": "boolean",
         "default": false,
-        "description": "Overlay eligible pending writes on the selected branch's committed data. Defaults to false. Allowed when ref selects a branch directly or an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject true with 400. Pending bulk imports are excluded. Returns 429 if the pending payload exceeds the consistent-read limit."
+        "description": "Overlay eligible inherited and own pending writes on the selected branch's committed snapshot. Defaults to false; ordinary branch reads use only the snapshot. Allowed for a branch or an alias that targets a branch; the alias is resolved when the request is admitted. Tag and tag-alias query/fetch reads internally include eligible fixed inherited writes, but reject true with 400. Pending bulk imports are excluded until materialized by a background build. Returns 429 if the eligible pending payload exceeds the consistent-read limit."
       },
       "IncludeVectors": {
         "title": "IncludeVectors",
@@ -821,55 +822,7 @@
         "type": "object",
         "properties": {
           "collection": {
-            "type": "object",
-            "properties": {
-              "collectionName": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "tags": {
-                "type": "object",
-                "description": "Collection metadata tags. Up to five entries.",
-                "maxProperties": 5,
-                "additionalProperties": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 127,
-                  "pattern": "^[^:#,]+$"
-                },
-                "propertyNames": {
-                  "pattern": "^[A-Za-z0-9_.-]{1,63}$"
-                }
-              },
-              "defaultBranchName": {
-                "type": "string",
-                "enum": [
-                  "main"
-                ]
-              },
-              "snapshotRetentionInDays": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 31,
-                "default": 30,
-                "description": "Number of days to retain committed snapshots."
-              },
-              "createdAt": {
-                "type": "integer",
-                "format": "int64",
-                "description": "Collection creation time as Unix epoch milliseconds."
-              }
-            },
-            "required": [
-              "collectionName",
-              "description",
-              "tags",
-              "defaultBranchName",
-              "snapshotRetentionInDays",
-              "createdAt"
-            ]
+            "$ref": "#/components/schemas/CollectionResponse"
           }
         },
         "required": [
@@ -922,7 +875,7 @@
           "asOf": {
             "type": "integer",
             "format": "int64",
-            "description": "Latest committed snapshot cutoff as Unix epoch milliseconds."
+            "description": "Select the latest retained committed snapshot at or before this Unix epoch millisecond cutoff. Inherited and pending WAL are excluded; this is not exact-time WAL restore."
           }
         },
         "required": [
@@ -1006,7 +959,7 @@
             "type": "string"
           },
           "parentBranch": {
-            "description": "Fixed identity and name of the direct source branch, even when its selected snapshot originated on an ancestor or its head was empty. Explicitly null for main or when no parent was recorded. Historical metadata only: it does not prevent parent deletion, and recreating the parent's name does not change this identity.",
+            "description": "Fixed identity and name of the direct source branch, even when its selected snapshot originated on an ancestor or its head was empty. Explicitly null for main, branches created from tags, or when no parent was recorded. Historical metadata only: it does not prevent parent deletion, and recreating the parent's name does not change this identity.",
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ParentBranchDetails"
@@ -1042,6 +995,26 @@
             "type": "integer",
             "format": "int64",
             "description": "Branch creation time as Unix epoch milliseconds."
+          },
+          "indexConfigs": {
+            "$ref": "#/components/schemas/IndexConfigs",
+            "description": "The branch's index schema."
+          },
+          "numDocs": {
+            "type": "integer",
+            "description": "Document count in this branch's committed head; 0 for an empty branch."
+          },
+          "dataUpdatedAt": {
+            "description": "Last data update of this branch's committed head as Unix epoch milliseconds. Explicitly null for an empty branch.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "int64"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1049,6 +1022,9 @@
           "parentBranch",
           "headSnapshot",
           "parentSnapshot",
+          "numDocs",
+          "dataUpdatedAt",
+          "indexConfigs",
           "createdAt"
         ]
       },
@@ -1072,12 +1048,28 @@
             "type": "integer",
             "format": "int64",
             "description": "Tag creation time as Unix epoch milliseconds, independent of the pinned snapshot commit time."
+          },
+          "indexConfigs": {
+            "$ref": "#/components/schemas/IndexConfigs",
+            "description": "Index schema pinned by the tag, including inherited WAL. With source.asOf, this is the selected snapshot's schema."
+          },
+          "numDocs": {
+            "type": "integer",
+            "description": "Document count in the pinned snapshot."
+          },
+          "dataUpdatedAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Last data update of the pinned snapshot as Unix epoch milliseconds."
           }
         },
         "required": [
           "name",
           "snapshotId",
           "snapshotCommittedAt",
+          "numDocs",
+          "dataUpdatedAt",
+          "indexConfigs",
           "createdAt"
         ]
       },
@@ -1111,12 +1103,23 @@
           },
           "dangling": {
             "type": "boolean",
-            "description": "Whether the bound target identity is missing. Reads of a dangling alias return 400. Deletion of a non-default branch or a tag is blocked with 409 while aliases reference it."
+            "description": "Whether the bound target identity is missing. Document reads through a dangling alias return 400; GET /collections/{collectionName}/aliases/{aliasName} still returns the alias with null indexConfigs. Deletion of a non-default branch or a tag is blocked with 409 while aliases reference it."
           },
           "createdAt": {
             "type": "integer",
             "format": "int64",
             "description": "Alias creation time as Unix epoch milliseconds."
+          },
+          "indexConfigs": {
+            "description": "Index schema of the target's version; null for a dangling alias.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndexConfigs"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1127,6 +1130,7 @@
           "targetId",
           "aliasRevision",
           "dangling",
+          "indexConfigs",
           "createdAt"
         ]
       },
@@ -1550,7 +1554,7 @@
           "collections"
         ],
         "operationId": "listCollections",
-        "description": "List all collections in an existing project.",
+        "description": "List all collections in an existing project, one page at a time in name order. A response with more collections to return carries nextPageToken; pass it as pageToken to get the next page, and omit pageToken for the first page. size and pageToken are the only query parameters; any other one, an out-of-range size, or an empty or malformed pageToken returns 400 BadRequest.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1570,9 +1574,10 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Opaque token returned by the previous page. Do not decode or modify it.",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it. Omit it for the first page; an empty value is rejected.",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           }
         ],
@@ -1634,6 +1639,24 @@
                           "dataUpdatedAt": 1788336060000
                         }
                       ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
                     }
                   }
                 }
@@ -1737,7 +1760,7 @@
           "collections"
         ],
         "operationId": "createCollection",
-        "description": "Create a collection.",
+        "description": "Create a collection. The response returns the created collection in the same shape as GET /collections/{collectionName}, including the normalized indexConfigs of its main branch.",
         "security": [
           {
             "ProjectApiKey": []
@@ -1838,14 +1861,33 @@
                   "example": {
                     "value": {
                       "collection": {
+                        "projectName": "example-project-name",
                         "collectionName": "example-collection-name",
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        },
                         "description": "Product catalog",
                         "tags": {
                           "environment": "production"
                         },
+                        "numPartitions": 1,
+                        "numDocs": 0,
                         "defaultBranchName": "main",
                         "snapshotRetentionInDays": 30,
-                        "createdAt": 1788336000000
+                        "createdAt": 1788336000000,
+                        "updatedAt": 1788336000000
                       }
                     }
                   }
@@ -2103,7 +2145,7 @@
           "collections"
         ],
         "operationId": "getCollection",
-        "description": "Get metadata of an existing collection.",
+        "description": "Get metadata of an existing collection. indexConfigs and numDocs describe the default main branch; other branches carry their own schema and statistics on the branch routes.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2266,7 +2308,7 @@
           "collections"
         ],
         "operationId": "updateCollection",
-        "description": "Configure a collection.",
+        "description": "Configure a collection: description, metadata tags and snapshot retention. indexConfigs in this request is the deprecated compatibility path for updating the default main branch's schema; branch schemas are updated on PATCH /collections/{collectionName}/branches/{branchName}. The response keeps returning the default branch's indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2285,7 +2327,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "minProperties": 1,
-                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs must preserve the complete existing schema; the server-managed id field may be included as returned or omitted. New fields may be added at any object depth while retaining existing fields and their settings. Field descriptions are the exception: an omitted field description keeps the stored one, an empty string clears it, and a new value replaces it without reindexing.",
+                "description": "Provide at least one non-null supported field. Omitted or null fields are unchanged. Supplied tags replace the entire metadata map; {} clears tags. An empty description clears it. indexConfigs (deprecated, see the property) updates the default main branch only and must preserve its complete existing schema; the server-managed id field may be included as returned or omitted. New fields may be added at any object depth while retaining existing fields and their settings. Field descriptions are the exception: an omitted field description keeps the stored one, an empty string clears it, and a new value replaces it without reindexing.",
                 "properties": {
                   "indexConfigs": {
                     "anyOf": [
@@ -2296,7 +2338,9 @@
                       {
                         "type": "null"
                       }
-                    ]
+                    ],
+                    "deprecated": true,
+                    "description": "Deprecated: updates the index schema of the default main branch only, exactly as PATCH /collections/{collectionName}/branches/main does. Use the branch route; this field remains until the SDKs, CLI and MCP server have moved to it."
                   },
                   "description": {
                     "anyOf": [
@@ -2596,7 +2640,7 @@
           "collections.docs"
         ],
         "operationId": "listDocs",
-        "description": "List documents in a collection. Vector values are excluded unless includeVectors is true.",
+        "description": "List documents in a collection. Vector values are excluded unless includeVectors is true. All refs, including tags and aliases targeting tags, list only the currently published snapshot. Pending WAL becomes visible to listing only after a builder publishes a snapshot; listing does not apply a WAL overlay.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2839,7 +2883,7 @@
           "collections.docs"
         ],
         "operationId": "listDocsExtended",
-        "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion.",
+        "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion. All refs, including tags and aliases targeting tags, list only the currently published snapshot. Pending WAL becomes visible to listing only after a builder publishes a snapshot; listing does not apply a WAL overlay.",
         "security": [
           {
             "ProjectApiKey": []
@@ -4532,7 +4576,7 @@
                       "null"
                     ],
                     "additionalProperties": true,
-                    "description": "Query object. For native embedding vector fields, use knn.queryText or ordered knn.queryInputs parts with explicit type (text or image) and string value. Cohere accepts mixed parts, OpenAI one text part. A raw knn.queryVector is also accepted for native fields and skips inference. Each knn query requires exactly one non-null queryText, queryInputs or queryVector and has its own k from 1 to 1000, independent of size and candidateSize. Text and multimodal inputs require a native embedding vector field. queryInputs uses the same part, image and byte limits as document inputs. All automatic query inputs are prepared before the first provider call; Cohere preparation checks inference quota before retrieving images. Query structure and per-leg bounds are validated by the server. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
+                    "description": "Query object. For native embedding vector fields, use knn.queryText or ordered knn.queryInputs parts with explicit type (text or image) and string value. Cohere accepts mixed parts, OpenAI one text part. A raw knn.queryVector is also accepted for native fields and skips inference. Each knn query requires exactly one non-null queryText, queryInputs or queryVector and has its own k from 1 to 1000, independent of size and candidateSize. Text and multimodal inputs require a native embedding vector field. queryInputs uses the same part, image and byte limits as document inputs. Each sparseVector.queryVector weight must be greater than 0 and at most 64; a weight outside that range returns 400. All automatic query inputs are prepared before the first provider call; Cohere preparation checks inference quota before retrieving images. Query structure and per-leg bounds are validated by the server. Omit or use null to match all documents. Facets support queryString and bool queries only; vector, sparse vector, and hybrid queries cannot be combined with facets. Bayesian fusion uses a top-level bayesian array of exactly two unboosted subqueries, with no nested fusion or boosts on Boolean descendants. See the Hybrid query guide for candidate budgets."
                   },
                   "consistentRead": {
                     "$ref": "#/components/schemas/ConsistentRead"
@@ -5331,7 +5375,7 @@
           "versioning"
         ],
         "operationId": "createBranch",
-        "description": "Create a writable branch from another branch's committed state in the same collection; pending writes are not copied. Omit source to use main. Only a branch source is allowed; tag and alias sources return 400 BadRequest. Optional source.asOf selects a retained committed snapshot. An empty source can create an empty branch, with parentBranch still recording the source branch.",
+        "description": "Create a writable branch from a branch or tag in the same collection. Without source.asOf, creation pins the source snapshot and fixed inherited and pending WAL ranges without copying WAL or waiting for the source build. The new branch materializes those ranges independently; its ordinary reads remain snapshot-only, while direct consistentRead includes eligible pending writes. Omit source to use main. A branch created from a tag inherits the tag's pinned schema and all writes captured when the tag was created. Later writes to the original branch are excluded. Alias sources and tag sources with asOf return 400 BadRequest. For a branch source, source.asOf selects only the latest retained committed snapshot at or before the cutoff, excluding all pending and inherited WAL. An empty source branch is allowed, with parentBranch still recording the source branch. The response carries the new branch's inherited indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -5357,7 +5401,7 @@
                     "pattern": "^[a-zA-Z0-9_-]{3,52}$"
                   },
                   "source": {
-                    "$ref": "#/components/schemas/BranchSource"
+                    "$ref": "#/components/schemas/RefSource"
                   }
                 },
                 "required": [
@@ -5411,6 +5455,23 @@
                         "parentSnapshot": {
                           "snapshotId": "snapshot-id",
                           "snapshotCommittedAt": 1788335940000
+                        },
+                        "numDocs": 1000,
+                        "dataUpdatedAt": 1788335940000,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
                         }
                       }
                     }
@@ -5540,7 +5601,7 @@
           "versioning"
         ],
         "operationId": "listBranches",
-        "description": "List branches in a collection.",
+        "description": "List branches in a collection, one page at a time in name order, like GET /collections. A response with more branches to return carries nextPageToken; pass it as pageToken to get the next page. size and pageToken are the only query parameters; any other one, an out-of-range size, or an empty or malformed pageToken returns 400 BadRequest. Each entry has the same shape as the response for a single branch, including indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -5549,6 +5610,26 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of branches to return at once. Defaults to 10 when omitted.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it. Omit it for the first page; an empty value is rejected.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         ],
         "responses": {
@@ -5564,6 +5645,10 @@
                       "items": {
                         "$ref": "#/components/schemas/BranchDetails"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Opaque token for the next page. Absent on the last page."
                     }
                   },
                   "required": [
@@ -5588,6 +5673,23 @@
                           "parentSnapshot": {
                             "snapshotId": "snapshot-id",
                             "snapshotCommittedAt": 1788335940000
+                          },
+                          "numDocs": 1000,
+                          "dataUpdatedAt": 1788335940000,
+                          "indexConfigs": {
+                            "title": {
+                              "type": "text",
+                              "analyzers": [
+                                "english"
+                              ],
+                              "description": "Book title as printed on the cover"
+                            },
+                            "category": {
+                              "type": "keyword"
+                            },
+                            "id": {
+                              "type": "keyword"
+                            }
                           }
                         },
                         {
@@ -5598,7 +5700,24 @@
                             "snapshotId": "snapshot-id",
                             "snapshotCommittedAt": 1788335940000
                           },
-                          "parentSnapshot": null
+                          "parentSnapshot": null,
+                          "numDocs": 1000,
+                          "dataUpdatedAt": 1788335940000,
+                          "indexConfigs": {
+                            "title": {
+                              "type": "text",
+                              "analyzers": [
+                                "english"
+                              ],
+                              "description": "Book title as printed on the cover"
+                            },
+                            "category": {
+                              "type": "keyword"
+                            },
+                            "id": {
+                              "type": "keyword"
+                            }
+                          }
                         }
                       ]
                     }
@@ -5704,6 +5823,380 @@
       }
     },
     "/collections/{collectionName}/branches/{branchName}": {
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "getBranch",
+        "description": "Get a branch with its index schema and data statistics. A branch owns its indexConfigs: a new branch inherits the source branch's current version, the tag's pinned version, or the origin snapshot's version for an asOf branch, and later schema updates of other branches, including main, do not change it. A name that is not a branch returns 404.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch with its index schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branch": {
+                      "$ref": "#/components/schemas/BranchDetails"
+                    }
+                  },
+                  "required": [
+                    "branch"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branch": {
+                        "name": "candidate",
+                        "parentBranch": {
+                          "branchId": "main-branch-id",
+                          "name": "main"
+                        },
+                        "headSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        },
+                        "parentSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        },
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        },
+                        "numDocs": 1000,
+                        "dataUpdatedAt": 1788335940000,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Describe a Branch"
+      },
+      "patch": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "updateBranch",
+        "description": "Update the index schema of one branch. The change applies to this branch only; updating main also updates the collection's indexConfigs, which mirror main. The same additive rule as the collection route applies within the branch: indexConfigs must preserve the branch's complete existing schema (the server-managed id field may be included as returned or omitted), new fields may be added at any object depth, and a field description may be set, replaced, or cleared without reindexing. Concurrent additive updates of the same branch are merged. Only a branch can be updated: naming a tag or an alias returns 400 BadRequest. Promoting a branch's schema to main is a manual step: apply the same additive change to main.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "A branch owns its indexConfigs only. Description, tags and snapshot retention stay on the collection route.",
+                "properties": {
+                  "indexConfigs": {
+                    "$ref": "#/components/schemas/IndexConfigs",
+                    "minProperties": 1
+                  }
+                },
+                "required": [
+                  "indexConfigs"
+                ]
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "indexConfigs": {
+                      "title": {
+                        "type": "text",
+                        "analyzers": [
+                          "english"
+                        ],
+                        "description": "Book title as printed on the cover"
+                      },
+                      "category": {
+                        "type": "keyword"
+                      },
+                      "author": {
+                        "type": "keyword"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated branch with its index schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "branch": {
+                      "$ref": "#/components/schemas/BranchDetails"
+                    }
+                  },
+                  "required": [
+                    "branch"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branch": {
+                        "name": "candidate",
+                        "parentBranch": {
+                          "branchId": "main-branch-id",
+                          "name": "main"
+                        },
+                        "headSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        },
+                        "parentSnapshot": {
+                          "snapshotId": "snapshot-id",
+                          "snapshotCommittedAt": 1788335940000
+                        },
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        },
+                        "numDocs": 1000,
+                        "dataUpdatedAt": 1788335940000,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Update a Branch's Index Schema"
+      },
       "delete": {
         "tags": [
           "versioning"
@@ -5846,7 +6339,7 @@
           "versioning"
         ],
         "operationId": "createTag",
-        "description": "Pin a committed snapshot from a branch or tag in the same collection as an immutable tag. A tag source pins the same snapshot, not a chain of tags. Alias sources are not allowed, and source.asOf is valid only for a branch source. Omit source to use main. An empty head or unavailable asOf history returns 400; verify committed data before tagging.",
+        "description": "Create a fixed, read-only reference from a branch or tag in the same collection. Without source.asOf, pin the source snapshot and fixed remaining WAL ranges; a tag has no writable WAL stream. Background builds may partially materialize those ranges into the tag's own snapshot without changing the source. Ordinary query/fetch reads include eligible inherited writes; bulk imports become visible only after a build materializes them. Document listing, including through a tag alias, uses only the published snapshot and sees pending changes after builder publication. Tag and alias requests still reject consistentRead=true. A tag source copies its fixed state, not a chain of tags. Alias sources are not allowed. source.asOf is valid only for a branch source and pins only the latest retained committed snapshot at or before the cutoff, with no pending or inherited WAL. Omit source to use main. An empty head or unavailable asOf history returns 400. The response carries the tag's pinned indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -5916,7 +6409,24 @@
                         "name": "validated-2026-09",
                         "snapshotId": "snapshot-id",
                         "createdAt": 1788336000000,
-                        "snapshotCommittedAt": 1788335940000
+                        "snapshotCommittedAt": 1788335940000,
+                        "numDocs": 1000,
+                        "dataUpdatedAt": 1788335940000,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        }
                       }
                     }
                   }
@@ -6045,7 +6555,7 @@
           "versioning"
         ],
         "operationId": "listTags",
-        "description": "List tags in a collection.",
+        "description": "List tags in a collection, one page at a time in name order, like GET /collections. A response with more tags to return carries nextPageToken; pass it as pageToken to get the next page. size and pageToken are the only query parameters; any other one, an out-of-range size, or an empty or malformed pageToken returns 400 BadRequest. Each entry has the same shape as the response for a single tag, including indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6054,6 +6564,26 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of tags to return at once. Defaults to 10 when omitted.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it. Omit it for the first page; an empty value is rejected.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         ],
         "responses": {
@@ -6069,6 +6599,10 @@
                       "items": {
                         "$ref": "#/components/schemas/TagDetails"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Opaque token for the next page. Absent on the last page."
                     }
                   },
                   "required": [
@@ -6083,7 +6617,24 @@
                           "name": "validated-2026-09",
                           "snapshotId": "snapshot-id",
                           "createdAt": 1788336000000,
-                          "snapshotCommittedAt": 1788335940000
+                          "snapshotCommittedAt": 1788335940000,
+                          "numDocs": 1000,
+                          "dataUpdatedAt": 1788335940000,
+                          "indexConfigs": {
+                            "title": {
+                              "type": "text",
+                              "analyzers": [
+                                "english"
+                              ],
+                              "description": "Book title as printed on the cover"
+                            },
+                            "category": {
+                              "type": "keyword"
+                            },
+                            "id": {
+                              "type": "keyword"
+                            }
+                          }
                         }
                       ]
                     }
@@ -6189,6 +6740,150 @@
       }
     },
     "/collections/{collectionName}/tags/{tagName}": {
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "getTag",
+        "description": "Get a tag with the index schema and data statistics of the snapshot it pins. Both are immutable: a tag keeps the schema version its snapshot was built with, whatever the branches do afterwards. A name that is not a tag returns 404.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/TagName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag with its pinned index schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tag": {
+                      "$ref": "#/components/schemas/TagDetails"
+                    }
+                  },
+                  "required": [
+                    "tag"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "tag": {
+                        "name": "release",
+                        "snapshotId": "snapshot-id",
+                        "snapshotCommittedAt": 1788335940000,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        },
+                        "numDocs": 1000,
+                        "dataUpdatedAt": 1788335940000,
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Describe a Tag"
+      },
       "delete": {
         "tags": [
           "versioning"
@@ -6331,7 +7026,7 @@
           "versioning"
         ],
         "operationId": "createAlias",
-        "description": "Create an alias that targets a branch or tag.",
+        "description": "Create an alias that targets a branch or tag. The response carries the target's indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6426,7 +7121,22 @@
                         "targetId": "tag-id",
                         "aliasRevision": 0,
                         "dangling": false,
-                        "createdAt": 1788336000000
+                        "createdAt": 1788336000000,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        }
                       }
                     }
                   }
@@ -6555,7 +7265,7 @@
           "versioning"
         ],
         "operationId": "listAliases",
-        "description": "List aliases in a collection.",
+        "description": "List aliases in a collection, one page at a time in name order, like GET /collections. A response with more aliases to return carries nextPageToken; pass it as pageToken to get the next page. size and pageToken are the only query parameters; any other one, an out-of-range size, or an empty or malformed pageToken returns 400 BadRequest. Each entry has the same shape as the response for a single alias, including indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6564,6 +7274,26 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "description": "Max number of aliases to return at once. Defaults to 10 when omitted.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "description": "Opaque token returned by the previous page. Do not decode or modify it. Omit it for the first page; an empty value is rejected.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         ],
         "responses": {
@@ -6579,6 +7309,10 @@
                       "items": {
                         "$ref": "#/components/schemas/AliasDetails"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Opaque token for the next page. Absent on the last page."
                     }
                   },
                   "required": [
@@ -6597,7 +7331,22 @@
                           "targetId": "tag-id",
                           "aliasRevision": 0,
                           "dangling": false,
-                          "createdAt": 1788336000000
+                          "createdAt": 1788336000000,
+                          "indexConfigs": {
+                            "title": {
+                              "type": "text",
+                              "analyzers": [
+                                "english"
+                              ],
+                              "description": "Book title as printed on the cover"
+                            },
+                            "category": {
+                              "type": "keyword"
+                            },
+                            "id": {
+                              "type": "keyword"
+                            }
+                          }
                         }
                       ]
                     }
@@ -6703,12 +7452,158 @@
       }
     },
     "/collections/{collectionName}/aliases/{aliasName}": {
+      "get": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "getAlias",
+        "description": "Get an alias with the index schema it currently serves, read through to its target: a branch's current version or a tag's pinned version. Retargeting an alias across branches with different schemas is allowed and not checked by the server; this route shows which schema reads through the alias see. A dangling alias (its bound target identity is gone) still returns 200 with dangling true and null indexConfigs. A name that is not an alias returns 404.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/AliasName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alias with its target's index schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alias": {
+                      "$ref": "#/components/schemas/AliasDetails"
+                    }
+                  },
+                  "required": [
+                    "alias"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "alias": {
+                        "aliasId": "alias-id",
+                        "aliasName": "latest",
+                        "targetKind": "BRANCH",
+                        "targetName": "main",
+                        "targetId": "main-branch-id",
+                        "aliasRevision": 1,
+                        "dangling": false,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        },
+                        "createdAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        },
+        "summary": "Describe an Alias"
+      },
       "patch": {
         "tags": [
           "versioning"
         ],
         "operationId": "retargetAlias",
-        "description": "Retarget an alias to a branch or tag.",
+        "description": "Retarget an alias to a branch or tag. The response carries the new target's indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6798,7 +7693,22 @@
                         "targetId": "branch-id",
                         "aliasRevision": 1,
                         "dangling": false,
-                        "createdAt": 1788336000000
+                        "createdAt": 1788336000000,
+                        "indexConfigs": {
+                          "title": {
+                            "type": "text",
+                            "analyzers": [
+                              "english"
+                            ],
+                            "description": "Book title as printed on the cover"
+                          },
+                          "category": {
+                            "type": "keyword"
+                          },
+                          "id": {
+                            "type": "keyword"
+                          }
+                        }
                       }
                     }
                   }
