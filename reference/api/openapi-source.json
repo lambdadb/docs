@@ -1,7 +1,7 @@
 {
   "repository": "lambdadb/lambdadb",
   "path": "api/openapi.json",
-  "commit": "286546eca7c1c443ac869ea58bc1e27b1d271478",
-  "sha256": "604e6fdcf0e0a5af2c9ac8714e60d282d0ebfb9847a49371ff0452fac48be070",
-  "publicationEvidence": "Deploy Prod run 42170907782 (2026-11-06, head 286546ec) succeeded for prod-aws-apne2-v3, prod-aws-apne1-v3, and prod-aws-eun1-v3 (app-instance pulumi-up and Gateway deploy for every stack). It publishes the contract changes since 6757e333: optional index field descriptions (lambdadb/lambdadb#555) and consistent reads through an alias that targets a branch (lambdadb/lambdadb#554)."
+  "commit": "f9aa63c79cbac2ac477a76ec45e5015ce665afd1",
+  "sha256": "ec499bb6ad4fd7359c1854359e9ecfd4cd8609420f440f7dcbf75566ccda8f32",
+  "publicationEvidence": "PENDING, not yet deployed: Deploy Prod run 44291949608 (dispatched 2026-11-18 from main f9aa63c79 without a stack input) was still in progress when this copy was synced. Replace this text with the run's outcome for prod-aws-apne2-v3, prod-aws-apne1-v3, prod-aws-eun1-v3 and the EKS Gateway publish before this pull request leaves Draft."
 }
