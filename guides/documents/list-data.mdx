@@ -17,7 +17,7 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 | refKind     | Ref type: `branch`, `tag`, or `alias`; use with `refName`. | string | | |
 | refName     | Ref name; use with `refKind`. | string | | |
 
-Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`.
+Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`. See [Read from a ref](/guides/data-versioning/branches-tags-aliases#read-from-a-ref) for examples.
 
 Tokens record a search position, not a snapshot pin. A branch may advance or an alias may be retargeted between pages. For a stable multi-page export, select the same immutable tag on every page and keep filter, partition, field-selection, and vector options unchanged. Restart pagination when the environment, project, collection, ref, or those options change. List requests do not support `consistentRead`.
 
@@ -34,9 +34,9 @@ Tokens record a search position, not a snapshot pin. A branch may advance or an 
       coll = client.collection("my_collection")
       # List first page of documents
       res = coll.docs.list(size=10)
-      # `res.docs` contains items (each item includes `doc` and metadata).
+      # `res.results` contains items (each item includes `doc` and metadata).
       # `res.documents` contains document bodies only.
-      for item in res.docs:
+      for item in res.results:
           print(item)
 
       # List next page using the token from the previous response
@@ -109,20 +109,16 @@ Tokens record a search position, not a snapshot pin. A branch may advance or an 
 
   ```bash cURL
   # List first page ($BASE_URL and $PROJECT_NAME match SDK base_url / project_name)
-  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10" \
-    -H "x-api-key: ${YOUR_API_KEY}"
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs?size=10" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 
   # Include vector values when needed
-  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&includeVectors=true" \
-    -H "x-api-key: ${YOUR_API_KEY}"
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs?size=10&includeVectors=true" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 
   # List next page (use nextPageToken from previous response)
-  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
-    -H "x-api-key: ${YOUR_API_KEY}"
-
-  # List documents through an alias
-  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs?refKind=alias&refName=production-read" \
-    -H "x-api-key: ${YOUR_API_KEY}"
+  curl -X GET "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs?size=10&pageToken=YOUR_PAGE_TOKEN" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
   ```
 
 </CodeGroup>
@@ -241,9 +237,9 @@ For filtering, partition filtering, field selection, or a JSON request body, use
   ```
 
   ```bash cURL
-  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs/list" \
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/list" \
     -H "Content-Type: application/json" \
-    -H "x-api-key: ${YOUR_API_KEY}" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     --data '{
       "size": 10,
       "filter": {
@@ -258,8 +254,7 @@ For filtering, partition filtering, field selection, or a JSON request body, use
       "fields": {
         "include": ["id", "title", "category"]
       },
-      "includeVectors": false,
-      "ref": { "kind": "alias", "name": "production-read" }
+      "includeVectors": false
     }'
   ```
 

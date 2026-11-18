@@ -26,7 +26,7 @@ Create a **project API key** in [LambdaDB Cloud](https://app.lambdadb.ai): open 
 pip install --upgrade cohere lambdadb
 ```
 
-Python SDK 0.15.0 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
+Python SDK 0.16.0 requires Python 3.10–3.13. See [SDK runtime requirements](/reference/sdk/introduction#supported-sdk-versions).
 
 These examples use caller-provided Cohere vectors. To have LambdaDB generate document and query embeddings, use [native embeddings](/guides/collections/native-embeddings) with a supported model. Native embedding fields require a different schema and search with `knn.queryText`, so changing only the query does not convert this collection's existing vectors.
 
@@ -61,10 +61,10 @@ def display_results(results, title, description=""):
     print(f"🔍 {title}")
     if description:
         print(f"📝 {description}")
-    print(f"📊 Found {len(results.docs)} results")
+    print(f"📊 Found {len(results.results)} results")
     print(f"{'='*60}")
 
-    for i, item in enumerate(results.docs, 1):
+    for i, item in enumerate(results.results, 1):
         print(f"\n--- Result {i} ---")
         print(f"Title: {item.doc['title']}")
         print(f"URL: {item.doc['url']}")
@@ -509,10 +509,10 @@ class WikipediaSearchExamples:
         print(f"🔍 {title}")
         if description:
             print(f"📝 {description}")
-        print(f"📊 Found {len(results.docs)} results")
+        print(f"📊 Found {len(results.results)} results")
         print(f"{'='*60}")
 
-        for i, item in enumerate(results.docs, 1):
+        for i, item in enumerate(results.results, 1):
             print(f"\n--- Result {i} ---")
             print(f"Title: {item.doc['title']}")
             print(f"URL: {item.doc['url']}")

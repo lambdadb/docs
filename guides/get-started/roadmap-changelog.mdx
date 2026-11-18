@@ -3,7 +3,7 @@ title: "Roadmap & Changelog"
 description: "Explore upcoming LambdaDB features and major product releases."
 ---
 
-Last updated: November 18, 2026
+Last updated: November 19, 2026
 
 ## Up Next
 
@@ -20,9 +20,9 @@ Last updated: November 18, 2026
 
 ### November 2026
 
-- Added [branch index schemas](/guides/data-versioning/branches-tags-aliases#branch-index-schemas): each branch owns its index schema and can add fields without changing `main`, and a single branch, tag, or alias can be read with its schema. Available in the REST API; SDK, CLI, and MCP support follows.
-- Allowed [creating a branch from a tag](/guides/data-versioning/branches-tags-aliases#create-a-branch-from-a-tag) in the REST API.
-- Branch, tag, and alias lists are now [paginated](/guides/data-versioning/branches-tags-aliases#page-through-ref-lists) and return 10 entries by default; clients that list more refs must follow `nextPageToken`.
+- Added [branch index schemas](/guides/data-versioning/branches-tags-aliases#branch-index-schemas): each branch owns its index schema and can add fields without changing `main`, and a single branch, tag, or alias can be read with its schema. Supported by the API, the Python, TypeScript, and Go SDKs, and the MCP server; CLI support follows.
+- Allowed [creating a branch from a tag](/guides/data-versioning/branches-tags-aliases#create-a-branch-from-a-tag) in the API, SDKs, and MCP server; CLI support follows.
+- Branch, tag, and alias lists are now [paginated](/guides/data-versioning/branches-tags-aliases#page-through-ref-lists) and return 10 entries by default; clients that list more refs must follow `nextPageToken`. The SDKs follow it for a complete list and can also read one page at a time, and the MCP server returns one page per call; CLI support follows.
 - Added optional [index field descriptions](/guides/collections/index-types#field-descriptions) to document what each field holds; they can be added, changed, or cleared on existing fields without reindexing. Supported by the [SDKs, CLI, and MCP server](/reference/sdk/introduction#supported-sdk-versions).
 - Allowed [consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) through an alias that currently targets a branch, in the API, SDKs, CLI, and MCP server.
 

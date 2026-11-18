@@ -389,9 +389,9 @@ lambdadb tags delete --collection cli-demo-docs --tag release-one --json
 lambdadb branches delete --collection cli-demo-docs --branch candidate --json
 ```
 
-`branches create` copies the committed state of a branch (`--source branch:NAME`, default `main`); `tags create` pins the committed snapshot of a branch or tag. Pending writes are not included in either. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
+`branches create` starts a branch from another branch (`--source branch:NAME`, default `main`); `tags create` pins the state of a branch or tag. Without `--as-of`, the new branch or tag takes the source's committed snapshot together with the writes still pending on the source; with `--as-of`, it takes only the latest retained committed snapshot at or before that time. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only. See [what a new branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
 
-Deletes take effect without confirmation. The server refuses to delete `main` and refuses to delete a branch or tag while an alias references it (HTTP `409`); list aliases, then retarget or delete them first. Mutations are never retried; an unverifiable outcome exits with code `5`, so list the refs before retrying.
+Deletes take effect without confirmation. The server refuses to delete `main` and refuses to delete a branch or tag while an alias references it (HTTP `409`); list aliases, then retarget or delete them first. The ref lists are [paginated](/guides/data-versioning/branches-tags-aliases#page-through-ref-lists) by the service, and CLI `0.4.1` requests a single page, so `branches list`, `tags list`, and `aliases list` show at most the first 10 refs in name order. Mutations are never retried; an unverifiable outcome exits with code `5`, so list the refs before retrying.
 
 ### Clean up the example collection
 

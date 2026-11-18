@@ -42,7 +42,7 @@ To fetch documents, specify their IDs within the per-request limit above.
           include_vectors=True,
           fields={"include": ["url", "title", "text", "dense_vector"], "exclude": ["metadata.raw"]},
       )
-      # `res.docs` contains items (each item includes `doc` and metadata).
+      # `res.results` contains items (each item includes `doc` and metadata).
       # `res.documents` contains document bodies only.
   ```
 
@@ -92,15 +92,15 @@ To fetch documents, specify their IDs within the per-request limit above.
   ```
 
   ```bash cURL
-  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/${collection_name}/docs/fetch" \
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/fetch" \
     -H "Content-Type: application/json" \
-    -H "x-api-key: ${YOUR_API_KEY}" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
     -d '{
       "ids": ["33201222"],
-      "ref": { "kind": "tag", "name": "validated-2026-09" },
       "includeVectors": true,
       "fields": {
-        "include": ["url", "title", "text", "dense_vector"]
+        "include": ["url", "title", "text", "dense_vector"],
+        "exclude": ["metadata.raw"]
       }
     }'
   ```

@@ -70,7 +70,7 @@ go get github.com/lambdadb/go-lambdadb@latest
 </CodeGroup>
 
 <Tip>
-    Python SDK 0.15.0 requires Python 3.10–3.13; use a virtual environment to keep dependencies separate. Go SDK 0.9.0 requires Go 1.22 or later. Check the selected release for its runtime requirements.
+    Python SDK 0.16.0 requires Python 3.10–3.13; use a virtual environment to keep dependencies separate. Go SDK 0.10.0 requires Go 1.22 or later. Check the selected release for its runtime requirements.
 </Tip>
 
 ## 📚 Step 3: Create a collection
@@ -176,17 +176,27 @@ func main() {
 ```
 </CodeGroup>
 
-The underlying REST response is `201 Created` and includes the default branch:
+The underlying REST response is `201 Created` with the full collection, including the stored index schema and the default branch:
 
 ```json
 {
   "collection": {
+    "projectName": "your_project_name_here",
     "collectionName": "your_collection_name_here",
+    "indexConfigs": {
+      "text": { "type": "text", "analyzers": ["english", "korean"] },
+      "keyword": { "type": "keyword" },
+      "vector": { "type": "vector", "dimensions": 64, "similarity": "cosine" },
+      "id": { "type": "keyword" }
+    },
     "description": "",
     "tags": {},
+    "numPartitions": 1,
+    "numDocs": 0,
     "defaultBranchName": "main",
     "snapshotRetentionInDays": 30,
-    "createdAt": 1788336000000
+    "createdAt": 1788336000000,
+    "updatedAt": 1788336000000
   }
 }
 ```
@@ -309,9 +319,9 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         consistent_read=True,
     )
     print("🔍 Search Results:")
-    # Query responses expose items in `res.docs` (each item includes `doc` and `score`).
+    # Query responses expose items in `res.results` (each item includes `doc` and `score`).
     # Use `res.documents` if you want document bodies only (no scores).
-    for item in res.docs:
+    for item in res.results:
         doc_id = str(item.doc.get("id"))
         score = f"{item.score:.2f}" if item.score is not None else "n/a"
         keyword = str(item.doc.get("keyword"))
@@ -387,7 +397,7 @@ with LambdaDB(project_api_key="your_api_key_here", base_url="YOUR_BASE_URL", pro
         consistent_read=True,
     )
     print("🔄 Hybrid Search Results:")
-    for item in res.docs:
+    for item in res.results:
         score = f"{item.score:.2f}" if item.score is not None else "n/a"
         print(f"{item.doc.get('id')} | {score} | {item.doc.get('text', '')[:50]}...")
 ```

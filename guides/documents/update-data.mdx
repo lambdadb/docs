@@ -7,7 +7,7 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 This page shows you how to update documents in a collection.
 
-The examples write to the default branch, `main`. The REST request accepts an optional `branch` field. To write to another branch, [create it first](/guides/data-versioning/branches-tags-aliases#create-and-list-branches), then include its name in `branch`; a tag or alias is not a valid write target.
+The examples write to the default branch, `main`. The request accepts an optional `branch`, in the REST body and on the SDK call (`branch` in Python and TypeScript, `Branch` in Go), as in [Upsert into a branch](/guides/documents/upsert-data#upsert-into-a-branch). To write to another branch, [create it first](/guides/data-versioning/branches-tags-aliases#create-and-list-branches), then pass its name; a tag or alias is not a valid write target.
 
 <Note>
 

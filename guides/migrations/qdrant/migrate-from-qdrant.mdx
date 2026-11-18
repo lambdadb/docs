@@ -154,7 +154,7 @@ Use `--migration.create-collection=false` when the target LambdaDB collection al
 
 </Note>
 
-For dense-vector migrations, add query overlap checks:
+For dense or sparse-vector migrations, add query overlap checks:
 
 ```bash
 lambdadb-migration qdrant \
@@ -170,7 +170,7 @@ lambdadb-migration qdrant \
   --migration.query-overlap
 ```
 
-By default, `--migration.query-overlap` reports dense-vector overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+By default, `--migration.query-overlap` reports vector overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
 
 ## Mapping details
 

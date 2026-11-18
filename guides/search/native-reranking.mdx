@@ -66,6 +66,77 @@ curl --request POST \
   --data-binary @rerank-query.json
 ```
 
+The SDKs take the same `rerank` object on a query. These snippets assume an initialized client, as in [Start with an SDK](/guides/get-started/quickstart); the Go snippet also imports `fmt`, `log`, `github.com/lambdadb/go-lambdadb/models/components`, and `github.com/lambdadb/go-lambdadb/optionalnullable`:
+
+<CodeGroup>
+
+```python Python
+response = client.collection("articles").query(
+    size=2,
+    query={"queryString": {"query": "restore collection", "defaultField": "body"}},
+    fields={"include": ["id", "title"]},
+    rerank={
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "query_text": "How do I restore a previous collection version?",
+        "fields": ["title", "body"],
+    },
+)
+if response.rerank is not None:
+    print(response.rerank.status)
+for item in response.results:
+    print(item.doc["id"], item.score, item.retrieval_score)
+```
+
+```typescript TypeScript
+const response = await client.collection("articles").query({
+  size: 2,
+  query: { queryString: { query: "restore collection", defaultField: "body" } },
+  fields: { include: ["id", "title"] },
+  rerank: {
+    provider: "typesafe",
+    model: "jev-1.13.0",
+    queryText: "How do I restore a previous collection version?",
+    fields: ["title", "body"],
+  },
+});
+console.log(response.rerank?.status);
+for (const item of response.docs) {
+  console.log(item.doc.id, item.score, item.retrievalScore);
+}
+```
+
+```go Go
+fields := components.CreateFieldsSelectorUnionFieldsSelector1(components.FieldsSelector1{
+  Include: []string{"id", "title"},
+})
+config := components.RerankConfig{
+  Provider:  "typesafe",
+  Model:     "jev-1.13.0",
+  QueryText: "How do I restore a previous collection version?",
+  Fields:    []string{"title", "body"},
+}
+response, err := client.Collection("articles").Query(ctx, lambdadb.QueryInput{
+  Size: lambdadb.Int64(2),
+  Query: map[string]any{
+    "queryString": map[string]any{"query": "restore collection", "defaultField": "body"},
+  },
+  Fields: &fields,
+  Rerank: optionalnullable.From(&config),
+})
+if err != nil {
+  log.Fatal(err)
+}
+if response.Rerank != nil {
+  fmt.Println(response.Rerank.Status)
+}
+for _, item := range response.Docs {
+  fmt.Println(item.Doc["id"], item.Score, item.RetrievalScore)
+}
+```
+
+</CodeGroup>
+
 ### Request parameters
 
 These parameters belong inside the `rerank` object.
@@ -378,6 +449,6 @@ Fallback reason codes are `timeout`, `rateLimit`, `unavailable`, `invalidRespons
 
 ## Usage and billing
 
-The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `rerank` in query requests; see their reranking guides for [Python](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.1/docs/native-reranking.md), [TypeScript](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/native-reranking.md), and [Go](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/native-reranking.md). The [CLI](/guides/get-started/use-with-cli#native-reranking) accepts it in query JSON files and the [MCP server](/guides/get-started/use-with-mcp#native-reranking) through `lambdadb_query_collection`. The Migration CLI does not rerank its verification searches.
+The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `rerank` in query requests; see their reranking guides for [Python](https://github.com/lambdadb/lambdadb-python-client/blob/v0.16.0/docs/native-reranking.md), [TypeScript](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.13.0/docs/native-reranking.md), and [Go](https://github.com/lambdadb/go-lambdadb/blob/v0.10.0/docs/native-reranking.md). The [CLI](/guides/get-started/use-with-cli#native-reranking) accepts it in query JSON files and the [MCP server](/guides/get-started/use-with-mcp#native-reranking) through `lambdadb_query_collection`. The Migration CLI does not rerank its verification searches.
 
 Reranking uses native inference and the existing inference quota. Successful stages with complete valid batch usage record aggregate input/output tokens; provider call count is not a billing unit. Failed, fallback, or incomplete-usage stages do not produce a customer reranking token event. See [Native reranking rates](/guides/costs/understanding-costs#native-reranking-rates) for token-to-LIU rates and a cost example.

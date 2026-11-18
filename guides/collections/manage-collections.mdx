@@ -1,11 +1,11 @@
 ---
 title: Manage collections
-description: List, describe, and delete LambdaDB collections using the Python, TypeScript, or Go SDKs and the REST API. Includes pagination and code examples.
+description: List, describe, configure, and delete LambdaDB collections using the Python, TypeScript, or Go SDKs and the REST API. Includes pagination and code examples.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 
-This page shows you how to manage your existing collections including listing, describing, and deleting operations.
+This page shows you how to manage your existing collections including listing, describing, configuring, and deleting operations.
 
 Later snippets reuse the imports and client setup from the first example. For Go, place the snippets inside `main`, import `context`, `log`, and `github.com/lambdadb/go-lambdadb` as `lambdadb`, and initialize `ctx := context.Background()`. See the [Start with an SDK](/guides/get-started/quickstart) for a complete Go setup.
 
@@ -15,7 +15,7 @@ Retrieve collections in your project with their configuration and metadata. The 
 
 | Parameter  | Description                                      | Type    | Required | Default |
 | :--------- | :----------------------------------------------- | :------ | :------- | :------ |
-| size       | Max number of collections to return in one page. | integer |          |         |
+| size       | Max number of collections to return in one page, from 1 to 100. | integer |          | 10      |
 | pageToken  | Token for the next page of results.              | string  |          |         |
 
 Treat `pageToken` as opaque. Return it unchanged to the same endpoint, and omit it for the first page: an empty or malformed `pageToken`, a `size` outside the range, or any other query parameter returns `400 BadRequest`.
@@ -182,7 +182,36 @@ Collection and ref timestamps, including `source.asOf`, use numeric Unix epoch m
 
 Update one or more of `description`, `tags`, or `snapshotRetentionInDays`:
 
-```bash
+<CodeGroup>
+
+```python Python
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    client.collections.update(
+        collection_name="example-collection",
+        description="Validated product catalog",
+        tags={"environment": "production"},
+        snapshot_retention_in_days=14,
+    )
+```
+
+```typescript TypeScript
+await client.collection("example-collection").update({
+  description: "Validated product catalog",
+  tags: { environment: "production" },
+  snapshotRetentionInDays: 14,
+});
+```
+
+```go Go
+_, err = client.Collection("example-collection").Update(ctx, lambdadb.UpdateCollectionOptions{
+  Description:             lambdadb.String("Validated product catalog"),
+  Tags:                    map[string]string{"environment": "production"},
+  SnapshotRetentionInDays: lambdadb.Int64(14),
+})
+if err != nil { log.Fatal(err) }
+```
+
+```bash cURL
 curl -i -X PATCH \
   "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection" \
   -H "content-type: application/json" \
@@ -193,6 +222,8 @@ curl -i -X PATCH \
     "snapshotRetentionInDays": 14
   }'
 ```
+
+</CodeGroup>
 
 The REST response is `200 OK` with the full `collection` wrapper. Omitted or `null` fields remain unchanged; at least one supported field must be non-null.
 
@@ -207,9 +238,51 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 
 ### Update the index schema
 
-An index schema belongs to a branch. The `indexConfigs` on a collection are those of its default `main` branch, and they stay in collection responses. To change a schema, update the branch that owns it:
+An index schema belongs to a branch. The `indexConfigs` on a collection are those of its default `main` branch, and they stay in collection responses. To change a schema, update the branch that owns it. The Go snippet also imports `github.com/lambdadb/go-lambdadb/models/components`:
 
-```bash
+<CodeGroup>
+
+```python Python
+with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
+    client.collection("example-collection").branches.update(
+        "main",
+        index_configs={
+            "title": {"type": "text", "analyzers": ["standard", "korean"]},
+            "embedding": {"type": "vector", "dimensions": 768, "similarity": "cosine"},
+            "category": {"type": "keyword"},
+        },
+    )
+```
+
+```typescript TypeScript
+await client.collection("example-collection").branches.update("main", {
+  indexConfigs: {
+    title: { type: "text", analyzers: ["standard", "korean"] },
+    embedding: { type: "vector", dimensions: 768, similarity: "cosine" },
+    category: { type: "keyword" },
+  },
+});
+```
+
+```go Go
+_, err = client.Collection("example-collection").Branches().Update(ctx, "main", lambdadb.UpdateBranchInput{
+  IndexConfigs: map[string]components.IndexConfigsUnion{
+    "title": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+      Type:      components.TypeTextText,
+      Analyzers: []components.Analyzer{components.AnalyzerStandard, components.AnalyzerKorean},
+    }),
+    "embedding": components.CreateIndexConfigsUnionVector(components.IndexConfigsVector{
+      Type:       components.TypeVectorVector,
+      Dimensions: 768,
+      Similarity: components.SimilarityCosine.ToPointer(),
+    }),
+    "category": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+  },
+})
+if err != nil { log.Fatal(err) }
+```
+
+```bash cURL
 curl -i -X PATCH \
   "$BASE_URL/projects/$PROJECT_NAME/collections/example-collection/branches/main" \
   -H "content-type: application/json" \
@@ -223,9 +296,11 @@ curl -i -X PATCH \
   }'
 ```
 
+</CodeGroup>
+
 The response is `200 OK` with the updated `branch`, including its `indexConfigs`. Updating `main` also changes the `indexConfigs` shown on the collection. Updating any other branch leaves `main` and the collection unchanged; see [Branch index schemas](/guides/data-versioning/branches-tags-aliases#branch-index-schemas).
 
-Sending `indexConfigs` to `PATCH .../collections/{collectionName}` still works and updates `main` the same way, but that path is deprecated. The SDK, CLI, and MCP server versions listed under [supported SDK versions](/reference/sdk/introduction#supported-sdk-versions) update a schema through it.
+Sending `indexConfigs` to `PATCH .../collections/{collectionName}` still works and updates `main` the same way, but that path is deprecated. The SDK and MCP server versions listed under [supported SDK versions](/reference/sdk/introduction#supported-sdk-versions) provide the branch update shown above and mark `indexConfigs` on their collection update as deprecated. LambdaDB CLI `0.4.1` updates a schema through the collection route with `collections update --index-config`, which changes `main` only.
 
 Submit a nonempty full schema that preserves existing fields and their settings while adding top-level or nested fields. A field's `description` is the only existing setting that can change. New fields can be added under existing objects at any depth. Include all existing fields in the submitted schema, including nested children, and preserve their types and settings. For example, adding `profile.city` is supported when `profile.name` and its settings are retained. Removing an existing field or changing its type, analyzers, vector settings, or embedding configuration is rejected.
 
