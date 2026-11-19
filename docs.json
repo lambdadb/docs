@@ -220,6 +220,10 @@
     {
       "source": "/guides/search/managed-reranking",
       "destination": "/guides/search/native-reranking"
+    },
+    {
+      "source": "/guides/get-started/search-examples",
+      "destination": "/guides/search/search-overview"
     }
   ]
 }
