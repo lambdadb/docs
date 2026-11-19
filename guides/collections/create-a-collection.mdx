@@ -170,7 +170,7 @@ The create response has the same shape as [describing the collection](/guides/co
 
 Native embeddings let LambdaDB derive vector values from fields in the document. Define the vector field with an `embedding` block that lists its `sources`. Source fields do not need their own index configs.
 
-For supported models and configuration rules, see [Native embeddings](/guides/collections/native-embeddings).
+For supported models and configuration rules, see [Native embeddings](/guides/collections/native-embeddings). The Go snippets on the rest of this page continue inside `main` from the first example.
 
 <CodeGroup>
 
@@ -219,6 +219,29 @@ await client.createCollection({
     },
   },
 });
+```
+
+```go Go
+_, err = client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
+  CollectionName: "semantic-docs",
+  IndexConfigs: map[string]components.IndexConfigsUnion{
+    "body": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+      Type: components.TypeTextText,
+      Analyzers: []components.Analyzer{components.AnalyzerEnglish},
+    }),
+    "bodyEmbedding": components.CreateIndexConfigsUnionNativeEmbeddingVector(components.IndexConfigsNativeEmbeddingVector{
+      Type: components.TypeVectorVector,
+      Embedding: components.EmbeddingConfig{
+        Provider: components.EmbeddingConfigProviderOpenai,
+        Model: "text-embedding-3-small",
+        Sources: []components.EmbeddingSource{{Field: "body", Type: components.EmbeddingSourceTypeText}},
+      },
+    }),
+  },
+})
+if err != nil {
+  log.Fatal(err)
+}
 ```
 
 ```bash cURL
@@ -284,6 +307,28 @@ await client.createCollection({
   indexConfigs: { url: { type: "keyword" }, author: { type: "keyword" }, content: { type: "text", analyzers: ["japanese", "korean", "english"] } },
   partitionConfig: { fieldName: "url", dataType: "keyword", numPartitions: 4 },
 });
+```
+
+```go Go
+_, err = client.Collections.Create(ctx, lambdadb.CreateCollectionOptions{
+  CollectionName: "example-collection",
+  IndexConfigs: map[string]components.IndexConfigsUnion{
+    "url": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+    "author": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+    "content": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+      Type: components.TypeTextText,
+      Analyzers: []components.Analyzer{components.AnalyzerJapanese, components.AnalyzerKorean, components.AnalyzerEnglish},
+    }),
+  },
+  PartitionConfig: &components.PartitionConfig{
+    FieldName: lambdadb.String("url"),
+    DataType: components.DataTypeKeyword.ToPointer(),
+    NumPartitions: lambdadb.Int64(4),
+  },
+})
+if err != nil {
+  log.Fatal(err)
+}
 ```
 
 ```bash cURL

@@ -115,10 +115,6 @@ func versioningExample(ctx context.Context, client *lambdadb.Client) error {
 
 This fetch includes eligible pending writes on `candidate`; it does not prove that a snapshot has committed. See [Consistent reads](#consistent-reads) for limits and the bulk-import exclusion.
 
-<Note>
-The SDK versions listed under [supported SDK versions](/reference/sdk/introduction#supported-sdk-versions) create, list, and delete refs. The individual ref routes, branch schema updates, ref list pagination, and tag sources for branches described below are REST operations those versions do not include; call the REST API for them.
-</Note>
-
 The SDK functions below take an initialized client and use the same `knowledge-base` collection. Call Python functions inside the client's `with LambdaDB(...) as client:` block, before it closes. Each example states its required refs and data; they are not an automatic sequence after the write above.
 
 ## Create and list branches
@@ -182,6 +178,48 @@ Set `source.kind` to `tag` to start a writable branch from a tag:
 
 The branch inherits the tag's snapshot, its pinned index schema, and the writes the tag captured when it was created. Writes made to the tag's original branch after the tag was created are excluded. `parentBranch` is `null` for a branch created from a tag, and `parentSnapshot` is the tag's snapshot at creation. `source.asOf` is not allowed with a tag source.
 
+These examples assume that the `validated-2026-09` tag exists and that no branch is named `hotfix`. In Python, `BranchSource` builds branch sources only; use `RefSource.tag(...)` for a tag source:
+
+<CodeGroup>
+
+```python Python
+from lambdadb import RefSource
+
+def create_branch_from_tag(client):
+    return client.collection("knowledge-base").branches.create(
+        "hotfix", source=RefSource.tag("validated-2026-09")
+    )
+```
+
+```typescript TypeScript
+import { LambdaDBClient, tagSource } from "@functional-systems/lambdadb";
+
+async function createBranchFromTag(client: LambdaDBClient) {
+  return client.collection("knowledge-base").branches.create({
+    branchName: "hotfix",
+    source: tagSource("validated-2026-09"),
+  });
+}
+```
+
+```go Go
+import (
+    "context"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func createBranchFromTag(ctx context.Context, client *lambdadb.Client) error {
+    _, err := client.Collection("knowledge-base").Branches().Create(ctx, lambdadb.CreateBranchInput{
+        BranchName: "hotfix",
+        Source:     lambdadb.TagSource("validated-2026-09"),
+    })
+    return err
+}
+```
+
+</CodeGroup>
+
 ### List and describe branches
 
 List branches:
@@ -192,7 +230,67 @@ curl -i \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
 ```
 
-The response contains a `branches` array, one page at a time in name order; see [Page through ref lists](#page-through-ref-lists). Each entry has the same fields as the create response. Read one branch with `GET .../branches/{branchName}`, which wraps the same object in `branch`; a name that is not a branch returns `404`.
+The response contains a `branches` array, one page at a time in name order; see [Page through ref lists](#page-through-ref-lists). Each entry has the same fields as the create response. Read one branch with `GET .../branches/{branchName}`, which wraps the same object in `branch`; a name that is not a branch returns `404`:
+
+```bash
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches/candidate" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+In the SDKs, `list` follows `nextPageToken` and returns every branch, and `get` reads one. The tag and alias clients have the same two methods:
+
+<CodeGroup>
+
+```python Python
+def describe_branches(client):
+    branches = client.collection("knowledge-base").branches
+    for branch in branches.list().branches:
+        print(branch.name, branch.num_docs)
+    candidate = branches.get("candidate").branch
+    print(candidate.index_configs)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function describeBranches(client: LambdaDBClient) {
+  const branches = client.collection("knowledge-base").branches;
+  for (const branch of (await branches.list()).branches) {
+    console.log(branch.name, branch.numDocs);
+  }
+  const { branch: candidate } = await branches.get("candidate");
+  console.log(candidate.indexConfigs);
+}
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func describeBranches(ctx context.Context, client *lambdadb.Client) error {
+    branches := client.Collection("knowledge-base").Branches()
+    all, err := branches.List(ctx)
+    if err != nil {
+        return err
+    }
+    for _, branch := range all {
+        fmt.Println(branch.Name, branch.NumDocs)
+    }
+    candidate, err := branches.Get(ctx, "candidate")
+    if err != nil {
+        return err
+    }
+    fmt.Println(candidate.IndexConfigs)
+    return nil
+}
+```
+
+</CodeGroup>
 
 | Field | Meaning |
 | :---- | :------ |
@@ -227,6 +325,55 @@ curl -i -X PATCH \
     }
   }'
 ```
+
+The SDKs take the same complete schema. These examples assume that `candidate` has only the `title` field:
+
+<CodeGroup>
+
+```python Python
+def add_category_field(client):
+    return client.collection("knowledge-base").branches.update(
+        "candidate",
+        index_configs={
+            "title": {"type": "text"},
+            "category": {"type": "keyword"},
+        },
+    ).branch
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function addCategoryField(client: LambdaDBClient) {
+  const { branch } = await client.collection("knowledge-base").branches.update("candidate", {
+    indexConfigs: {
+      title: { type: "text" },
+      category: { type: "keyword" },
+    },
+  });
+  return branch;
+}
+```
+
+```go Go
+import (
+    "context"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+    "github.com/lambdadb/go-lambdadb/models/components"
+)
+
+func addCategoryField(ctx context.Context, client *lambdadb.Client) (*lambdadb.BranchDetails, error) {
+    return client.Collection("knowledge-base").Branches().Update(ctx, "candidate", lambdadb.UpdateBranchInput{
+        IndexConfigs: map[string]components.IndexConfigsUnion{
+            "title":    components.CreateIndexConfigsUnionText(components.IndexConfigsText{Type: components.TypeTextText}),
+            "category": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+        },
+    })
+}
+```
+
+</CodeGroup>
 
 The response is the updated `branch` object. The same additive rules as a [collection schema update](/guides/collections/manage-collections#update-the-index-schema) apply within the branch: send the branch's complete existing schema, preserve every existing field and its settings, and add new fields at any depth. A field's `description` is the only existing setting that can change. Concurrent additive updates of the same branch are merged.
 
@@ -310,7 +457,71 @@ curl -i -X POST \
   }'
 ```
 
-Omit `source` to tag the current state of `main`. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../tags/{tagName}` returns one `tag`. A name that is not a tag returns `404`.
+Omit `source` to tag the current state of `main`. The create response wraps the ref in `tag`; `GET .../tags` returns a `tags` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../tags/{tagName}` returns one `tag`. A name that is not a tag returns `404`:
+
+```bash
+# List tags
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/tags" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+# Read one tag
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/tags/validated-2026-09" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+<CodeGroup>
+
+```python Python
+def describe_tags(client):
+    tags = client.collection("knowledge-base").tags
+    for tag in tags.list().tags:
+        print(tag.name, tag.snapshot_id)
+    validated = tags.get("validated-2026-09").tag
+    print(validated.num_docs, validated.index_configs)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function describeTags(client: LambdaDBClient) {
+  const tags = client.collection("knowledge-base").tags;
+  for (const tag of (await tags.list()).tags) {
+    console.log(tag.name, tag.snapshotId);
+  }
+  const { tag: validated } = await tags.get("validated-2026-09");
+  console.log(validated.numDocs, validated.indexConfigs);
+}
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func describeTags(ctx context.Context, client *lambdadb.Client) error {
+    tags := client.Collection("knowledge-base").Tags()
+    all, err := tags.List(ctx)
+    if err != nil {
+        return err
+    }
+    for _, tag := range all {
+        fmt.Println(tag.Name, tag.SnapshotID)
+    }
+    validated, err := tags.Get(ctx, "validated-2026-09")
+    if err != nil {
+        return err
+    }
+    fmt.Println(validated.NumDocs, validated.IndexConfigs)
+    return nil
+}
+```
+
+</CodeGroup>
 
 A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag copies the same fixed state; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
 
@@ -366,7 +577,73 @@ curl -i -X PATCH \
   }'
 ```
 
-`GET .../aliases` returns an `aliases` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../aliases/{aliasName}` returns one `alias`. Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, `indexConfigs`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
+`GET .../aliases` returns an `aliases` array one page at a time (see [Page through ref lists](#page-through-ref-lists)), and `GET .../aliases/{aliasName}` returns one `alias`:
+
+```bash
+# List aliases
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/aliases" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+# Read one alias
+curl -i \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/aliases/production-read" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+<CodeGroup>
+
+```python Python
+def describe_aliases(client):
+    aliases = client.collection("knowledge-base").aliases
+    for alias in aliases.list().aliases:
+        print(alias.alias_name, alias.target_kind, alias.target_name)
+    production = aliases.get("production-read").alias
+    print(production.dangling, production.index_configs)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function describeAliases(client: LambdaDBClient) {
+  const aliases = client.collection("knowledge-base").aliases;
+  for (const alias of (await aliases.list()).aliases) {
+    console.log(alias.aliasName, alias.targetKind, alias.targetName);
+  }
+  const { alias: production } = await aliases.get("production-read");
+  console.log(production.dangling, production.indexConfigs);
+}
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func describeAliases(ctx context.Context, client *lambdadb.Client) error {
+    aliases := client.Collection("knowledge-base").Aliases()
+    all, err := aliases.List(ctx)
+    if err != nil {
+        return err
+    }
+    for _, alias := range all {
+        fmt.Println(alias.AliasName, alias.TargetKind, alias.TargetName)
+    }
+    production, err := aliases.Get(ctx, "production-read")
+    if err != nil {
+        return err
+    }
+    fmt.Println(production.Dangling, production.IndexConfigs)
+    return nil
+}
+```
+
+</CodeGroup>
+
+Alias objects include `aliasId`, `aliasName`, `targetKind`, `targetName`, `targetId`, `aliasRevision`, `dangling`, `indexConfigs`, and epoch-millisecond `createdAt`. Request `kind` values are lowercase; response `targetKind` values are `BRANCH` or `TAG`.
 
 `indexConfigs` on an alias is the schema its readers currently get: the target branch's current schema or the target tag's pinned schema. Create and retarget responses carry it too, so a retarget shows the schema the alias now serves.
 
@@ -489,6 +766,88 @@ curl -i \
 | `pageToken` | Opaque token from the previous page. Omit it for the first page. | |
 
 `nextPageToken` is absent on the last page. Treat it as opaque and return it unchanged to the same list. An empty or malformed `pageToken`, a `size` outside the range, or any other query parameter returns `400 BadRequest`. A client that reads only the first response sees at most `size` entries, so follow `nextPageToken` until it is absent to see every ref.
+
+The SDK `list` methods do this for you: they follow `nextPageToken` with the server's default page size and return the complete set, raising an error instead of a partial list when a page fails. To control paging, read one page at a time or iterate over pages. The same methods exist on the tag and alias clients:
+
+<CodeGroup>
+
+```python Python
+def page_through_branches(client):
+    branches = client.collection("knowledge-base").branches
+
+    # One page at a time
+    page = branches.list_page(size=20)
+    if page.next_page_token:
+        page = branches.list_page(size=20, page_token=page.next_page_token)
+
+    # Or iterate over every page
+    for entries in branches.list_pages(size=20):
+        for branch in entries:
+            print(branch.name)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function pageThroughBranches(client: LambdaDBClient) {
+  const branches = client.collection("knowledge-base").branches;
+
+  // One page at a time
+  let page = await branches.listPage({ size: 20 });
+  if (page.nextPageToken) {
+    page = await branches.listPage({ size: 20, pageToken: page.nextPageToken });
+  }
+
+  // Or iterate over every page
+  for await (const entries of branches.listPages({ size: 20 })) {
+    for (const branch of entries.branches) console.log(branch.name);
+  }
+}
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func pageThroughBranches(ctx context.Context, client *lambdadb.Client) error {
+    branches := client.Collection("knowledge-base").Branches()
+
+    // One page at a time
+    page, err := branches.ListPage(ctx, &lambdadb.ListRefsOpts{Size: lambdadb.Int64(20)})
+    if err != nil {
+        return err
+    }
+    if page.NextPageToken != nil {
+        _, err = branches.ListPage(ctx, &lambdadb.ListRefsOpts{
+            Size: lambdadb.Int64(20), PageToken: page.NextPageToken,
+        })
+        if err != nil {
+            return err
+        }
+    }
+
+    // Or iterate over every page
+    iterator := branches.ListIterator(ctx, &lambdadb.ListRefsOpts{Size: lambdadb.Int64(20)})
+    for {
+        entries, err := iterator.Next(ctx)
+        if err != nil {
+            return err
+        }
+        if entries == nil {
+            return nil
+        }
+        for _, branch := range entries.Branches {
+            fmt.Println(branch.Name)
+        }
+    }
+}
+```
+
+</CodeGroup>
 
 ## Read from a ref
 
@@ -619,6 +978,65 @@ DELETE .../branches/{branchName}
 DELETE .../tags/{tagName}
 DELETE .../aliases/{aliasName}
 ```
+
+These examples delete the `production-read` alias first, because a branch or tag that an alias still references cannot be deleted, and then the `validated-2026-09` tag and the `candidate` branch:
+
+```bash
+curl -i -X DELETE \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/aliases/production-read" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+curl -i -X DELETE \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/tags/validated-2026-09" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+
+curl -i -X DELETE \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches/candidate" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY"
+```
+
+<CodeGroup>
+
+```python Python
+def delete_refs(client):
+    collection = client.collection("knowledge-base")
+    collection.aliases.delete("production-read")
+    collection.tags.delete("validated-2026-09")
+    collection.branches.delete("candidate")
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function deleteRefs(client: LambdaDBClient) {
+  const collection = client.collection("knowledge-base");
+  await collection.aliases.delete("production-read");
+  await collection.tags.delete("validated-2026-09");
+  await collection.branches.delete("candidate");
+}
+```
+
+```go Go
+import (
+    "context"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func deleteRefs(ctx context.Context, client *lambdadb.Client) error {
+    collection := client.Collection("knowledge-base")
+    if _, err := collection.Aliases().Delete(ctx, "production-read"); err != nil {
+        return err
+    }
+    if _, err := collection.Tags().Delete(ctx, "validated-2026-09"); err != nil {
+        return err
+    }
+    _, err := collection.Branches().Delete(ctx, "candidate")
+    return err
+}
+```
+
+</CodeGroup>
 
 The default `main` branch cannot be deleted independently from its collection; an attempt returns `400 BadRequest`. Other branches and tags cannot be deleted while any alias references them (`409 Conflict`). Delete or retarget those aliases first. Deleting a ref does not delete the collection.
 

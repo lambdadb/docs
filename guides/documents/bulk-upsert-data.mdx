@@ -90,7 +90,7 @@ Document field names are preserved as supplied in every SDK. The examples use `d
 
 </CodeGroup>
 
-After a successful request you'll receive a message such as `"Upsert request is accepted"`. Documents are processed asynchronously and become searchable after indexing completes.
+After a successful request you'll receive a message such as `"Bulk upsert request is accepted"`. Documents are processed asynchronously and become searchable after indexing completes.
 
 ---
 
@@ -98,7 +98,7 @@ After a successful request you'll receive a message such as `"Upsert request is 
 
 If you need to control the upload yourself (e.g. from a different process or storage), use this flow: (1) get bulk upsert info, (2) upload the payload with every returned signed header, then (3) call the bulk-upsert API with the `objectKey`.
 
-Both REST control calls accept a branch. Use the same branch for the upload-URL request and the completion request; omitting it in both places writes to `main`.
+Both control calls accept a branch, over REST and in the SDKs: Python `get_bulk_upsert(branch=...)` and `bulk_upsert(object_key=..., branch=...)`, TypeScript `getBulkUpsert({ branch })` and `bulkUpsert({ objectKey, branch })`, and Go `GetBulkUpsertInfoForBranch(ctx, branch)` and `BulkUpsertInput.Branch`. Use the same branch for the upload-URL request and the completion request; omitting it in both places writes to `main`. The one-step helpers above take `branch` as well (`bulk_upsert_docs(docs=..., branch=...)`, `bulkUpsertDocs({ docs, branch })`, and `UpsertDocsInput.Branch` with `BulkUpsertDocuments`).
 
 The uploaded object is bound to that branch's write stream. Do not reuse its key for another branch or after deleting and recreating the original branch. The REST completion request's `type` field is optional; the examples use `"application/json"`. The server validates the uploaded object's Content-Type, not this request field. Setting `type` does not replace sending the required `Content-Type` header during upload.
 

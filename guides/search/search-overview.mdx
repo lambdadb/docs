@@ -104,6 +104,39 @@ For example, assume the collection has a `tenant_id` keyword index, a `content` 
 }
 ```
 
+The SDKs take the same filter; the Python key is `in_` because `in` is a reserved word. These snippets reuse the client from the [example](#example) below; in Python, run them inside its `with` block:
+
+<CodeGroup>
+
+```python Python
+results = client.collection("my_collection").query(
+    partition_filter={"field": "tenant_id", "in_": ["tenant_42"]},
+    query={"queryString": {"query": "refund", "defaultField": "content"}},
+    size=10,
+)
+```
+
+```typescript TypeScript
+const results = await client.collection("my_collection").query({
+  partitionFilter: { field: "tenant_id", in: ["tenant_42"] },
+  query: { queryString: { query: "refund", defaultField: "content" } },
+  size: 10,
+});
+```
+
+```go Go
+// Also import "github.com/lambdadb/go-lambdadb/models/components".
+results, err := client.Collection("my_collection").Query(ctx, lambdadb.QueryInput{
+  PartitionFilter: &components.PartitionFilter{Field: "tenant_id", In: []string{"tenant_42"}},
+  Query: map[string]interface{}{
+    "queryString": map[string]interface{}{"query": "refund", "defaultField": "content"},
+  },
+  Size: lambdadb.Int64(10),
+})
+```
+
+</CodeGroup>
+
 `field` must match the configured partition field, and `in` contains field values, not physical partition IDs. Hash partitioning can place several field values in the same physical partition; the request also restricts matches to the supplied values. Derive permitted values in your backend from the caller's authorization.
 
 Use query predicates, including `knn.filter`, for additional document conditions within that search scope. A document predicate alone does not replace `partitionFilter` for skipping physical partitions. Internal sharding distributes query execution and has no user-facing configuration; it is separate from this explicit partition selection.
@@ -120,7 +153,7 @@ from lambdadb import LambdaDB
 with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
     coll = client.collection("my_collection")
     results = coll.query(query={"queryString": {"query": "*:*"}}, size=10)
-    # `results.docs` contains items (each item includes `doc` and `score`).
+    # `results.results` contains items (each item includes `doc` and `score`).
     # `results.documents` contains document bodies only (no scores).
 ```
 
@@ -168,9 +201,17 @@ func main() {
 }
 ```
 
-</CodeGroup>
+```bash cURL
+curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/query" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "query": { "queryString": { "query": "*:*" } },
+    "size": 10
+  }'
+```
 
-To query a specific ref over REST, add `"ref": { "kind": "branch", "name": "candidate" }` alongside `query` and `size`. Omitting `ref` selects `main`. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#read-from-a-ref).
+</CodeGroup>
 
 The response will look like this:
 
@@ -196,3 +237,52 @@ The response will look like this:
 ```
 
 Without explicit sorting or applied reranking, scored results are ordered by descending retrieval score: BM25 for full-text search, the configured similarity metric for vector search, or the selected fusion method for hybrid search. Applied reranking orders candidates by their final evaluation `score` and preserves the retrieval score in `retrievalScore`.
+
+## Query a branch, tag, or alias
+
+Add `ref` to read from a specific branch, tag, or alias; omitting it selects `main`. The fields you can query are those of the selected ref's index schema: a branch's own schema, a tag's pinned schema, or the schema of an alias's current target. These snippets reuse the client from the [example](#example) above (in Python, inside its `with` block) and query the `candidate` branch:
+
+<CodeGroup>
+
+```python Python
+from lambdadb import Ref
+
+results = client.collection("my_collection").query(
+    query={"queryString": {"query": "*:*"}},
+    size=10,
+    ref=Ref.branch("candidate"),
+)
+```
+
+```typescript TypeScript
+import { branchRef } from "@functional-systems/lambdadb";
+
+const results = await client.collection("my_collection").query({
+  query: { queryString: { query: "*:*" } },
+  size: 10,
+  ref: branchRef("candidate"),
+});
+```
+
+```go Go
+results, err := client.Collection("my_collection").Query(ctx, lambdadb.QueryInput{
+  Query: map[string]interface{}{"queryString": map[string]interface{}{"query": "*:*"}},
+  Size:  lambdadb.Int64(10),
+  Ref:   lambdadb.BranchRef("candidate"),
+})
+```
+
+```bash cURL
+curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/query" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "query": { "queryString": { "query": "*:*" } },
+    "size": 10,
+    "ref": { "kind": "branch", "name": "candidate" }
+  }'
+```
+
+</CodeGroup>
+
+Use `Ref.tag(...)` or `Ref.alias(...)` in Python, `tagRef(...)` or `aliasRef(...)` in TypeScript, and `lambdadb.TagRef(...)` or `lambdadb.AliasRef(...)` in Go for the other ref kinds. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#read-from-a-ref).

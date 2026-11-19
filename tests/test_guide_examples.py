@@ -72,9 +72,10 @@ class GuideExampleTest(unittest.TestCase):
             validate(body("/branches", "post"), creation)
 
     def test_collection_creation_guide_matches_spec(self):
-        created = [example for example in blocks("guides/collections/create-a-collection.mdx")
-                   if "projectName" in example.get("collection", {})]
-        self.assertEqual(1, len(created))
-        validate(SPEC["paths"]["/collections"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
-                 created[0])
+        for guide in ("guides/collections/create-a-collection.mdx", "guides/get-started/quickstart.mdx"):
+            created = [example for example in blocks(guide)
+                       if "projectName" in example.get("collection", {})]
+            self.assertEqual(1, len(created), guide)
+            validate(SPEC["paths"]["/collections"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
+                     created[0])
 

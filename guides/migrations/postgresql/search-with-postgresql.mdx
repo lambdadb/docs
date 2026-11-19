@@ -80,7 +80,7 @@ Resolve the target collection in your backend from the authenticated user's allo
 
 If you combine multiple source tables in one collection, make document IDs unique across those tables. If a row moves between datasets, remove its old search representation as well as writing the new one.
 
-Use [branches and tags](/guides/data-versioning/branches-tags-aliases) when a single dataset needs different search histories or pinned versions. Application chat branches and Git revisions do not automatically become LambdaDB refs; your application must maintain that relationship. Schemas and retention are configured at the collection level.
+Use [branches and tags](/guides/data-versioning/branches-tags-aliases) when a single dataset needs different search histories or pinned versions. Application chat branches and Git revisions do not automatically become LambdaDB refs; your application must maintain that relationship. Each branch owns its [index schema](/guides/data-versioning/branches-tags-aliases#branch-index-schemas); snapshot retention, metadata tags, and partitioning are configured at the collection level.
 
 Search requests target one collection. If a user searches several repositories or combines shared character knowledge with private chat memory, plan application-side requests, result merging, authorization, and their combined cost.
 

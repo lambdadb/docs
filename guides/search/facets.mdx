@@ -20,6 +20,51 @@ Add `facets` to the [query request](/reference/api/endpoint/document-query). Eac
 }
 ```
 
+The SDKs take the same `facets` map on a query. These snippets assume an initialized client, as in [Start with an SDK](/guides/get-started/quickstart), and an `items` collection; the Go snippet also imports `fmt`, `log`, and `github.com/lambdadb/go-lambdadb/models/components`:
+
+<CodeGroup>
+
+```python Python
+result = client.collection("items").query(
+    size=0,
+    query={"queryString": {"query": "status:active"}},
+    facets={"category": {"size": 5}, "tags": {}},
+)
+if result.facets is not None:
+    for bucket in result.facets["category"].buckets:
+        print(bucket.value, bucket.count)
+```
+
+```typescript TypeScript
+const result = await client.collection("items").query({
+  size: 0,
+  query: { queryString: { query: "status:active" } },
+  facets: { category: { size: 5 }, tags: {} },
+});
+for (const bucket of result.facets?.category?.buckets ?? []) {
+  console.log(bucket.value, bucket.count);
+}
+```
+
+```go Go
+result, err := client.Collection("items").Query(ctx, lambdadb.QueryInput{
+  Size:  lambdadb.Int64(0),
+  Query: map[string]any{"queryString": map[string]any{"query": "status:active"}},
+  Facets: map[string]components.FacetRequest{
+    "category": {Size: lambdadb.Int64(5)},
+    "tags":     {},
+  },
+})
+if err != nil {
+  log.Fatal(err)
+}
+for _, bucket := range result.Facets["category"].Buckets {
+  fmt.Println(bucket.Value, bucket.Count)
+}
+```
+
+</CodeGroup>
+
 A response includes a `facets` object alongside the usual document results:
 
 ```json
@@ -70,6 +115,6 @@ Configure each facet field as a [keyword index](/guides/collections/index-types#
 
 ## Client compatibility
 
-The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `facets` in query requests and preserve facet results when documents are downloaded through `docsUrl`; see their facet guides for [Python](https://github.com/lambdadb/lambdadb-python-client/blob/v0.14.1/docs/keyword-facets.md), [TypeScript](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.11.1/docs/keyword-facets.md), and [Go](https://github.com/lambdadb/go-lambdadb/blob/v0.8.0/docs/keyword-facets.md).
+The recommended [SDK releases](/reference/sdk/introduction#supported-sdk-versions) accept `facets` in query requests and preserve facet results when documents are downloaded through `docsUrl`; see their facet guides for [Python](https://github.com/lambdadb/lambdadb-python-client/blob/v0.16.0/docs/keyword-facets.md), [TypeScript](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.13.0/docs/keyword-facets.md), and [Go](https://github.com/lambdadb/go-lambdadb/blob/v0.10.0/docs/keyword-facets.md).
 
 The [CLI](/guides/get-started/use-with-cli) accepts facets in query JSON files, and the [MCP server](/guides/get-started/use-with-mcp) accepts them through `lambdadb_query_collection`.
