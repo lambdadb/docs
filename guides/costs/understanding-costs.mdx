@@ -3,11 +3,17 @@ title: Understanding costs
 description: Learn how LambdaDB usage pricing works across reads, writes, storage, and inference, including request minimums and promotional pricing for data returned and retention storage.
 ---
 
-LambdaDB offers a **Free** plan and a **Pay as You Go** plan.
+LambdaDB offers a **Free** plan at **$0**, with no credit card required, and a **Pay as You Go** plan with **no minimum monthly charge** or base fee. If you have no usage, your cost is **$0**.
 
-There is **no minimum cost** or base fee. If you have no usage, your cost is **$0**.
+[Sign up for free](https://app.lambdadb.ai/auth/signup). To switch to Pay as You Go, an organization owner can upgrade in the dashboard.
 
 On the **Pay as You Go** plan, reads, writes, storage, and inference are billed from measured usage at the rates below. Data returned and retention storage are also metered, with fees waived during the promotion described below.
+
+**Read-usage example**
+
+Each query, fetch, or list request counts as at least 1 GB of read usage. At \$5.00/PB, 1 GB corresponds to \$0.000005 before monthly billing aggregation. This is a read-usage example, not a standalone purchase or invoice amount. Larger billed collection or selected-partition sizes and strong consistency can increase read usage. Storage, writes, and inference are billed separately.
+
+Usage is aggregated and invoiced monthly; see [Billing cycle](#billing-cycle) and the detailed metering rules below.
 
 For the latest pricing details, see [Pricing](https://lambdadb.ai/pricing).
 
