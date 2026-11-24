@@ -39,7 +39,7 @@ These CRUD-like operations can take place at both individual document level and 
 Every collection has a default branch named `main`. Data versioning adds three kinds of named ref within that collection:
 
 - A **branch** is a writable line of history with its own index schema. It can be created from another branch or from a tag in the same collection.
-- A **tag** is an immutable name for one committed snapshot.
+- A **tag** is a read-only name for a fixed version of the data, which can include writes still waiting for a snapshot.
 - An **alias** is a mutable read name that points to a branch or tag.
 
 Reads use `main` when no ref is supplied. Queries, fetches, and lists can instead select a branch, tag, or alias. Writes select a branch name and cannot target a tag or alias.

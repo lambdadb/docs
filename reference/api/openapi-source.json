@@ -1,7 +1,7 @@
 {
   "repository": "lambdadb/lambdadb",
   "path": "api/openapi.json",
-  "commit": "f9aa63c79cbac2ac477a76ec45e5015ce665afd1",
-  "sha256": "ec499bb6ad4fd7359c1854359e9ecfd4cd8609420f440f7dcbf75566ccda8f32",
-  "publicationEvidence": "Deploy Prod run 44291949608 (2026-11-18, main f9aa63c79, dispatched without a stack input) succeeded for prod-aws-apne2-v3, prod-aws-apne1-v3, and prod-aws-eun1-v3 (app-instance pulumi-up) and then published the EKS Gateway for every prod cluster. After the run, the Gateway pods of lambdadb-eks-prod-aws-apne2, lambdadb-eks-prod-aws-apne1, and lambdadb-eks-prod-aws-eun1 were read as Running and Ready on gateway image 1487eb2c8adebfec13064e9103022d77ef9096d8, the last commit outside deploy/ that f9aa63c79 contains. It publishes the contract changes since 286546ec: branch-scoped index schemas with the individual branch, tag, and alias routes (lambdadb/lambdadb#587), paginated branch, tag, and alias listings and the rejection of an empty pageToken (lambdadb/lambdadb#605), branches created from tags (lambdadb/lambdadb#606), and the branch, tag, and listing semantics of the OSWALD WAL integration (lambdadb/lambdadb#553). No request was sent to the production API to exercise the new routes."
+  "commit": "b32acec40f844067ef3845453f94d9e674bc1a86",
+  "sha256": "146e722e67b4591081e67bd5c8ba478f6bb6486b0171f5d6adb73ca6eef2f11b",
+  "publicationEvidence": "Deploy Prod run https://github.com/lambdadb/lambdadb/actions/runs/45363612273 (2026-11-24, main b32acec40f844067ef3845453f94d9e674bc1a86) published Gateway and data-plane artifacts for apne2, apne1, and eun1. Read-only Kubernetes checks on 2026-11-24 showed Gateway and Management deployments in all three regions at their observed generation with two updated and two ready replicas on image a53d97f3913bf07fa97d249520e2357dbf3ba132. The image revision and the pinned main revision contain byte-identical public specs, including branch rollback (#612) and tagging before the first snapshot (#614)."
 }

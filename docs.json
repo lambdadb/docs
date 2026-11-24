@@ -143,6 +143,7 @@
                   "reference/api/endpoint/branch-list",
                   "reference/api/endpoint/branch-describe",
                   "reference/api/endpoint/branch-configure",
+                  "reference/api/endpoint/branch-rollback",
                   "reference/api/endpoint/branch-delete",
                   "reference/api/endpoint/tag-create",
                   "reference/api/endpoint/tag-list",
