@@ -5,11 +5,11 @@ description: Create and roll back branches, capture versions with tags, route re
 
 LambdaDB data versioning provides named histories for the data stored in a collection. Every collection starts with a default branch named `main`.
 
-| Ref type | Purpose | Writable | What can change after creation |
-|:----|:--------|:---------|:------------------|
-| Branch | Isolated line of document history | Yes | The branch head changes on commits and rollbacks |
-| Tag | Read-only reference to data captured at a point in time | No | Pending writes captured at creation can appear in later list results. The tag excludes subsequent writes to the source. |
-| Alias | Stable read name for a branch or tag | No | Follows its target and can be retargeted with `PATCH` |
+| Ref type | Purpose | Writable |
+|:----|:--------|:---------|
+| Branch | Isolated line of document history | Yes |
+| Tag | Fixed version of the data at a point in time | No |
+| Alias | Stable read name you can retarget to a branch or tag | No |
 
 Refs are scoped to one collection. Branch merge, ref rename, and cross-collection snapshot sharing are not part of this API. Branch, tag, and alias names must contain 3 to 52 letters, numbers, underscores, or hyphens.
 
