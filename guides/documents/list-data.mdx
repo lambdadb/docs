@@ -19,7 +19,7 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 
 Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`. See [Read from a ref](/guides/data-versioning/branches-tags-aliases#read-from-a-ref) for examples.
 
-Tokens record a search position, not a snapshot pin. A branch may advance or an alias may be retargeted between pages. For a stable multi-page export, select the same immutable tag on every page and keep filter, partition, field-selection, and vector options unchanged. Restart pagination when the environment, project, collection, ref, or those options change. List requests do not support `consistentRead`.
+Page tokens record a search position. Between pages, a branch may advance, an alias may be retargeted, and a tag may publish pending writes it captured at creation. For a stable multi-page export, use the same [tag created with `source.asOf`](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) on every page and keep filter, partition, field-selection, and vector options unchanged. Restart pagination when the environment, project, collection, ref, or those options change. List requests do not support `consistentRead`.
 
 <CodeGroup>
 

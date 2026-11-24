@@ -1,17 +1,17 @@
 ---
 title: Branches, tags, and aliases
-description: Create writable branches, pin immutable tags, route reads through aliases, and select a ref for LambdaDB document operations.
+description: Create and roll back branches, capture versions with tags, route reads through aliases, and select a ref for LambdaDB document operations.
 ---
 
 LambdaDB data versioning provides named histories for the data stored in a collection. Every collection starts with a default branch named `main`.
 
-| Ref type | Purpose | Writable | Target can change |
-|:----|:--------|:---------|:------------------|
-| Branch | Isolated line of document history | Yes | Advances when writes commit |
-| Tag | Immutable name for one committed snapshot | No | No |
-| Alias | Stable read name for a branch or tag | No | Yes, with `PATCH` |
+| Ref type | Purpose | Writable |
+|:----|:--------|:---------|
+| Branch | Isolated line of document history | Yes |
+| Tag | Fixed version of the data at a point in time | No |
+| Alias | Stable read name you can retarget to a branch or tag | No |
 
-Refs are scoped to one collection. Branch merge, direct branch reset, ref rename, and cross-collection snapshot sharing are not part of this API. Branch, tag, and alias names must contain 3 to 52 letters, numbers, underscores, or hyphens.
+Refs are scoped to one collection. Branch merge, ref rename, and cross-collection snapshot sharing are not part of this API. Branch, tag, and alias names must contain 3 to 52 letters, numbers, underscores, or hyphens.
 
 ## Use the SDKs
 
@@ -134,7 +134,7 @@ curl -i -X POST \
 
 Omit `source` to use `main`. A branch can be created from another branch or from a tag in the same collection; an alias source returns `400 BadRequest`. A branch created from an empty source branch has explicitly `null` `headSnapshot` and `parentSnapshot`, but `parentBranch` still identifies the source branch.
 
-Without `source.asOf`, the new branch starts from the source's committed snapshot and also takes over the writes that were still pending on the source at creation time. Those writes are not part of its snapshot yet: ordinary reads of the new branch see them after its own build commits them, and a [consistent read](#consistent-reads) on the branch includes the eligible ones immediately. Writes that reach the source afterward do not appear on the new branch.
+Without `source.asOf`, the new branch inherits the source's committed snapshot if one exists, along with any writes that were still pending on the source at creation time. Those writes are not part of its snapshot yet: ordinary reads of the new branch see them after its own build commits them, and a [consistent read](#consistent-reads) on the branch includes the eligible ones immediately. Writes that reach the source afterward do not appear on the new branch.
 
 The new branch also inherits its source's index schema and owns it from then on; see [Branch index schemas](#branch-index-schemas). Retention remains collection-scoped.
 
@@ -176,7 +176,7 @@ Set `source.kind` to `tag` to start a writable branch from a tag:
 }
 ```
 
-The branch inherits the tag's snapshot, its pinned index schema, and the writes the tag captured when it was created. Writes made to the tag's original branch after the tag was created are excluded. `parentBranch` is `null` for a branch created from a tag, and `parentSnapshot` is the tag's snapshot at creation. `source.asOf` is not allowed with a tag source.
+The branch inherits the tag's snapshot if one exists, its pinned index schema, and the writes the tag captured when it was created. Writes made to the tag's original branch after the tag was created are excluded. `parentBranch` is `null` for a branch created from a tag, and `parentSnapshot` records the tag's published snapshot when the branch is created, or is `null` if the tag has none. `source.asOf` is not allowed with a tag source.
 
 These examples assume that the `validated-2026-09` tag exists and that no branch is named `hotfix`. In Python, `BranchSource` builds branch sources only; use `RefSource.tag(...)` for a tag source:
 
@@ -442,6 +442,36 @@ func createHistoricalBranch(ctx context.Context, client *lambdadb.Client, cutoff
 
 </CodeGroup>
 
+## Roll back a branch to a tag
+
+Use the [REST rollback endpoint](/reference/api/endpoint/branch-rollback) to restore a branch's data and index schema from a tag in the same collection. The branch keeps its identity and gets a new committed head snapshot. The tag must have a published snapshot. If the tag is still waiting for its first snapshot, the request returns `400 BadRequest`.
+
+This example rolls `candidate` back to `validated-2026-09`:
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/branches/candidate/rollback" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{"tag": "validated-2026-09"}'
+```
+
+A successful request returns `200 OK` with the branch ID and its new `headSnapshot`:
+
+```json
+{
+  "branchId": "candidate-branch-id",
+  "headSnapshot": {
+    "snapshotId": "rollback-snapshot-id",
+    "snapshotCommittedAt": 1788336000000
+  }
+}
+```
+
+Ordinary reads use the restored snapshot. [Consistent reads](#consistent-reads) also include eligible writes inherited from the tag and new writes to the branch. Bulk writes become visible after a build. Writes accepted before the rollback may still finish on the previous write stream.
+
+A repeated request performs another rollback and can undo intervening writes. If a request times out, check the branch state before retrying. If two requests try to replace the same write stream, one succeeds and the other returns `409 Conflict`.
+
 ## Create and list tags
 
 A tag is a fixed, read-only name for the state of its source at creation. It cannot be retargeted:
@@ -525,11 +555,15 @@ func describeTags(ctx context.Context, client *lambdadb.Client) error {
 
 A tag source can be a branch or another tag in the same collection, but not an alias. Creating a tag from a tag copies the same fixed state; it does not create a chain of tags. `source.asOf` is allowed only for a branch source.
 
-Without `source.asOf`, a tag pins the source's committed snapshot together with the writes that were still pending on the source at that moment. Query and fetch reads of the tag include those captured writes, except pending bulk imports, which appear after a background build materializes them. Document listing shows captured writes once a background build has published them into the tag's snapshot. With `source.asOf`, the tag pins only the selected committed snapshot. A tag never accepts writes, and its captured state does not change when the source moves on.
+Without `source.asOf`, a tag captures the source's published snapshot if one exists, along with any pending writes at creation time. You can create a tag before the first snapshot if the source has pending writes. A source with neither a snapshot nor pending writes returns `400 BadRequest`.
 
-As long as the tag exists, its pinned snapshot remains available even beyond the collection's [snapshot retention period](/guides/collections/create-a-collection#snapshot-retention). For example, with a 30-day retention period, a tagged snapshot remains readable through the tag after 30 days. This makes tags suitable for long-term savepoints, such as a data version associated with a code release. The tag preserves that snapshot, not all earlier snapshots.
+Query and fetch reads of the tag include eligible captured writes. Pending bulk imports become visible after a build publishes them into the tag's snapshot. Document listing reads the published snapshot. With `source.asOf`, the tag captures only the selected committed snapshot. Later writes to the source are excluded.
 
-Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs`, `numDocs`, `dataUpdatedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `snapshotCommittedAt` is the pinned snapshot's commit time, while `createdAt` is the tag's creation time; both use Unix epoch milliseconds. `indexConfigs` is the schema the tag pins, and `numDocs` and `dataUpdatedAt` describe its pinned snapshot.
+A tag protects the snapshot it currently references beyond the collection's [snapshot retention period](/guides/collections/create-a-collection#snapshot-retention). For example, use a tag created with `source.asOf` to keep a release snapshot readable after a 30-day retention period.
+
+Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs`, `numDocs`, `dataUpdatedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `createdAt` records tag creation, and `indexConfigs` is fixed when the tag is created. The other fields describe the currently published snapshot. Timestamps use Unix epoch milliseconds.
+
+Before the first snapshot, `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` are explicitly `null`, and `numDocs` is `0`. Clients that decode tag create, describe, or list responses must accept these nulls. The snapshot ID can change as the tag's captured writes are published.
 
 ```json
 {
@@ -547,8 +581,6 @@ Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs
   }
 }
 ```
-
-A tag cannot be created from an empty head.
 
 ## Create, retarget, and list aliases
 
@@ -880,11 +912,11 @@ Query and fetch requests support `consistentRead: true` when they select a branc
 
 Consistent reads overlay eligible pending writes, including those a branch took over from its source at creation, on the branch's committed snapshot; ordinary branch reads use only the snapshot. Query and fetch reads of a tag already include the writes the tag captured, without the flag. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`: on every ref, document listing reads only the published snapshot.
 
-Page tokens record a search position, not a fixed snapshot. Branches can advance and aliases can move between pages. Use the same immutable tag on every page for a stable export, keeping filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
+Page tokens record a search position. Between pages, a branch can advance, an alias can move, and a tag can publish captured writes. For a stable export, use the same tag created with `source.asOf` on every page and keep filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
 
 ### Iterate over a tag with the SDKs
 
-These examples assume `validated-2026-09` already exists. Each pagination helper keeps the same tag on subsequent requests. Python pages contain document dictionaries; TypeScript and Go pages contain result items whose `doc` or `Doc` field holds the document.
+These examples assume `validated-2026-09` was created with `source.asOf`. Each pagination helper keeps the same tag on subsequent requests. Python pages contain document dictionaries; TypeScript and Go pages contain result items whose `doc` or `Doc` field holds the document.
 
 <CodeGroup>
 

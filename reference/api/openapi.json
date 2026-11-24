@@ -1036,18 +1036,32 @@
             "type": "string"
           },
           "snapshotId": {
-            "type": "string",
-            "description": "Immutable snapshot pinned by the tag. A tag cannot pin an empty head."
+            "description": "Current published snapshot ID. Explicitly null before the first publication and may change as fixed writes are published.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "snapshotCommittedAt": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Pinned snapshot commit time as Unix epoch milliseconds."
+            "description": "Current snapshot commit time as Unix epoch milliseconds. Explicitly null before the first publication.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "int64"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "createdAt": {
             "type": "integer",
             "format": "int64",
-            "description": "Tag creation time as Unix epoch milliseconds, independent of the pinned snapshot commit time."
+            "description": "Tag creation time as Unix epoch milliseconds."
           },
           "indexConfigs": {
             "$ref": "#/components/schemas/IndexConfigs",
@@ -1055,12 +1069,19 @@
           },
           "numDocs": {
             "type": "integer",
-            "description": "Document count in the pinned snapshot."
+            "description": "Document count in the current published snapshot, or 0 before the first publication."
           },
           "dataUpdatedAt": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Last data update of the pinned snapshot as Unix epoch milliseconds."
+            "description": "Last data update in the current snapshot as Unix epoch milliseconds. Explicitly null before the first publication.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "int64"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5375,7 +5396,7 @@
           "versioning"
         ],
         "operationId": "createBranch",
-        "description": "Create a writable branch from a branch or tag in the same collection. Without source.asOf, creation pins the source snapshot and fixed inherited and pending WAL ranges without copying WAL or waiting for the source build. The new branch materializes those ranges independently; its ordinary reads remain snapshot-only, while direct consistentRead includes eligible pending writes. Omit source to use main. A branch created from a tag inherits the tag's pinned schema and all writes captured when the tag was created. Later writes to the original branch are excluded. Alias sources and tag sources with asOf return 400 BadRequest. For a branch source, source.asOf selects only the latest retained committed snapshot at or before the cutoff, excluding all pending and inherited WAL. An empty source branch is allowed, with parentBranch still recording the source branch. The response carries the new branch's inherited indexConfigs.",
+        "description": "Create a writable branch from a branch or tag in the same collection. Without source.asOf, creation pins the source snapshot (if any) and fixed inherited and pending WAL ranges without copying WAL or waiting for the source build. The new branch materializes those ranges independently; its ordinary reads remain snapshot-only, while direct consistentRead includes eligible pending writes. Omit source to use main. A branch created from a tag inherits the tag's pinned schema and all writes captured when the tag was created. Later writes to the original branch are excluded. Alias sources and tag sources with asOf return 400 BadRequest. For a branch source, source.asOf selects only the latest retained committed snapshot at or before the cutoff, excluding all pending and inherited WAL. An empty source branch is allowed, with parentBranch still recording the source branch. The response carries the new branch's inherited indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6333,13 +6354,199 @@
         "summary": "Delete a Branch"
       }
     },
+    "/collections/{collectionName}/branches/{branchName}/rollback": {
+      "post": {
+        "tags": [
+          "versioning"
+        ],
+        "operationId": "rollbackBranch",
+        "summary": "Roll Back a Branch to a Tag",
+        "description": "Restore a branch's data and index schema from a tag in the same collection. The tag must have a published snapshot. Before its first snapshot, rollback returns 400. The branch keeps its identity and records a new committed snapshot. Ordinary reads show the restored snapshot; consistentRead also includes eligible inherited WAL and new writes. Bulk writes appear after build. Writes admitted before rollback may still complete on the previous stream. Each request resolves the current branch by name. Sending the request again performs another rollback and can undo intervening writes. If two requests attempt to replace the same active WAL stream, one succeeds and the other returns 409.",
+        "security": [
+          {
+            "ProjectApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionName"
+          },
+          {
+            "$ref": "#/components/parameters/BranchName"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 52,
+                    "pattern": "^[a-zA-Z0-9_-]{3,52}$"
+                  }
+                }
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "tag": "release-42"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Committed rollback result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "branchId",
+                    "headSnapshot"
+                  ],
+                  "properties": {
+                    "branchId": {
+                      "type": "string"
+                    },
+                    "headSnapshot": {
+                      "$ref": "#/components/schemas/SnapshotDetails",
+                      "description": "New head committed on the destination branch by this rollback."
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "branchId": "main-branch-id",
+                      "headSnapshot": {
+                        "snapshotId": "rollback-snapshot-id",
+                        "snapshotCommittedAt": 1788336000000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for bad request",
+                    "value": {
+                      "message": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthenticated"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for authentication failure",
+                    "value": {
+                      "message": "Authentication failed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/CatalogConflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for too many requests",
+                    "value": {
+                      "message": "Too many requests"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Optional retry delay in seconds. Not present on every 429 response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response for internal server error",
+                    "value": {
+                      "message": "Internal server error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
+          }
+        }
+      }
+    },
     "/collections/{collectionName}/tags": {
       "post": {
         "tags": [
           "versioning"
         ],
         "operationId": "createTag",
-        "description": "Create a fixed, read-only reference from a branch or tag in the same collection. Without source.asOf, pin the source snapshot and fixed remaining WAL ranges; a tag has no writable WAL stream. Background builds may partially materialize those ranges into the tag's own snapshot without changing the source. Ordinary query/fetch reads include eligible inherited writes; bulk imports become visible only after a build materializes them. Document listing, including through a tag alias, uses only the published snapshot and sees pending changes after builder publication. Tag and alias requests still reject consistentRead=true. A tag source copies its fixed state, not a chain of tags. Alias sources are not allowed. source.asOf is valid only for a branch source and pins only the latest retained committed snapshot at or before the cutoff, with no pending or inherited WAL. Omit source to use main. An empty head or unavailable asOf history returns 400. The response carries the tag's pinned indexConfigs.",
+        "description": "Create a fixed, read-only reference from a branch or tag in the same collection. Without source.asOf, capture the source's published snapshot (if any) and remaining WAL through the fork point. A tag can be created before the first snapshot if it inherits pending WAL. Background builds may partially materialize those ranges into the tag's own snapshot without changing the source. Ordinary query/fetch reads include eligible inherited writes; bulk imports become visible only after a build materializes them. Document listing, including through a tag alias, uses only the published snapshot and sees pending changes after builder publication. Tag and alias requests still reject consistentRead=true. A tag source copies its fixed state, not a chain of tags. Alias sources are not allowed. source.asOf is valid only for a branch source and pins only the latest retained committed snapshot at or before the cutoff, with no pending or inherited WAL. Omit source to use main. A source with neither a snapshot nor pending WAL, or unavailable asOf history, returns 400. The response carries the tag's pinned indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6745,7 +6952,7 @@
           "versioning"
         ],
         "operationId": "getTag",
-        "description": "Get a tag with the index schema and data statistics of the snapshot it pins. Both are immutable: a tag keeps the schema version its snapshot was built with, whatever the branches do afterwards. A name that is not a tag returns 404.",
+        "description": "Get a tag with its fixed index schema and the statistics of its current published snapshot. Before the first publication the document count is 0 and the snapshot ID, commit time, and data update time are null. A name that is not a tag returns 404.",
         "security": [
           {
             "ProjectApiKey": []

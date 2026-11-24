@@ -88,7 +88,7 @@ The WAL records pending changes separately; Builder incorporates those changes i
 3. Builder processes pending changes and writes the resulting indexes and snapshot data to S3.
 4. Builder publishes the snapshot through the metadata store and advances the branch head. Ordinary reads can then see the indexed changes.
 
-[Branches](/guides/data-versioning/branches-tags-aliases) advance to new snapshots as data is indexed. Tags pin immutable snapshots, and aliases route reads to a named branch or tag.
+[Branches](/guides/data-versioning/branches-tags-aliases) advance to new snapshots as data is indexed. Tags capture a fixed version of the data, including pending writes when applicable. Aliases route reads to a named branch or tag.
 
 ## Read consistency
 
