@@ -194,7 +194,7 @@ const results = await client.queryPoints("articles", {
 | Query alias | `search()` | `query()` / `search()` | TypeScript `query()` supports Qdrant JS-style `filter`, `with_payload`, and `with_vector`. |
 | Retrieve | `retrieve()` | `retrieve()` | Uses strongly consistent LambdaDB fetches. |
 | Delete points | `delete()` | `delete()` | Supports point IDs and supported Qdrant filters. |
-| Scroll | `scroll()` | `scroll()` | Supports filtered scroll with payload and vector response selectors. Maps to LambdaDB document listing, which reads only the published snapshot and has no consistent-read option, so recent writes can be missing until they are committed. Returned offsets are LambdaDB page tokens, not Qdrant point-id offsets. |
+| Scroll | `scroll()` | `scroll()` | Supports filtered scroll with payload and vector response selectors. Maps to LambdaDB document listing without the consistent-read option, so on a branch recent writes can be missing until they are committed. Returned offsets are LambdaDB page tokens, not Qdrant point-id offsets. |
 | Count | `count()` | `count()` | Unfiltered collection count only. |
 
 ## Data mapping

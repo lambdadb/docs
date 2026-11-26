@@ -50,9 +50,9 @@ Schema updates are additive and apply to one branch: preserve every existing fie
 | Bayesian candidate budget | `1 <= size <= candidateSize <= 1000` | Exactly two unboosted signals. With reranking, use `rerank.candidateSize` instead; see [Bayesian request construction](/guides/search/hybrid#bayesian-hybrid-query) |
 | Facet request | Up to 5 fields; 1–100 returned buckets per field, default 10 | Aggregation also has distinct-value and memory budgets; see below |
 | Facet aggregation | 10,000 distinct `(field, value)` buckets and 256 KiB of distinct value bytes across requested fields | The same value on two fields counts twice. Exceeding either budget returns HTTP `400`; lowering returned bucket counts alone does not reduce aggregation work. See [facet handling](/guides/search/facets#limits-and-cost) |
-| Consistent-read pending payload | Less than 1 GiB by default, on the selected branch | Reaching the configured threshold returns HTTP `429`; wait for indexing to catch up |
+| Consistent-read pending payload | Less than 1 GiB by default, on the selected branch or tag | Reaching the configured threshold returns HTTP `429`; wait for indexing to catch up |
 
-[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available only for query and fetch against a branch, selected directly or through an alias that currently targets a branch. They exclude pending bulk imports; tags, aliases that target a tag, and list requests do not support them.
+[Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads) are available for query, fetch, and [extended list](/guides/documents/list-data#extended-list-request) requests against a branch, selected directly or through an alias that currently targets a branch. They exclude pending bulk imports. Tags and aliases that target a tag reject the option; their reads already include the pending writes the tag captured.
 
 Large query, fetch, and list results can return `isDocsInline: false` and a presigned `docsUrl`. The inline threshold leaves room below 6 MiB for transport overhead; it is not a total-result cap. Other processing and memory budgets still apply. Follow the [large-result download instructions](/guides/search/limits#large-results).
 

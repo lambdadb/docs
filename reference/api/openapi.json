@@ -2661,7 +2661,7 @@
           "collections.docs"
         ],
         "operationId": "listDocs",
-        "description": "List documents in a collection. Vector values are excluded unless includeVectors is true. All refs, including tags and aliases targeting tags, list only the currently published snapshot. Pending WAL becomes visible to listing only after a builder publishes a snapshot; listing does not apply a WAL overlay.",
+        "description": "List documents in ascending document ID order. Vector values are excluded unless includeVectors is true. Each page reads the current published branch snapshot. Tags and aliases targeting tags also include pending ordinary writes from the tag. Unpublished bulk imports are excluded. Documents added after the cursor position can appear on later pages, and deleted documents disappear once the deletion is visible to this read.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2685,7 +2685,7 @@
           {
             "in": "query",
             "name": "pageToken",
-            "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages.",
+            "description": "Opaque position returned as nextPageToken. Repeat the other query parameters to continue from that position in the current data. A malformed token or a change to the request conditions returns 400.",
             "schema": {
               "type": "string"
             }
@@ -2904,7 +2904,7 @@
           "collections.docs"
         ],
         "operationId": "listDocsExtended",
-        "description": "List documents in a collection with optional filters, partition filtering, field selection, and vector inclusion. All refs, including tags and aliases targeting tags, list only the currently published snapshot. Pending WAL becomes visible to listing only after a builder publishes a snapshot; listing does not apply a WAL overlay.",
+        "description": "List documents with optional filters, partition filtering, sorting, field selection, and vector inclusion. Each page reads the current published branch snapshot. On a branch or branch alias, consistentRead also includes pending ordinary writes. Tags and tag aliases always include their pending ordinary writes. Bulk imports become visible after publication. Later pages include currently visible documents after the cursor. Changes to a sort value can cause a document to be returned again or skipped.",
         "security": [
           {
             "ProjectApiKey": []
@@ -2938,7 +2938,20 @@
                       "string",
                       "null"
                     ],
-                    "description": "Opaque search position, not a snapshot pin. For a stable export, use the same immutable tag and unchanged filters/projection across pages."
+                    "description": "Opaque position in the requested order. Repeat the original request body with nextPageToken as pageToken. Each request resolves the current ref and reads the latest data visible to it. A malformed token, incompatible sort value, or change to the request conditions returns 400."
+                  },
+                  "sort": {
+                    "type": ["array", "null"],
+                    "description": "Order by up to four keyword, long, double, or datetime fields in the given order. Each object specifies one field and asc or desc. Ascending document ID breaks ties and is the default order when sort is omitted or null. For keyword arrays, asc selects the smallest indexed value and desc the largest. Missing keywords sort last for asc and first for desc. Missing numeric and datetime values sort as zero (Unix epoch for datetime).",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "object",
+                      "minProperties": 1,
+                      "maxProperties": 1,
+                      "propertyNames": {"pattern": "\\S", "not": {"pattern": "\\.$"}},
+                      "additionalProperties": {"type": "string", "enum": ["asc", "desc"]}
+                    }
                   },
                   "filter": {
                     "type": [
@@ -2959,6 +2972,35 @@
                   },
                   "ref": {
                     "$ref": "#/components/schemas/RefContext"
+                  },
+                  "consistentRead": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include pending ordinary writes from the branch and its inherited history as of this page request. Bulk imports become visible after publication. Tags and aliases targeting tags reject true."
+                  }
+                },
+                "if": {
+                  "required": [
+                    "consistentRead"
+                  ],
+                  "properties": {
+                    "consistentRead": {
+                      "const": true
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "ref": {
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "branch",
+                            "alias"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -3008,6 +3050,23 @@
                         }
                       ]
                     }
+                  }
+                },
+                "consistentRead": {
+                  "summary": "First page including pending writes",
+                  "value": {
+                    "size": 10,
+                    "sort": [{"category": "asc"}],
+                    "consistentRead": true
+                  }
+                },
+                "continuation": {
+                  "summary": "Next page with the same request options",
+                  "value": {
+                    "size": 10,
+                    "sort": [{"category": "asc"}],
+                    "consistentRead": true,
+                    "pageToken": "<nextPageToken>"
                   }
                 }
               }
@@ -6361,7 +6420,7 @@
         ],
         "operationId": "rollbackBranch",
         "summary": "Roll Back a Branch to a Tag",
-        "description": "Restore a branch's data and index schema from a tag in the same collection. The tag must have a published snapshot. Before its first snapshot, rollback returns 400. The branch keeps its identity and records a new committed snapshot. Ordinary reads show the restored snapshot; consistentRead also includes eligible inherited WAL and new writes. Bulk writes appear after build. Writes admitted before rollback may still complete on the previous stream. Each request resolves the current branch by name. Sending the request again performs another rollback and can undo intervening writes. If two requests attempt to replace the same active WAL stream, one succeeds and the other returns 409.",
+        "description": "Restore a branch's data and index schema from a tag in the same collection. The branch keeps its identity. When the tag has a published snapshot, the branch records a new committed snapshot. Ordinary reads show the restored snapshot; consistentRead also includes eligible inherited WAL and new writes. Bulk writes appear after build. When the tag has no published snapshot yet, the branch head becomes empty and the branch inherits the tag's fixed WAL, like a branch created from that tag: no snapshot is recorded, headSnapshot is null in the response and in the branch details, ordinary reads and document listing return no documents until a build publishes the inherited writes, and consistentRead includes the eligible inherited writes. The rollback time is not recorded, so source.asOf on this branch returns 400 for cutoffs between the branch's last snapshot before the rollback and the first snapshot published after it, including after that snapshot is published. Writes admitted before rollback may still complete on the previous stream. Each request resolves the current branch by name. Sending the request again performs another rollback and can undo intervening writes. If two requests attempt to replace the same active WAL stream, one succeeds and the other returns 409.",
         "security": [
           {
             "ProjectApiKey": []
@@ -6420,8 +6479,15 @@
                       "type": "string"
                     },
                     "headSnapshot": {
-                      "$ref": "#/components/schemas/SnapshotDetails",
-                      "description": "New head committed on the destination branch by this rollback."
+                      "description": "New head committed on the destination branch by this rollback. Explicitly null when the tag had no published snapshot, which leaves the branch head empty.",
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/SnapshotDetails"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 },
@@ -6433,6 +6499,13 @@
                         "snapshotId": "rollback-snapshot-id",
                         "snapshotCommittedAt": 1788336000000
                       }
+                    }
+                  },
+                  "tagWithoutSnapshot": {
+                    "summary": "The tag had no published snapshot",
+                    "value": {
+                      "branchId": "main-branch-id",
+                      "headSnapshot": null
                     }
                   }
                 }
@@ -6546,7 +6619,7 @@
           "versioning"
         ],
         "operationId": "createTag",
-        "description": "Create a fixed, read-only reference from a branch or tag in the same collection. Without source.asOf, capture the source's published snapshot (if any) and remaining WAL through the fork point. A tag can be created before the first snapshot if it inherits pending WAL. Background builds may partially materialize those ranges into the tag's own snapshot without changing the source. Ordinary query/fetch reads include eligible inherited writes; bulk imports become visible only after a build materializes them. Document listing, including through a tag alias, uses only the published snapshot and sees pending changes after builder publication. Tag and alias requests still reject consistentRead=true. A tag source copies its fixed state, not a chain of tags. Alias sources are not allowed. source.asOf is valid only for a branch source and pins only the latest retained committed snapshot at or before the cutoff, with no pending or inherited WAL. Omit source to use main. A source with neither a snapshot nor pending WAL, or unavailable asOf history, returns 400. The response carries the tag's pinned indexConfigs.",
+        "description": "Create a fixed, read-only reference from a branch or tag in the same collection. Without source.asOf, capture the source's published snapshot (if any) and remaining WAL through the fork point. A tag can be created before the first snapshot if it inherits pending WAL. Background builds may partially materialize those ranges into the tag's own snapshot without changing the source. Ordinary query, fetch, and document listing include eligible inherited writes, including through an alias targeting the tag. Bulk imports must be published to be visible. Tags and aliases targeting tags reject consistentRead=true. A tag source copies its fixed state, not a chain of tags. Alias sources are not allowed. source.asOf is valid only for a branch source and pins only the latest retained committed snapshot at or before the cutoff, with no pending or inherited WAL. Omit source to use main. A source with neither a snapshot nor pending WAL, or unavailable asOf history, returns 400. The response carries the tag's pinned indexConfigs.",
         "security": [
           {
             "ProjectApiKey": []
