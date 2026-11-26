@@ -28,18 +28,18 @@ The examples cover the stable SDK releases below. These SDKs support data versio
 
 | Client or tool | Release covered | Guide |
 | :------------- | :------------------ | :---- |
-| Python SDK | [0.16.0](https://pypi.org/project/lambdadb/0.16.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.16.0/docs/sdks/versioning/README.md) |
-| JavaScript/TypeScript SDK | [0.13.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.13.0) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.13.0/docs/data-versioning.md) |
-| Go SDK | [0.10.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.10.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.10.0/docs/sdks/versioning/README.md) |
-| LambdaDB CLI | [0.5.0](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.5.0) | [Use the CLI](/guides/get-started/use-with-cli) |
-| LambdaDB MCP server | [0.6.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.6.0) | [Use the MCP server](/guides/get-started/use-with-mcp) |
+| Python SDK | [0.17.0](https://pypi.org/project/lambdadb/0.17.0/) | [Python data versioning](https://github.com/lambdadb/lambdadb-python-client/blob/v0.17.0/docs/sdks/versioning/README.md) |
+| JavaScript/TypeScript SDK | [0.15.0](https://www.npmjs.com/package/@functional-systems/lambdadb/v/0.15.0) | [TypeScript data versioning](https://github.com/lambdadb/lambdadb-typescript-client/blob/v0.15.0/docs/data-versioning.md) |
+| Go SDK | [0.11.0](https://github.com/lambdadb/go-lambdadb/releases/tag/v0.11.0) | [Go data versioning](https://github.com/lambdadb/go-lambdadb/blob/v0.11.0/docs/sdks/versioning/README.md) |
+| LambdaDB CLI | [0.6.0](https://github.com/lambdadb/lambdadb-cli/releases/tag/v0.6.0) | [Use the CLI](/guides/get-started/use-with-cli) |
+| LambdaDB MCP server | [0.7.0](https://github.com/lambdadb/lambdadb-mcp/releases/tag/v0.7.0) | [Use the MCP server](/guides/get-started/use-with-mcp) |
 | Migration CLI | [0.1.9](https://github.com/lambdadb/lambdadb-migration/releases/tag/v0.1.9) | [Migrations](/guides/migrations/overview) |
 
 Installation guides use the latest stable releases; pin a version when reproducibility matters and verify compatibility before upgrading.
 
 The LambdaDB CLI has a smaller [document-list page limit](/guides/get-started/use-with-cli#cli-limits) than the API; use pagination or `--all` for more. The Migration CLI is intended for migration workflows.
 
-Python SDK 0.16.0 requires Python **3.10–3.13**. Go SDK 0.10.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
+Python SDK 0.17.0 requires Python **3.10–3.13**. Go SDK 0.11.0 requires Go **1.22 or later**. The CLI and MCP server require Node.js **22.14.0 or later**. Update the specific client or tool you use; updating an application's SDK does not update a separately installed CLI, MCP server, or Migration CLI.
 
 ### Search and embedding configuration
 
@@ -68,7 +68,9 @@ Every index config type carries an optional [field description](/guides/collecti
 
 Start with the [SDK examples](/guides/data-versioning/branches-tags-aliases#use-the-sdks) to create a branch, write to it, and read from a selected ref. The language-specific guides cover tags, aliases, pagination, and bulk uploads. Python also provides async methods; JavaScript/TypeScript uses promises and async iterators, while Go uses `context.Context`.
 
-REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps with datetime helpers such as `created_at_dt`; the TypeScript collection-scoped client returns `Date` values; Go provides time getters. Branch parent and snapshot fields can be null, so check them before accessing their fields.
+The SDKs also provide [branch rollback](/guides/data-versioning/branches-tags-aliases#roll-back-a-branch-to-a-tag) and [sorted document listing with consistent reads](/guides/documents/list-data#sort-and-read-pending-writes). In Go SDK 0.11.0, the snapshot fields of `TagDetails` are pointers, which is a breaking change from 0.10.0.
+
+REST timestamps use Unix epoch milliseconds. Python exposes numeric timestamps with datetime helpers such as `created_at_dt`; the TypeScript collection-scoped client returns `Date` values; Go provides time getters. Branch parent and snapshot fields, the snapshot fields of a tag that is still waiting for its first snapshot, and the `headSnapshot` of a rollback to such a tag can be null, so check them before using them.
 
 ## Compatibility clients
 

@@ -9,7 +9,7 @@ Use `lambdadb` to sign in, list organizations, create and select projects, view 
 
 ## Install
 
-This guide covers CLI `0.5.0`. Install the latest stable release using one method, and check `command -v lambdadb` before switching package managers.
+This guide covers CLI `0.6.0`. Install the latest stable release using one method, and check `command -v lambdadb` before switching package managers.
 
 <Tabs>
   <Tab title="npm">
@@ -203,9 +203,9 @@ lambdadb init --non-interactive --agents codex,claude --scope project \
 
 Supply the key securely before running. Non-interactive setup applies the requested file plan without prompts; it does not log in or issue a key. In a non-TTY session or with `--json`, `init` requires `--non-interactive`.
 
-Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.5.0` launches MCP `0.6.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
+Generated agent settings pin the installed CLI version and launch its `mcp` command with the chosen target. CLI `0.6.0` launches MCP `0.7.0`. The bridge reads the OS credential or selected environment variable at startup and forwards it to MCP without putting the key value in agent files or command arguments. OS-store connections require the same OS user and access to the unlocked store; environment-mode connections require the selected variable in the agent's launch environment. GUI applications may not inherit terminal exports.
 
-After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. If a sandboxed CLI reports `CREDENTIAL_STORE_ERROR`, no server request was made. The agent can use the configured MCP connection after confirming that its endpoint and project match the CLI target; server authentication and permission failures must not be bypassed by switching connections. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.5.0/docs/agents.md) for configuration paths and per-agent reload instructions.
+After upgrading the CLI or changing projects, rerun `init` for the same agents and scope, review the changes, then restart or reload the agents. Reruns preserve unrelated settings and edited skills; conflicting custom MCP entries require manual resolution. Check the agent's MCP tool list and make a small read to verify access. If a sandboxed CLI reports `CREDENTIAL_STORE_ERROR`, no server request was made. The agent can use the configured MCP connection after confirming that its endpoint and project match the CLI target; server authentication and permission failures must not be bypassed by switching connections. See the [agent setup reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.6.0/docs/agents.md) for configuration paths and per-agent reload instructions.
 
 To launch the bridge directly from an MCP client's command configuration, use `lambdadb mcp`, adding `--write-tools` if needed. It is read-only by default and reserves stdout for MCP protocol traffic, so `--json` is not supported. The flag controls writes even if `LAMBDADB_MCP_ENABLE_WRITE_TOOLS` is set in the parent environment. See [MCP connection methods](/guides/get-started/use-with-mcp#connect-with-the-cli) for the distinction from launching the MCP package directly.
 
@@ -274,7 +274,7 @@ For eligible pending ordinary writes, fetch can use:
 lambdadb docs fetch --collection cli-demo-docs --ref branch:main --ids doc-1 --consistent-read --json
 ```
 
-For query, set `"consistentRead": true` in the request file. Both forms accept `--ref branch:NAME` or `--ref alias:NAME` when the alias currently targets a branch; `--ref tag:NAME` is rejected before any request is sent, and the server rejects an alias that targets a tag. These reads exclude pending bulk imports and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+For query, set `"consistentRead": true` in the request file; [`docs list`](#list-update-and-delete-documents) takes the same `--consistent-read` flag. These forms accept `--ref branch:NAME` or `--ref alias:NAME` when the alias currently targets a branch; `--ref tag:NAME` is rejected before any request is sent, because a tag read already includes the writes the tag captured, and the server rejects an alias that targets a tag. These reads exclude pending bulk imports and can return `429`. They do not establish committed indexing. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
 The CLI also accepts [keyword facets](/guides/search/facets) and an omitted `query` for match-all requests. Use `size: 0` with nonempty facets for counts without document results.
 
@@ -322,7 +322,7 @@ Without reranking, supply top-level `candidateSize` with `1 <= size <= candidate
 
 ## List, update, and delete documents
 
-`docs list` pages through documents at a ref without ranking. Set `--size` within the [CLI page limit](#cli-limits); use `--page-token` with the returned `nextPageToken`, or `--all` to follow pages to the end within the network budget. An optional `--file` holds `filter`, `partitionFilter`, and `fields`:
+`docs list` pages through documents at a ref without ranking, in ascending document ID order unless the file sets `sort`. Set `--size` within the [CLI page limit](#cli-limits); use `--page-token` with the returned `nextPageToken`, or `--all` to follow pages to the end within the network budget. An optional `--file` holds `filter`, `partitionFilter`, `fields`, and `sort`:
 
 ```bash
 lambdadb docs list --collection cli-demo-docs --ref branch:main --size 5 --json
@@ -335,9 +335,20 @@ cat > list-filter.json <<'JSON'
 JSON
 
 lambdadb docs list --collection cli-demo-docs --ref branch:main --file list-filter.json --json
+
+cat > list-sort.json <<'JSON'
+{
+  "sort": [{ "category": "asc" }],
+  "fields": { "include": ["id", "category"] }
+}
+JSON
+
+lambdadb docs list --collection cli-demo-docs --ref branch:main --file list-sort.json --consistent-read --json
 ```
 
-Use a tag for a stable export; a branch can advance and an alias can be retargeted between pages. List does not support consistent reads, and `total` counts the page, not the collection.
+`sort` takes one to four objects, each mapping one field to `"asc"` or `"desc"`, and ascending document ID breaks ties; see [Sort and read pending writes](/guides/documents/list-data#sort-and-read-pending-writes). An empty `sort` is rejected before any request is sent; omit it or set it to `null` for the default order. A branch lists its published snapshot, and `--consistent-read` adds its pending writes, through `branch:NAME` or an alias that targets a branch; `--ref tag:NAME` with it is rejected before any request is sent. A tag, or an alias that targets one, also lists the writes the tag captured. A list that includes pending writes can return `429`.
+
+A page token is bound to the ref, `--size`, the file's contents, `--consistent-read`, and `--include-vectors` of the page that returned it. Continue with the same command plus `--page-token`, as the next-page line of human output prints it; a changed condition returns HTTP `400`, so start again from the first page instead. Use a tag created with `--as-of` for a stable export: between pages a branch can advance, an alias can be retargeted, and a tag can publish the writes it captured. `total` counts the page, not the collection.
 
 `docs update` merges JSONL rows into existing documents. Every row needs a nonempty string `id` that already exists; omitted fields are kept, nested objects merge, arrays are replaced, and `null` is rejected for indexed fields. Batches run sequentially and stop at the first failure, with the same result fields and exit codes as import:
 
@@ -387,7 +398,7 @@ lambdadb aliases create --collection cli-demo-docs --alias production --target t
 lambdadb aliases retarget --collection cli-demo-docs --alias production --target branch:main --json
 ```
 
-`branches create` starts a writable branch from a branch or a tag (`--source branch:NAME` or `--source tag:NAME`, default `branch:main`) and inherits the source's index schema; `tags create` pins the state of a branch or tag. Without `--as-of`, the new branch or tag takes the source's committed snapshot and also the writes that were pending on the source at creation; with `--as-of`, it takes only the latest retained committed snapshot at or before that time, without pending writes. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only; with a tag source it is rejected before any request is sent. A branch created from a tag reports `parentBranch: null`. See [what a new branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
+`branches create` starts a writable branch from a branch or a tag (`--source branch:NAME` or `--source tag:NAME`, default `branch:main`) and inherits the source's index schema; `tags create` pins the state of a branch or tag. Without `--as-of`, the new branch or tag takes the source's committed snapshot, if one exists, and also the writes that were pending on the source at creation; with `--as-of`, it takes only the latest retained committed snapshot at or before that time, without pending writes. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only; with a tag source it is rejected before any request is sent. A branch created from a tag reports `parentBranch: null`. See [what a new branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
 
 ### List and describe refs
 
@@ -401,7 +412,7 @@ lambdadb tags describe --collection cli-demo-docs --tag release-one --json
 lambdadb aliases describe --collection cli-demo-docs --alias production --json
 ```
 
-`describe` reads one ref with the index fields it serves; a name that is not a ref of that kind fails with HTTP `404`. Every branch, tag, and alias result carries `indexConfigs`, and branches and tags also carry `numDocs` and `dataUpdatedAt`. An alias whose target is missing is returned with `indexConfigs: null`.
+`describe` reads one ref with the index fields it serves; a name that is not a ref of that kind fails with HTTP `404`. Every branch, tag, and alias result carries `indexConfigs`, and branches and tags also carry `numDocs` and `dataUpdatedAt`. A tag created before its source's first snapshot has `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` set to `null` and `numDocs: 0` until a build publishes its captured writes; human output shows it as `not published`. An alias whose target is missing is returned with `indexConfigs: null`.
 
 `branches list`, `tags list`, and `aliases list` return one page in name order, like `collections list`. Set `--size` within the [CLI page limit](#cli-limits); when more refs follow, the result has a `nextPageToken` to pass to `--page-token`. `--all` follows the pages to the end within the network budget:
 
@@ -431,6 +442,17 @@ lambdadb branches describe --collection cli-demo-docs --branch candidate --json
 ```
 
 Existing fields cannot be removed or redefined, except for their `description`. `branches describe` output includes the server-managed `id` keyword field; send it back unchanged or omit it. A tag or alias name is rejected by the server (HTTP `400`). To apply the same change to `main`, run the command again with `--branch main`. See [Branch index schemas](/guides/data-versioning/branches-tags-aliases#branch-index-schemas).
+
+### Roll back a branch
+
+`branches rollback` restores a branch to the data and index schema of a tag in the same collection. It runs without confirmation, so tag the branch first to keep a way back:
+
+```bash
+lambdadb tags create --collection cli-demo-docs --tag before-rollback --source branch:candidate --json
+lambdadb branches rollback --collection cli-demo-docs --branch candidate --tag release-one --json
+```
+
+The branch keeps its name and identity, and its writes that the tag does not hold are undone. The result has `state: "rolledBack"`, `branchId`, and `headSnapshot`. When the tag has no published snapshot yet, `headSnapshot` is `null`: the branch head is empty and the branch inherits the writes the tag captured, which ordinary reads and `docs list` return after a build publishes them and `--consistent-read` returns right away. Rollback is never retried, because a repeat is another rollback and can undo writes made in between; after an unknown outcome (exit code `5`), run `branches describe` before deciding to run it again. See [Roll back a branch to a tag](/guides/data-versioning/branches-tags-aliases#roll-back-a-branch-to-a-tag).
 
 ### Delete refs
 
@@ -497,7 +519,7 @@ Import and update report `accepted`, `failed`, `unknown`, and `notAttempted` cou
 
 For data commands, the shared network budget covers retries, pages, batches, and large-result downloads. Account, project, and usage commands apply `--timeout-ms` to each HTTP request; it does not bound browser approval, prompts, or project provisioning. Use `--timeout-ms 120000` for a longer request budget. Optional `--mode bulk` on `docs import` uses bulk ingestion, which never generates native embeddings; a record with a present source must supply its native vector directly. See [Bulk upsert data](/guides/documents/bulk-upsert-data).
 
-Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.5.0/docs/account.md) for session recovery.
+Management mutations are never retried automatically. An uncertain project creation or key issuance exits with code `5` and `data.state: "unknown"`; inspect the project list or named key in Console before retrying. See the [account command reference](https://github.com/lambdadb/lambdadb-cli/blob/v0.6.0/docs/account.md) for session recovery.
 
 ## Next steps
 

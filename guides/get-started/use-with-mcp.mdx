@@ -7,7 +7,7 @@ LambdaDB can be used from any **Model Context Protocol (MCP)** client through th
 
 For a guided first search with a coding agent, see [Start with an AI agent](/guides/get-started/with-an-agent). Use the [CLI setup](#connect-with-the-cli) to connect supported coding agents, or follow the manual steps below for another MCP client, such as Claude Desktop.
 
-The MCP server works with one project per process and exposes 11 read tools, or 26 tools when writes are enabled, covering collections, documents, search, branches, tags, and aliases. Started without project variables, it also adds three [connection tools](#environment-variables). Organization listing, project creation and selection, and usage reports are [CLI account commands](/guides/get-started/use-with-cli#manage-your-account-and-projects), not MCP tools.
+The MCP server works with one project per process and exposes 11 read tools, or 27 tools when writes are enabled, covering collections, documents, search, branches, tags, and aliases. Started without project variables, it also adds three [connection tools](#environment-variables). Organization listing, project creation and selection, and usage reports are [CLI account commands](/guides/get-started/use-with-cli#manage-your-account-and-projects), not MCP tools.
 
 ## Before you start
 
@@ -31,7 +31,7 @@ lambdadb init
 
 Choose account login to select or create a project and explicitly issue a key, or reuse an existing connection. Select the agents, review the scope and write-tool setting, and approve the file plan. Supported agents include Codex, Claude Code, Cursor, VS Code, Gemini CLI, OpenCode, GitHub Copilot CLI, Kiro, and the Cline VS Code extension; see [agent setup](/guides/get-started/use-with-cli#connect-coding-agents) for their scope restrictions and non-interactive examples. Claude Desktop uses the manual steps below.
 
-CLI `0.5.0` generates a launch command pinned to that CLI version, which runs MCP `0.6.0` through `lambdadb mcp`. The bridge reads the selected OS credential or environment variable and forwards the project's base URL, name, and key to the MCP process. It adds no account-management tools and stores no key value in generated agent files. A saved OS credential needs the same OS user and access to the unlocked store; an environment-held key must be available to the agent process.
+CLI `0.6.0` generates a launch command pinned to that CLI version, which runs MCP `0.7.0` through `lambdadb mcp`. The bridge reads the selected OS credential or environment variable and forwards the project's base URL, name, and key to the MCP process. It adds no account-management tools and stores no key value in generated agent files. A saved OS credential needs the same OS user and access to the unlocked store; an environment-held key must be available to the agent process.
 
 | Launch method | Write-tool control |
 |:--------------|:-------------------|
@@ -60,7 +60,7 @@ Project creation does not automatically issue an API key. In the project's **API
 
 ## Step 2: Choose the published package
 
-The npm package is `@functional-systems/lambdadb-mcp`. This guide covers version `0.6.0`; the commands below use the latest stable release. No source checkout or build is required.
+The npm package is `@functional-systems/lambdadb-mcp`. This guide covers version `0.7.0`; the commands below use the latest stable release. No source checkout or build is required.
 
 ```bash
 node --version
@@ -75,7 +75,7 @@ npx --yes @functional-systems/lambdadb-mcp@latest
 
 This is a **stdio server**: when launched in a terminal it waits for MCP protocol input, rather than showing an interactive prompt. It has no CLI `--help` or `--version` mode; use npm metadata to check the package version. Protocol messages use stdout and diagnostics use stderr.
 
-Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.6.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
+Alternatively, install globally with `npm install --global @functional-systems/lambdadb-mcp@latest` and configure your client to run `lambdadb-mcp` with no arguments. Installed copies do not update themselves; run the same install command to update or `npm uninstall --global @functional-systems/lambdadb-mcp` to remove it. The client configuration below pins version `0.7.0` for reproducible launches. Review [releases](https://github.com/lambdadb/lambdadb-mcp/releases) and update the version explicitly.
 
 ### Transport limit
 
@@ -92,7 +92,7 @@ The [documented MCP server release](/reference/sdk/introduction#supported-sdk-ve
 
 The three project variables are required together: setting any one of them selects this explicit configuration, and a missing one fails startup.
 
-With none of the three set, the server starts disconnected and adds `lambdadb_connect`, `lambdadb_connection_status`, and `lambdadb_cancel_connection`. `lambdadb_connect` returns a verification link and code; after you sign in and approve one project in the browser, the server saves a project key in the OS credential store and reuses it on later starts. Until a project is connected, the data tools return `not_connected`. The connection tools are not added when the project variables are set, and a service that does not offer this flow returns `connect_not_offered`; use the project variables in that case. See [Connect without a key](https://github.com/lambdadb/lambdadb-mcp/blob/v0.6.0/README.md#connect-without-a-key) for the optional variables and credential-store requirements.
+With none of the three set, the server starts disconnected and adds `lambdadb_connect`, `lambdadb_connection_status`, and `lambdadb_cancel_connection`. `lambdadb_connect` returns a verification link and code; after you sign in and approve one project in the browser, the server saves a project key in the OS credential store and reuses it on later starts. Until a project is connected, the data tools return `not_connected`. The connection tools are not added when the project variables are set, and a service that does not offer this flow returns `connect_not_offered`; use the project variables in that case. See [Connect without a key](https://github.com/lambdadb/lambdadb-mcp/blob/v0.7.0/README.md#connect-without-a-key) for the optional variables and credential-store requirements.
 
 When launched directly, the installed package reads the process environment. It does not read the general CLI's config file or automatically load `.env` or `.env.local`; the [CLI bridge](#connect-with-the-cli) resolves CLI credentials and supplies this environment for you. `LAMBDADB_ENV_FILE` is only for the source repository's development launchers. Set secrets through your client's protected local configuration or environment forwarding; do not put the key in command arguments.
 
@@ -105,7 +105,7 @@ For **Claude Desktop**, open **Settings → Developer → Edit Config** and merg
   "mcpServers": {
     "lambdadb": {
       "command": "npx",
-      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.6.0"],
+      "args": ["--yes", "@functional-systems/lambdadb-mcp@0.7.0"],
       "env": {
         "LAMBDADB_BASE_URL": "YOUR_REGION_BASE_URL",
         "LAMBDADB_PROJECT_NAME": "YOUR_PROJECT_NAME",
@@ -145,9 +145,21 @@ Tool discovery confirms the local MCP connection; it does not authenticate to La
 2. Call `lambdadb_get_collection` for a known collection. Its `indexConfigs` include each field's [`description`](/guides/collections/index-types#field-descriptions) when one is set, which helps an assistant choose fields.
 3. Run `lambdadb_query_collection` with a small query against that collection.
 
-Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Use `lambdadb_list_branches`, `lambdadb_list_tags`, and `lambdadb_list_aliases` to discover refs when `main` is not the intended target. Each returns one page in name order: pass `size` (1–100; the server default is 10) and, while the response carries `nextPageToken`, pass it back as `pageToken` to read the next page. Each branch owns its index schema and a tag pins one, so before searching a ref other than `main`, read its `indexConfigs` with `lambdadb_get_branch`, `lambdadb_get_tag`, or `lambdadb_get_alias`. Query and fetch accept `consistentRead: true` with a branch ref, including the default `main` branch, or an alias that currently targets a branch; a tag ref or an alias that targets a tag rejects it. List does not support `consistentRead`. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
+Query, fetch, and list tools accept an optional `ref` such as `{ "kind": "tag", "name": "release" }`; omitting it reads from `main`. Use `lambdadb_list_branches`, `lambdadb_list_tags`, and `lambdadb_list_aliases` to discover refs when `main` is not the intended target. Each returns one page in name order: pass `size` (1–100; the server default is 10) and, while the response carries `nextPageToken`, pass it back as `pageToken` to read the next page. Each branch owns its index schema and a tag pins one, so before searching a ref other than `main`, read its `indexConfigs` with `lambdadb_get_branch`, `lambdadb_get_tag`, or `lambdadb_get_alias`. A tag that is still waiting for its first snapshot has `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` set to `null` and `numDocs: 0` until a build publishes its captured writes. Query, fetch, and list accept `consistentRead: true` with a branch ref, including the default `main` branch, or an alias that currently targets a branch; a tag ref or an alias that targets a tag rejects it. Reads of a tag, or of an alias that targets a tag, already include the writes the tag captured. See [Data versioning](/guides/data-versioning/branches-tags-aliases).
 
-Query, fetch, and list follow the [service result and ID limits](/guides/get-started/limits#search-and-reads). List also accepts optional `filter`, `fields`, `includeVectors`, and `partitionFilter`. Keep `size` small while exploring and use `fields` to leave out large stored fields.
+Query, fetch, and list follow the [service result and ID limits](/guides/get-started/limits#search-and-reads). List also accepts optional `filter`, `fields`, `includeVectors`, `partitionFilter`, and `sort`: one to four objects, each mapping one field to `"asc"` or `"desc"`, as in the [list API](/guides/documents/list-data#sort-and-read-pending-writes); an empty `sort` is rejected before any request. Keep `size` small while exploring and use `fields` to leave out large stored fields. For example, these `lambdadb_list_docs` arguments list `main` by category, including its pending writes:
+
+```json
+{
+  "collectionName": "cli-demo-docs",
+  "size": 5,
+  "ref": { "kind": "branch", "name": "main" },
+  "sort": [{ "category": "asc" }],
+  "consistentRead": true
+}
+```
+
+To read the next page, add the returned `nextPageToken` as `pageToken` and repeat every other argument unchanged. A page token is bound to `size`, `sort`, `consistentRead`, `filter`, `fields`, `partitionFilter`, `includeVectors`, and `ref`, and a changed argument returns HTTP `400`.
 
 For example, pass these arguments to `lambdadb_query_collection` for the sample collection created in the [CLI guide](/guides/get-started/use-with-cli):
 
@@ -198,7 +210,7 @@ The LambdaDB MCP server can also expose write operations:
 |:-----|:------|
 | Collections | `lambdadb_create_collection`, `lambdadb_update_collection`, `lambdadb_delete_collection` |
 | Documents | `lambdadb_upsert_docs`, `lambdadb_update_docs`, `lambdadb_bulk_upsert_docs`, `lambdadb_delete_docs` |
-| Data versioning | `lambdadb_create_branch`, `lambdadb_update_branch`, `lambdadb_delete_branch`, `lambdadb_create_tag`, `lambdadb_delete_tag`, `lambdadb_create_alias`, `lambdadb_retarget_alias`, `lambdadb_delete_alias` |
+| Data versioning | `lambdadb_create_branch`, `lambdadb_update_branch`, `lambdadb_rollback_branch`, `lambdadb_delete_branch`, `lambdadb_create_tag`, `lambdadb_delete_tag`, `lambdadb_create_alias`, `lambdadb_retarget_alias`, `lambdadb_delete_alias` |
 
 The MCP server accepts all 49 [fixed text analyzer presets](/guides/collections/choose-text-analyzers) when creating collections.
 
@@ -215,6 +227,7 @@ Every tool takes `collectionName`. The other inputs are:
 | `lambdadb_delete_docs` | Exactly one of a nonempty `ids` array or a `filter`, plus optional `partitionFilter` and `branch` |
 | `lambdadb_create_branch` | `branchName`; optional `source: { "kind": "branch", "name": "...", "asOf"?: <epoch ms> }` or `{ "kind": "tag", "name": "..." }`, default `main`. The new branch inherits the source's index schema |
 | `lambdadb_update_branch` | `branchName` and `indexConfigs`: the branch's complete existing schema from `lambdadb_get_branch` plus the fields to add. Changes that branch only; updating `main` also changes the collection's `indexConfigs`. Index changes are additive, except that a field `description` can be changed or cleared. A tag or alias name is rejected |
+| `lambdadb_rollback_branch` | `branchName` and `tagName` of a tag in the same collection. Restores the branch's data and index schema from the tag and returns `branchId` and `headSnapshot`. `headSnapshot` is `null` when the tag has no published snapshot yet: the branch head stays empty until a build publishes the tag's captured writes, and `consistentRead` reads them meanwhile. Annotated as destructive, and its description tells the assistant to confirm with the user first. It is never retried, because a repeated rollback can undo writes made after the first; after an uncertain failure, inspect the branch with `lambdadb_get_branch` |
 | `lambdadb_create_tag` | `tagName`; optional branch or tag source as above, default `main` |
 | `lambdadb_create_alias`, `lambdadb_retarget_alias` | `aliasName` and `target: { "kind": "branch" \| "tag", "name": "..." }`. Retargeting changes future alias reads, not write targets |
 | `lambdadb_delete_branch`, `lambdadb_delete_tag`, `lambdadb_delete_alias` | `branchName`, `tagName`, or `aliasName`. Deleting an alias does not delete its target |
@@ -233,7 +246,13 @@ A typical versioning workflow creates a branch from `main`, writes and evaluates
 { "collectionName": "memories", "aliasName": "serving", "target": { "kind": "tag", "name": "reviewed" } }
 ```
 
-Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch and tag sources can be a branch or a tag, never an alias; a tag source does not accept `asOf`, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Without `asOf`, a new branch or tag takes its source's committed snapshot together with the writes still pending on the source; with `asOf`, it takes only the latest retained committed snapshot at or before the cutoff. Captured pending writes appear in ordinary reads of a new branch after a build commits them, and pending bulk imports after indexing, so verify the data before relying on a new ref; see [what a branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Bulk inputs must fit the [transport limit](#transport-limit); the tool does not accept local paths or URLs.
+To discard later writes to `candidate` and restore it from the tag, pass these arguments to `lambdadb_rollback_branch` after the user confirms:
+
+```json
+{ "collectionName": "memories", "branchName": "candidate", "tagName": "reviewed" }
+```
+
+Document writes without `branch` go to `main`. `asOf` is an integer Unix epoch millisecond cutoff. Branch and tag sources can be a branch or a tag, never an alias; a tag source does not accept `asOf`, and alias targets cannot be aliases. `main` cannot be deleted, and a branch or tag still referenced by an alias cannot be deleted until the alias is retargeted or removed. Without `asOf`, a new branch or tag takes its source's committed snapshot, if one exists, together with the writes still pending on the source; with `asOf`, it takes only the latest retained committed snapshot at or before the cutoff. Captured pending writes appear in ordinary reads of a new branch after a build commits them, and pending bulk imports after indexing, so verify the data before relying on a new ref; see [what a branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Bulk inputs must fit the [transport limit](#transport-limit); the tool does not accept local paths or URLs.
 
 For direct package setup, enable them by changing the environment value and restarting the MCP server:
 
@@ -277,7 +296,7 @@ If the server cannot start:
 For development, use a release tag and Node.js 22.14.0 or later:
 
 ```bash
-git clone --branch v0.6.0 https://github.com/lambdadb/lambdadb-mcp
+git clone --branch v0.7.0 https://github.com/lambdadb/lambdadb-mcp
 cd lambdadb-mcp
 npm ci
 npm run build
