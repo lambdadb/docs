@@ -481,7 +481,7 @@ You can also roll back to a tag that is still waiting for its first snapshot, wi
 
 Until a build publishes the captured writes, ordinary query, fetch, and list requests on the branch return no documents, and the branch details report `headSnapshot` as `null`. Consistent reads include the eligible captured writes right away. No snapshot records this rollback, so creating a branch from this one with `source.asOf` returns `400 BadRequest` for cutoffs between the branch's last snapshot before the rollback and the first snapshot published after it.
 
-The Python and TypeScript SDKs return the same branch ID and head snapshot. These examples assume that the `candidate` branch and the `validated-2026-09` tag exist, and check for a `null` head before reading it:
+The SDKs return the same branch ID and head snapshot. These examples assume that the `candidate` branch and the `validated-2026-09` tag exist, and check for a `null` head before reading it:
 
 <CodeGroup>
 
@@ -508,6 +508,30 @@ async function rollBackCandidate(client: LambdaDBClient) {
   } else {
     console.log(branchId, headSnapshot.snapshotId);
   }
+}
+```
+
+```go Go
+import (
+    "context"
+    "fmt"
+
+    lambdadb "github.com/lambdadb/go-lambdadb"
+)
+
+func rollBackCandidate(ctx context.Context, client *lambdadb.Client) error {
+    result, err := client.Collection("knowledge-base").Branches().Rollback(ctx, "candidate", lambdadb.RollbackBranchInput{
+        Tag: "validated-2026-09",
+    })
+    if err != nil {
+        return err
+    }
+    if result.HeadSnapshot == nil {
+        fmt.Println(result.BranchID, "has an empty head until a build publishes the tag's writes")
+    } else {
+        fmt.Println(result.BranchID, result.HeadSnapshot.SnapshotID)
+    }
+    return nil
 }
 ```
 
@@ -583,7 +607,11 @@ func describeTags(ctx context.Context, client *lambdadb.Client) error {
         return err
     }
     for _, tag := range all {
-        fmt.Println(tag.Name, tag.SnapshotID)
+        if tag.SnapshotID != nil {
+            fmt.Println(tag.Name, *tag.SnapshotID)
+        } else {
+            fmt.Println(tag.Name, "waiting for its first snapshot")
+        }
     }
     validated, err := tags.Get(ctx, "validated-2026-09")
     if err != nil {
@@ -606,7 +634,7 @@ A tag protects the snapshot it currently references beyond the collection's [sna
 
 Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs`, `numDocs`, `dataUpdatedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `createdAt` records tag creation, and `indexConfigs` is fixed when the tag is created. The other fields describe the currently published snapshot. Timestamps use Unix epoch milliseconds.
 
-Before the first snapshot, `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` are explicitly `null`, and `numDocs` is `0`. Clients that decode tag create, describe, or list responses must accept these nulls. The Python SDK returns them as `None` and the TypeScript SDK as `null`, as in the tag list example above. The snapshot ID can change as the tag's captured writes are published.
+Before the first snapshot, `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` are explicitly `null`, and `numDocs` is `0`. Clients that decode tag create, describe, or list responses must accept these nulls. The Python SDK returns them as `None`, the TypeScript SDK as `null`, and the Go SDK as nil pointers, as in the tag list example above; Go's `GetSnapshotID()` returns `""` for a nil ID. The snapshot ID can change as the tag's captured writes are published.
 
 ```json
 {
