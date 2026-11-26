@@ -262,7 +262,7 @@ For filtering, partition filtering, sorting, field selection, pending writes, or
 
 </CodeGroup>
 
-The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options.
+The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options. The Python and TypeScript helpers also use it when you pass `sort` or `consistentRead: true` (`consistent_read=True` in Python). To read the next page, pass the same arguments again, including the page size, with the returned token.
 In Go, pass these as `Filter`, `PartitionFilter`, `Fields`, and `IncludeVectors` on `lambdadb.ListDocsOpts`.
 
 The extended list request body supports:
@@ -306,18 +306,65 @@ Inside a `bool` filter, `occur` can be `filter`, `must`, `must_not`, or `should`
 
 ### Sort and read pending writes
 
-`sort` and `consistentRead` are part of the REST request body. This request returns the first page ordered by `category`, including writes to `main` that are not yet in its published snapshot:
+These requests return pages ordered by `category`, including writes to `main` that are not yet in its published snapshot. The SDK examples read a second page with the same arguments:
 
-```bash
-curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/list" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
-  --data '{
-    "size": 10,
-    "sort": [{"category": "asc"}],
-    "consistentRead": true
-  }'
-```
+<CodeGroup>
+
+  ```python Python
+  from lambdadb import LambdaDB
+
+  with LambdaDB(
+      project_api_key="YOUR_API_KEY",
+      base_url="YOUR_BASE_URL",
+      project_name="YOUR_PROJECT_NAME",
+  ) as client:
+      coll = client.collection("my_collection")
+
+      res = coll.docs.list(size=10, sort=[{"category": "asc"}], consistent_read=True)
+      if res.next_page_token:
+          res_next = coll.docs.list(
+              size=10,
+              sort=[{"category": "asc"}],
+              consistent_read=True,
+              page_token=res.next_page_token,
+          )
+  ```
+
+  ```typescript TypeScript
+  import { LambdaDBClient, type ListDocsInput } from "@functional-systems/lambdadb";
+
+  const client = new LambdaDBClient({
+    projectApiKey: "YOUR_API_KEY",
+    baseUrl: "YOUR_BASE_URL",
+    projectName: "YOUR_PROJECT_NAME",
+  });
+  const collection = client.collection("my_collection");
+
+  const request: ListDocsInput = {
+    size: 10,
+    sort: [{ category: "asc" }],
+    consistentRead: true,
+  };
+  const res = await collection.docs.list(request);
+  if (res.nextPageToken) {
+    const resNext = await collection.docs.list({ ...request, pageToken: res.nextPageToken });
+  }
+  ```
+
+  ```bash cURL
+  curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/list" \
+    -H "Content-Type: application/json" \
+    -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+    --data '{
+      "size": 10,
+      "sort": [{"category": "asc"}],
+      "consistentRead": true
+    }'
+  ```
+
+</CodeGroup>
+
+In the SDKs, the paging helpers (`list_pages` in Python and `listPages` or `listAll` in TypeScript) repeat these options and the page size on every page. A `sort` direction other than `asc` or `desc` fails in the SDK before a request is sent, and so does `consistentRead: true` (`consistent_read=True` in Python) with a tag ref.
 
 Fields are compared in the order given, and ascending document ID breaks ties. Omit `sort` or send `null` for the default order; an empty array returns `400 BadRequest`. For a `keyword` array, `asc` uses the smallest indexed value and `desc` the largest. A document without a `keyword` value sorts last for `asc` and first for `desc`; a missing numeric or `datetime` value sorts as zero (the Unix epoch for `datetime`). If a document's sort value changes between pages, that document can be returned again or skipped.
 

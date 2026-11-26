@@ -481,7 +481,39 @@ You can also roll back to a tag that is still waiting for its first snapshot, wi
 
 Until a build publishes the captured writes, ordinary query, fetch, and list requests on the branch return no documents, and the branch details report `headSnapshot` as `null`. Consistent reads include the eligible captured writes right away. No snapshot records this rollback, so creating a branch from this one with `source.asOf` returns `400 BadRequest` for cutoffs between the branch's last snapshot before the rollback and the first snapshot published after it.
 
-A repeated request performs another rollback and can undo intervening writes. If a request times out, check the branch state before retrying. If two requests try to replace the same write stream, one succeeds and the other returns `409 Conflict`.
+The Python and TypeScript SDKs return the same branch ID and head snapshot. These examples assume that the `candidate` branch and the `validated-2026-09` tag exist, and check for a `null` head before reading it:
+
+<CodeGroup>
+
+```python Python
+def roll_back_candidate(client):
+    result = client.collection("knowledge-base").branches.rollback(
+        "candidate", tag="validated-2026-09"
+    )
+    if result.head_snapshot is None:
+        print(result.branch_id, "has an empty head until a build publishes the tag's writes")
+    else:
+        print(result.branch_id, result.head_snapshot.snapshot_id)
+```
+
+```typescript TypeScript
+import { LambdaDBClient } from "@functional-systems/lambdadb";
+
+async function rollBackCandidate(client: LambdaDBClient) {
+  const { branchId, headSnapshot } = await client
+    .collection("knowledge-base")
+    .branches.rollback("candidate", { tag: "validated-2026-09" });
+  if (headSnapshot === null) {
+    console.log(branchId, "has an empty head until a build publishes the tag's writes");
+  } else {
+    console.log(branchId, headSnapshot.snapshotId);
+  }
+}
+```
+
+</CodeGroup>
+
+A repeated request performs another rollback and can undo intervening writes. The SDK rollback methods therefore never retry automatically, even when retries are configured. If a request times out, check the branch state before retrying. If two requests try to replace the same write stream, one succeeds and the other returns `409 Conflict`.
 
 ## Create and list tags
 
@@ -518,7 +550,7 @@ curl -i \
 def describe_tags(client):
     tags = client.collection("knowledge-base").tags
     for tag in tags.list().tags:
-        print(tag.name, tag.snapshot_id)
+        print(tag.name, tag.snapshot_id or "waiting for its first snapshot")
     validated = tags.get("validated-2026-09").tag
     print(validated.num_docs, validated.index_configs)
 ```
@@ -529,7 +561,7 @@ import { LambdaDBClient } from "@functional-systems/lambdadb";
 async function describeTags(client: LambdaDBClient) {
   const tags = client.collection("knowledge-base").tags;
   for (const tag of (await tags.list()).tags) {
-    console.log(tag.name, tag.snapshotId);
+    console.log(tag.name, tag.snapshotId ?? "waiting for its first snapshot");
   }
   const { tag: validated } = await tags.get("validated-2026-09");
   console.log(validated.numDocs, validated.indexConfigs);
@@ -574,7 +606,7 @@ A tag protects the snapshot it currently references beyond the collection's [sna
 
 Tag responses contain `name`, `snapshotId`, `snapshotCommittedAt`, `indexConfigs`, `numDocs`, `dataUpdatedAt`, and `createdAt`. Unlike branch responses, the snapshot fields are at the top level of the tag object. `createdAt` records tag creation, and `indexConfigs` is fixed when the tag is created. The other fields describe the currently published snapshot. Timestamps use Unix epoch milliseconds.
 
-Before the first snapshot, `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` are explicitly `null`, and `numDocs` is `0`. Clients that decode tag create, describe, or list responses must accept these nulls. The snapshot ID can change as the tag's captured writes are published.
+Before the first snapshot, `snapshotId`, `snapshotCommittedAt`, and `dataUpdatedAt` are explicitly `null`, and `numDocs` is `0`. Clients that decode tag create, describe, or list responses must accept these nulls. The Python SDK returns them as `None` and the TypeScript SDK as `null`, as in the tag list example above. The snapshot ID can change as the tag's captured writes are published.
 
 ```json
 {
@@ -927,7 +959,7 @@ Page tokens record a position, not a snapshot: each page reads the data currentl
 
 ### Iterate over a tag with the SDKs
 
-These examples assume `validated-2026-09` was created with `source.asOf`. Each pagination helper keeps the same tag on subsequent requests. Python pages contain document dictionaries; TypeScript and Go pages contain result items whose `doc` or `Doc` field holds the document.
+These examples assume `validated-2026-09` was created with `source.asOf`. Each pagination helper keeps the same tag and page size on subsequent requests. Python pages contain document dictionaries; TypeScript and Go pages contain result items whose `doc` or `Doc` field holds the document.
 
 <CodeGroup>
 
