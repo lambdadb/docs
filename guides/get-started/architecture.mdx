@@ -29,7 +29,7 @@ Stacked cards represent variable compute capacity. Each compute component can ex
 
 ### Gateway
 
-**Gateway** is the regional entry point for API requests. It validates project API keys, enforces access and rate limits, and handles collection and data-versioning management requests. It sends document writes and branch queries or fetches with `consistentRead: true` to Writer. Other read requests go to the Query Executor's coordination service.
+**Gateway** is the regional entry point for API requests. It validates project API keys, enforces access and rate limits, and handles collection and data-versioning management requests. It sends document writes and branch queries, fetches, or list requests with `consistentRead: true` to Writer. Other read requests go to the Query Executor's coordination service.
 
 ### Writer
 
@@ -92,7 +92,7 @@ The WAL records pending changes separately; Builder incorporates those changes i
 
 ## Read consistency
 
-By default, reads use the selected committed snapshot, so newly acknowledged writes may not be visible immediately. For a branch query or fetch with `consistentRead: true`, Writer combines the committed snapshot with eligible pending changes, including updates and deletes.
+By default, reads use the selected committed snapshot, so newly acknowledged writes may not be visible immediately. For a branch query, fetch, or list request with `consistentRead: true`, Writer combines the committed snapshot with eligible pending changes, including updates and deletes.
 
 Consistent reads require a branch target, selected directly or through an alias that currently targets a branch; tags and aliases that target a tag do not support them. Pending bulk imports remain invisible until Builder commits them to a snapshot. A consistent read can return `429` when its pending payload exceeds the supported limit. See [Consistent reads](/guides/data-versioning/branches-tags-aliases#consistent-reads).
 
