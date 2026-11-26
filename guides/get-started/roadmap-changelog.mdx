@@ -3,7 +3,7 @@ title: "Roadmap & Changelog"
 description: "Explore upcoming LambdaDB features and major product releases."
 ---
 
-Last updated: November 24, 2026
+Last updated: November 26, 2026
 
 ## Up Next
 
@@ -20,7 +20,8 @@ Last updated: November 24, 2026
 
 ### November 2026
 
-- Added [branch rollback](/guides/data-versioning/branches-tags-aliases#roll-back-a-branch-to-a-tag) to the REST API to restore a branch's data and index schema from a tag.
+- Added [branch rollback](/guides/data-versioning/branches-tags-aliases#roll-back-a-branch-to-a-tag) to the REST API to restore a branch's data and index schema from a tag, including a tag that is still waiting for its first snapshot; clients that read the rollback response must accept a `null` `headSnapshot`.
+- Document listing in the REST API can [sort by up to four fields and include a branch's pending writes](/guides/documents/list-data#sort-and-read-pending-writes), and listing a tag now includes the pending writes it captured.
 - The REST API can [tag pending writes before the first snapshot](/guides/data-versioning/branches-tags-aliases#create-and-list-tags), so clients that read tag responses must accept `null` snapshot IDs, snapshot commit times, and data update times.
 - Added [branch index schemas](/guides/data-versioning/branches-tags-aliases#branch-index-schemas): each branch owns its index schema and can add fields without changing `main`, and a single branch, tag, or alias can be read with its schema. Supported by the API, the [SDKs, CLI, and MCP server](/reference/sdk/introduction#supported-sdk-versions).
 - Allowed [creating a branch from a tag](/guides/data-versioning/branches-tags-aliases#create-a-branch-from-a-tag) in the API, SDKs, CLI, and MCP server.

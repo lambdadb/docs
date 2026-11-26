@@ -19,7 +19,9 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 
 Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`. See [Read from a ref](/guides/data-versioning/branches-tags-aliases#read-from-a-ref) for examples.
 
-Page tokens record a search position. Between pages, a branch may advance, an alias may be retargeted, and a tag may publish pending writes it captured at creation. For a stable multi-page export, use the same [tag created with `source.asOf`](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) on every page and keep filter, partition, field-selection, and vector options unchanged. Restart pagination when the environment, project, collection, ref, or those options change. List requests do not support `consistentRead`.
+Documents are returned in ascending document ID order unless an [extended list request](#extended-list-request) sorts them. A list request on a branch reads its published snapshot. On a tag, or an alias that targets a tag, it also includes the pending writes the tag captured. To include a branch's pending writes, set `consistentRead` in an extended list request. Pending bulk imports become visible after they are published. A read that includes pending writes can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads).
+
+Page tokens record a position in the requested order, not a snapshot. Each page reads the data currently visible to the ref, so documents added after the position can appear on later pages and documents disappear once their deletion is visible to the read. Between pages, a branch may advance, an alias may be retargeted, and a tag may publish pending writes it captured at creation. For a stable multi-page export, use the same [tag created with `source.asOf`](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) on every page. Keep the page size and the sort, filter, partition, field-selection, vector, and consistency options unchanged: a changed request condition returns `400 BadRequest`, as does reusing a token with a different project, collection, or ref. Start again from the first page when any of them changes.
 
 <CodeGroup>
 
@@ -153,7 +155,7 @@ The response includes `total` (the number of documents returned in this page, in
 
 ## Extended list request
 
-For filtering, partition filtering, field selection, or a JSON request body, use the extended list endpoint:
+For filtering, partition filtering, sorting, field selection, pending writes, or a JSON request body, use the extended list endpoint:
 
 <CodeGroup>
 
@@ -271,6 +273,8 @@ The extended list request body supports:
 | pageToken      | Token for the next page of results.                          | string  |          |         |
 | filter         | Filter applied before pagination. Supports `queryString` and nested `bool` filters. | object  |          |         |
 | partitionFilter | Restricts the request to matching partition values.         | object  |          |         |
+| sort           | Order by up to four `keyword`, `long`, `double`, or `datetime` fields, as objects of one field and `asc` or `desc`. See [Sort and read pending writes](#sort-and-read-pending-writes). | object[] |          | Ascending document ID |
+| consistentRead | Include the pending writes of a branch, or of an alias that targets a branch. A tag or an alias that targets a tag rejects `true`. | boolean |          | false   |
 | fields         | Field selector with `include` and/or `exclude`. Use dot notation for nested fields. | object  |          |         |
 | includeVectors | Indicates whether vector values are included in the response. | boolean |          | false   |
 | ref            | Branch, tag, or alias selector as `{ "kind": "...", "name": "..." }`. | object | | `main` branch |
@@ -300,9 +304,26 @@ Inside a `bool` filter, `occur` can be `filter`, `must`, `must_not`, or `should`
 }
 ```
 
+### Sort and read pending writes
+
+`sort` and `consistentRead` are part of the REST request body. This request returns the first page ordered by `category`, including writes to `main` that are not yet in its published snapshot:
+
+```bash
+curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/list" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  --data '{
+    "size": 10,
+    "sort": [{"category": "asc"}],
+    "consistentRead": true
+  }'
+```
+
+Fields are compared in the order given, and ascending document ID breaks ties. Omit `sort` or send `null` for the default order; an empty array returns `400 BadRequest`. For a `keyword` array, `asc` uses the smallest indexed value and `desc` the largest. A document without a `keyword` value sorts last for `asc` and first for `desc`; a missing numeric or `datetime` value sorts as zero (the Unix epoch for `datetime`). If a document's sort value changes between pages, that document can be returned again or skipped.
+
 <Note>
 
-  When you use `nextPageToken` with the extended endpoint, keep the same `filter`, `partitionFilter`, `fields`, `includeVectors`, and `ref` options across pages.
+  When you use `nextPageToken` with the extended endpoint, repeat the original request body with the token as `pageToken`: keep the same `size`, `sort`, `consistentRead`, `filter`, `partitionFilter`, `fields`, `includeVectors`, and `ref` options across pages.
 
 </Note>
 

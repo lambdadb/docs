@@ -444,7 +444,7 @@ func createHistoricalBranch(ctx context.Context, client *lambdadb.Client, cutoff
 
 ## Roll back a branch to a tag
 
-Use the [REST rollback endpoint](/reference/api/endpoint/branch-rollback) to restore a branch's data and index schema from a tag in the same collection. The branch keeps its identity and gets a new committed head snapshot. The tag must have a published snapshot. If the tag is still waiting for its first snapshot, the request returns `400 BadRequest`.
+Use the [REST rollback endpoint](/reference/api/endpoint/branch-rollback) to restore a branch's data and index schema from a tag in the same collection. The branch keeps its identity. When the tag has a published snapshot, the branch gets a new committed head snapshot.
 
 This example rolls `candidate` back to `validated-2026-09`:
 
@@ -456,7 +456,7 @@ curl -i -X POST \
   -d '{"tag": "validated-2026-09"}'
 ```
 
-A successful request returns `200 OK` with the branch ID and its new `headSnapshot`:
+When the tag has a published snapshot, a successful request returns `200 OK` with the branch ID and its new `headSnapshot`:
 
 ```json
 {
@@ -469,6 +469,17 @@ A successful request returns `200 OK` with the branch ID and its new `headSnapsh
 ```
 
 Ordinary reads use the restored snapshot. [Consistent reads](#consistent-reads) also include eligible writes inherited from the tag and new writes to the branch. Bulk writes become visible after a build. Writes accepted before the rollback may still finish on the previous write stream.
+
+You can also roll back to a tag that is still waiting for its first snapshot, without waiting for a build. The tag has no snapshot to restore, so the branch is left without a committed head and takes over the writes the tag captured, like a [branch created from that tag](#create-a-branch-from-a-tag). The response carries an explicit `null`, which clients that decode it must accept. If the tag's first snapshot is published while the request is in progress, the rollback restores that snapshot and returns it instead:
+
+```json
+{
+  "branchId": "candidate-branch-id",
+  "headSnapshot": null
+}
+```
+
+Until a build publishes the captured writes, ordinary query, fetch, and list requests on the branch return no documents, and the branch details report `headSnapshot` as `null`. Consistent reads include the eligible captured writes right away. No snapshot records this rollback, so creating a branch from this one with `source.asOf` returns `400 BadRequest` for cutoffs between the branch's last snapshot before the rollback and the first snapshot published after it.
 
 A repeated request performs another rollback and can undo intervening writes. If a request times out, check the branch state before retrying. If two requests try to replace the same write stream, one succeeds and the other returns `409 Conflict`.
 
@@ -557,7 +568,7 @@ A tag source can be a branch or another tag in the same collection, but not an a
 
 Without `source.asOf`, a tag captures the source's published snapshot if one exists, along with any pending writes at creation time. You can create a tag before the first snapshot if the source has pending writes. A source with neither a snapshot nor pending writes returns `400 BadRequest`.
 
-Query and fetch reads of the tag include eligible captured writes. Pending bulk imports become visible after a build publishes them into the tag's snapshot. Document listing reads the published snapshot. With `source.asOf`, the tag captures only the selected committed snapshot. Later writes to the source are excluded.
+Query, fetch, and list reads of the tag include eligible captured writes. Pending bulk imports become visible after a build publishes them into the tag's snapshot. With `source.asOf`, the tag captures only the selected committed snapshot. Later writes to the source are excluded.
 
 A tag protects the snapshot it currently references beyond the collection's [snapshot retention period](/guides/collections/create-a-collection#snapshot-retention). For example, use a tag created with `source.asOf` to keep a release snapshot readable after a 30-day retention period.
 
@@ -908,11 +919,11 @@ Supplying only one of `refKind` or `refName` is invalid.
 
 ### Consistent reads
 
-Query and fetch requests support `consistentRead: true` when they select a branch directly or through an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject it with `400`.
+Query, fetch, and [extended list](/guides/documents/list-data#extended-list-request) requests support `consistentRead: true` when they select a branch directly or through an alias that currently targets a branch; the alias is resolved to its branch when the request is admitted. Tag reads and an alias that targets a tag reject it with `400`.
 
-Consistent reads overlay eligible pending writes, including those a branch took over from its source at creation, on the branch's committed snapshot; ordinary branch reads use only the snapshot. Query and fetch reads of a tag already include the writes the tag captured, without the flag. They can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them. List requests do not support `consistentRead`: on every ref, document listing reads only the published snapshot.
+Consistent reads overlay eligible pending writes, including those a branch took over from its source at creation, on the branch's committed snapshot; ordinary branch reads use only the snapshot. Query, fetch, and list reads of a tag already include the writes the tag captured, without the flag. Consistent reads and tag reads, including list requests, can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads), independently of request rate limits. Pending bulk imports are excluded and become visible only after indexing commits them.
 
-Page tokens record a search position. Between pages, a branch can advance, an alias can move, and a tag can publish captured writes. For a stable export, use the same tag created with `source.asOf` on every page and keep filters and projection options unchanged. Query responses do not include a resolved snapshot ID.
+Page tokens record a position, not a snapshot: each page reads the data currently visible to the ref. Between pages, a branch can advance, an alias can move, and a tag can publish captured writes. For a stable export, use the same tag created with `source.asOf` on every page and keep the rest of the request, including `size`, unchanged. Query responses do not include a resolved snapshot ID.
 
 ### Iterate over a tag with the SDKs
 

@@ -1,7 +1,7 @@
 {
   "repository": "lambdadb/lambdadb",
   "path": "api/openapi.json",
-  "commit": "b32acec40f844067ef3845453f94d9e674bc1a86",
-  "sha256": "146e722e67b4591081e67bd5c8ba478f6bb6486b0171f5d6adb73ca6eef2f11b",
-  "publicationEvidence": "Deploy Prod run https://github.com/lambdadb/lambdadb/actions/runs/45363612273 (2026-11-24, main b32acec40f844067ef3845453f94d9e674bc1a86) published Gateway and data-plane artifacts for apne2, apne1, and eun1. Read-only Kubernetes checks on 2026-11-24 showed Gateway and Management deployments in all three regions at their observed generation with two updated and two ready replicas on image a53d97f3913bf07fa97d249520e2357dbf3ba132. The image revision and the pinned main revision contain byte-identical public specs, including branch rollback (#612) and tagging before the first snapshot (#614)."
+  "commit": "16c6e46854b13cebd20c501e541bb030b33ca805",
+  "sha256": "269590b8addc8e25785c222938b84e737a9f9dee0a5e8b45c0dde4779bde1b6d",
+  "publicationEvidence": "Deploy Prod run https://github.com/lambdadb/lambdadb/actions/runs/45830131279 (2026-11-26, release 2026.11.26-2, main 16c6e46854b13cebd20c501e541bb030b33ca805) moved the Gateway and data-plane tags for apne2, apne1, and eun1. Read-only Kubernetes checks on 2026-11-26 at 13:37 UTC showed the Gateway and data-plane Flux Kustomizations of all three regions applied at main@sha1:16c6e46854b13cebd20c501e541bb030b33ca805 and ready, their Helm releases ready and deployed, and the Gateway and Management deployments at their observed generation with two updated and two ready replicas on the image digests of that release (gateway sha256:58ae03d6f9e848d58c649d6b2ef20ea8d3d766f25ab5e27813ce13699b8e1011, management sha256:2e0f467b51ab3adc7238104ec23033c60e09e99cab49eb1076655dace8d16e64). The release passed the public API E2E in dev in Release run https://github.com/lambdadb/lambdadb/actions/runs/45820180323. The pinned revision contains sorted and consistent document listing (#635) and branch rollback to a tag before its first snapshot (#640)."
 }
