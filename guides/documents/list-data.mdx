@@ -265,7 +265,7 @@ For filtering, partition filtering, sorting, field selection, pending writes, or
 
 </CodeGroup>
 
-The SDKs use POST for document or partition filters, field selection, sorting, and consistent reads. TypeScript 0.15.0 also uses POST for `consistentRead: false`. Python 0.17.0 treats `consistent_read=False` like omission. Go 0.11.0 uses POST if `Ref` or `ConsistentRead` is set, including `lambdadb.Bool(false)`.
+The SDKs use POST for document or partition filters, field selection, sorting, and consistent reads. Python (`consistent_read=False`) and TypeScript 0.15.1 or later (`consistentRead: false`) choose the same endpoint as when the option is omitted. In TypeScript 0.15.0, adding `consistentRead: false` switches a basic list from GET to POST, which invalidates its page token. Go 0.11.0 uses POST if `Ref` or `ConsistentRead` is set, including `lambdadb.Bool(false)`.
 
 The extended list request body supports:
 

@@ -20,6 +20,7 @@ Last updated: November 27, 2026
 
 ### November 2026
 
+- The Python and TypeScript [Qdrant adapters](/guides/migrations/qdrant/qdrant-sdk-compatibility#filter-support) now preserve boolean grouping in search, scroll, and delete and reject unsupported predicates such as `MatchExcept` before sending a request.
 - Added [branch rollback](/guides/data-versioning/branches-tags-aliases#roll-back-a-branch-to-a-tag) to restore a branch's data and index schema from a tag, including a tag that is still waiting for its first snapshot; clients that read the rollback response must accept a `null` `headSnapshot`. Supported by the API, the [SDKs, CLI, and MCP server](/reference/sdk/introduction#supported-sdk-versions).
 - Document listing can [sort by up to four fields and include a branch's pending writes](/guides/documents/list-data#sort-and-read-pending-writes), and listing a tag now includes the pending writes it captured. Supported by the API, the [SDKs, CLI, and MCP server](/reference/sdk/introduction#supported-sdk-versions).
 - The REST API can [tag pending writes before the first snapshot](/guides/data-versioning/branches-tags-aliases#create-and-list-tags), so clients that read tag responses must accept `null` snapshot IDs, snapshot commit times, and data update times. The [SDKs, CLI, and MCP server](/reference/sdk/introduction#supported-sdk-versions) accept them.

@@ -321,7 +321,7 @@ For Qdrant sparse vectors, the CLI converts `indices` and `values` to an object 
 
 To use LambdaDB's Python or TypeScript Qdrant compatibility client, [prepare the vector mapping before importing](/guides/migrations/qdrant/qdrant-sdk-compatibility#prepare-the-migration-mapping). The generated mapping uses `dense` for unnamed vectors and the normalized source names for named vectors. The adapters expect `_qdrant_vector` and `_qdrant_vector_<name>`, respectively.
 
-Before switching application traffic, check the returned point IDs and [filter behavior](/guides/migrations/qdrant/qdrant-sdk-compatibility#filter-support) against Qdrant. For deletes, pass explicit point IDs that you have confirmed should be deleted.
+Before switching application traffic, compare the returned point IDs with Qdrant and check that your predicates are [supported by the adapter](/guides/migrations/qdrant/qdrant-sdk-compatibility#filter-support).
 
 <CardGroup cols={1}>
   <Card title="Qdrant SDK compatibility" href="/guides/migrations/qdrant/qdrant-sdk-compatibility" icon="code">
