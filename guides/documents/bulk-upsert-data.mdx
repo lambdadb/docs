@@ -37,8 +37,6 @@ Document field names are preserved as supplied in every SDK. The examples use `d
       coll.docs.bulk_upsert_docs(docs=docs)
   ```
 
-<PythonClientLifecycleNote />
-
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -89,6 +87,8 @@ Document field names are preserved as supplied in every SDK. The examples use `d
   ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 After a successful request you'll receive a message such as `"Bulk upsert request is accepted"`. Documents are processed asynchronously and become searchable after indexing completes.
 

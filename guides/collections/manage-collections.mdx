@@ -35,8 +35,6 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
         res_next = client.collections.list(size=20, page_token=res.next_page_token)
 ```
 
-<PythonClientLifecycleNote />
-
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -86,6 +84,8 @@ curl -i -X GET "$BASE_URL/projects/$PROJECT_NAME/collections?size=20&pageToken=Y
 ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 The response includes detailed information about each collection. When there are more results, the response may include `nextPageToken` for fetching the next page:
 

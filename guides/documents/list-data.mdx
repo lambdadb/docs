@@ -46,8 +46,6 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
           res_next = coll.docs.list(size=10, page_token=res.next_page_token)
   ```
 
-<PythonClientLifecycleNote />
-
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -59,13 +57,14 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
   const collection = client.collection("my_collection");
 
   // List first page
-  const res = await collection.docs.list({ size: 20 });
+  const options = { size: 20 };
+  const res = await collection.docs.list(options);
   console.log(res.docs?.length, res.total);
 
   // List next page
   if (res.nextPageToken) {
     const resNext = await collection.docs.list({
-      size: 20,
+      ...options,
       pageToken: res.nextPageToken,
     });
   }
@@ -124,6 +123,8 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
   ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 The response includes `total` (the number of documents returned in this page, including any delivered through `docsUrl`), the current page of documents, and an optional token for the next page. `total` is not the collection size:
 
@@ -262,7 +263,7 @@ For filtering, partition filtering, sorting, field selection, pending writes, or
 
 </CodeGroup>
 
-The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options. They also use it when you pass `sort` or `consistentRead: true` (`consistent_read=True` in Python, `ConsistentRead` in Go). To read the next page, pass the same arguments again, including the page size, with the returned token.
+The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options. They also use it when you pass `sort` or `consistentRead: true` (`consistent_read=True` in Python, `ConsistentRead` in Go). TypeScript and Go also use the extended endpoint when you explicitly pass `false`, and Go uses it for any explicit ref. If the first page used the extended endpoint, omitting those options can switch the next request to GET and invalidate its token. Reuse the first request's options and change only the page token, as in the [sorted list examples](#sort-and-read-pending-writes).
 In Go, pass these as `Filter`, `PartitionFilter`, `Fields`, `Sort`, `ConsistentRead`, and `IncludeVectors` on `lambdadb.ListDocsOpts`.
 
 The extended list request body supports:

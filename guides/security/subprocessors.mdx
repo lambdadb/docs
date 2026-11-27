@@ -3,7 +3,7 @@ title: Subprocessors
 description: Review the subprocessors LambdaDB uses to process customer data, their purposes, and processing locations.
 ---
 
-Last updated: October 9, 2026
+Last updated: November 27, 2026
 
 LambdaDB (Functional Systems Corp.) uses the following subprocessors to process customer data (customer content and account, usage, and billing data):
 
@@ -14,6 +14,10 @@ LambdaDB (Functional Systems Corp.) uses the following subprocessors to process 
 | Vercel | Website and dashboard hosting | United States |
 
 Account, authentication, usage, and billing data are processed on AWS infrastructure in the us-east-1 (N. Virginia) region.
+
+## Optional inference
+
+When you use [native embeddings](/guides/collections/native-embeddings), LambdaDB sends the configured source inputs or query inputs to the selected embedding provider. When you enable [native reranking](/guides/search/native-reranking), the selected provider receives the query text and the candidate fields you choose for scoring. For questions about processing locations for a particular provider, contact [contact@lambdadb.ai](mailto:contact@lambdadb.ai).
 
 ## Changes to subprocessors
 

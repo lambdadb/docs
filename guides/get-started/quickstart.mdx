@@ -38,7 +38,7 @@ To replace a key, create a new one, update your application's credentials, and v
 <CloudConnectionDetails />
 
 <Info>
-  The Free plan includes monthly read, write, storage, and inference usage at no cost. Add a payment method when you need Pay as You Go usage beyond the Free plan limits. See [Understanding costs](/guides/costs/understanding-costs).
+  The Free plan includes up to 2 GB of stored data and monthly allowances for reads, writes, and inference. An organization owner can upgrade to Pay as You Go from Billing in the dashboard. See [Understanding costs](/guides/costs/understanding-costs).
 </Info>
 
 <Tip>
@@ -111,8 +111,6 @@ with LambdaDB(
     print(res)
 ```
 
-<PythonClientLifecycleNote />
-
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -175,6 +173,8 @@ func main() {
 }
 ```
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 The underlying REST response is `201 Created` with the full collection, including the stored index schema and the default branch:
 
