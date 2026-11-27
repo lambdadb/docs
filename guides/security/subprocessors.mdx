@@ -5,11 +5,11 @@ description: Review the subprocessors LambdaDB uses to process customer data, th
 
 Last updated: November 27, 2026
 
-LambdaDB (Functional Systems Corp.) uses the following providers to process customer content and account, usage, or billing data. An inference provider receives data only when you use [native embeddings](/guides/collections/native-embeddings) or [native reranking](/guides/search/native-reranking) with that provider.
+LambdaDB (Functional Systems Corp.) uses the following providers to process customer data and to administer accounts and billing. Customer data includes the documents, vectors, and queries you send to LambdaDB. An inference provider receives data only when you use [native embeddings](/guides/collections/native-embeddings) or [native reranking](/guides/search/native-reranking) with that provider.
 
 | Subprocessor | Purpose | Data processed | Processing location |
 | --- | --- | --- | --- |
-| Amazon Web Services (AWS) | Compute, storage, and networking | Customer content | AWS region selected for the project |
+| Amazon Web Services (AWS) | Compute, storage, and networking | Customer data | AWS region selected for the project |
 | Amazon Web Services (AWS) | Account and service administration | Account, authentication, usage, and billing data | United States |
 | Stripe | Payment processing | Billing and payment information | United States |
 | Vercel | Website and dashboard hosting | Website and dashboard requests | United States |
