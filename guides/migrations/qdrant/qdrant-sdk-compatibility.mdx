@@ -273,9 +273,9 @@ Python v0.17.0 and TypeScript v0.15.0 can translate these filters differently fr
 |:--------------|:-----------------|
 | `Filter.must` with scalar `MatchValue` or range conditions | Conditions are required. Verify the target field types and matching rules. |
 | `Filter.should` with `Filter.must` | The `should` conditions become optional. |
-| A single `Filter.must_not` / `mustNot` condition that produces one clause | The excluded value becomes a positive match. |
+| `Filter.must_not` / `mustNot` when the entire filter translates to one exclusion clause | The excluded value becomes a positive match. |
 | `MatchAny` or `HasIdCondition` with multiple values under `must` | Every value becomes required. |
-| `MatchExcept` | A single excluded value under `must` can become a positive match. Check exclusions using a native filter that expresses the intended match set. |
+| `MatchExcept` | If the entire filter translates to one exclusion clause, the excluded value becomes a positive match. Check exclusions using a native filter that expresses the intended match set. |
 | `MatchText` | Splits on whitespace and translates terms to LambdaDB text query strings. |
 | Geo or nested object filters | Unsupported. |
 
