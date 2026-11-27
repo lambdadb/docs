@@ -23,7 +23,7 @@ Use [`lambdadb usage`](/guides/get-started/use-with-cli#view-usage) to inspect c
 
 LambdaDB offers two plans:
 
-- **Free**: includes up to **2 GB of stored data** at any one time. Monthly allowances are **1 PB of reads**, **2 GB of writes**, and **500K LIU of inference**. After a Free plan limit is reached, additional usage is **restricted**.
+- **Free**: includes a **2 GB quota on current physical storage**. Monthly allowances are **1 PB of reads**, **2 GB of writes**, and **500K LIU of inference**. After a Free plan limit is reached, additional usage is **restricted**.
 - **Pay as You Go**: usage is billed at the rates described below, with no minimum charge or per-collection fixed fee. Inactive collections still incur storage usage while their data is retained.
 
 ## Read usage
@@ -60,7 +60,9 @@ Storage is billed on **physical storage** at **$0.33 per GB-month**.
 
 If you use **branching**, logical storage and physical storage can differ; billing follows **physical** storage.
 
-Usage is computed from **hourly averages** of stored data. Those averages are summed into **GB-hours** over the billing period (not a single end-of-month snapshot).
+The Free plan quota uses the latest hourly physical storage measurement across the project's branches. When the recorded usage reaches 2 GB, LambdaDB blocks document upserts, updates, and bulk upserts. Document deletion remains available subject to the monthly write quota.
+
+For billing, LambdaDB sums **hourly averages** of stored data into **GB-hours** over the billing period.
 
 ## Data returned and retention storage
 

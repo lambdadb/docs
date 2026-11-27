@@ -264,7 +264,7 @@ lambdadb-migration pinecone \
   --migration.checkpoint-path .lambdadb-migration/checkpoints/tenant-a
 ```
 
-To resume, rerun the same command. The checkpoint key omits the prefix, so use a separate checkpoint directory for each scope.
+To resume, rerun the same command. The checkpoint key includes the target project and collection and omits the prefix. If you reuse a target, use a separate checkpoint directory for each prefix.
 
 After indexing completes, compare the [scoped Pinecone IDs](https://docs.pinecone.io/reference/api/2026-07/data-plane/list) with [all target document IDs](/guides/documents/list-data) while both sets are stable. This check uses `pinecone==10.3.0` and `lambdadb==0.17.0`. Use the same credentials and the data-plane host for the `articles` index.
 

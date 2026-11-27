@@ -263,8 +263,11 @@ For filtering, partition filtering, sorting, field selection, pending writes, or
 
 </CodeGroup>
 
-The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options. They also use it when you pass `sort` or `consistentRead: true` (`consistent_read=True` in Python, `ConsistentRead` in Go). TypeScript and Go also use the extended endpoint when you explicitly pass `false`, and Go uses it for any explicit ref. If the first page used the extended endpoint, omitting those options can switch the next request to GET and invalidate its token. Reuse the first request's options and change only the page token, as in the [sorted list examples](#sort-and-read-pending-writes).
-In Go, pass these as `Filter`, `PartitionFilter`, `Fields`, `Sort`, `ConsistentRead`, and `IncludeVectors` on `lambdadb.ListDocsOpts`.
+The scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended POST endpoint when you pass a filter, partition filter, field selector, sort order, or enable consistent reads.
+
+In TypeScript 0.15.0, `consistentRead: false` also selects POST. Python 0.17.0 treats `consistent_read=False` like omission when choosing the endpoint. In Go 0.11.0, setting `Ref` or `ConsistentRead` on `lambdadb.ListDocsOpts` selects POST, including when you pass `lambdadb.Bool(false)` for `ConsistentRead`. Use `Filter`, `PartitionFilter`, `Fields`, `Sort`, and `IncludeVectors` for the corresponding Go options.
+
+Page tokens are tied to the request method and options. Reuse the first request's options and change only the page token, as in the [sorted list examples](#sort-and-read-pending-writes).
 
 The extended list request body supports:
 

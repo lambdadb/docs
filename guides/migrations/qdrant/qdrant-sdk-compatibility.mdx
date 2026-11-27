@@ -267,17 +267,18 @@ const [records, nextOffset] = await client.scroll("articles", {
 
 ## Filter support
 
-Python v0.17.0 and TypeScript v0.15.0 can translate these filters differently from Qdrant. Compare matched IDs on representative data before reusing a filter for search or scroll.
+Python v0.17.0 and TypeScript v0.15.0 have filter translation bugs that can change which points match. Compare matched IDs on representative data before reusing a filter for search or scroll. See [Qdrant's filtering rules](https://qdrant.tech/documentation/search/filtering/) for the expected behavior.
 
 | Qdrant filter | Adapter behavior |
 |:--------------|:-----------------|
 | `Filter.must` with scalar `MatchValue` or range conditions | Conditions are required. Verify the target field types and matching rules. |
-| `Filter.should` with `Filter.must` | The `should` conditions become optional. |
-| `Filter.must_not` / `mustNot` when the entire filter translates to one exclusion clause | The excluded value becomes a positive match. |
+| `Filter.should` with a required `Filter.must` clause | Clauses translated as `should` become optional. `MatchExcept` follows the rule below. |
+| `Filter.must_not` / `mustNot` | If the entire filter translates to one exclusion clause, the adapter removes the negation and returns a positive match. |
 | `MatchAny` or `HasIdCondition` with multiple values under `must` | Every value becomes required. |
-| `MatchExcept` | If the entire filter translates to one exclusion clause, the excluded value becomes a positive match. Check exclusions using a native filter that expresses the intended match set. |
+| `MatchExcept` | If the entire filter translates to one clause, the excluded value becomes a positive match. With multiple clauses, each listed value becomes a `must_not` clause. This makes a `MatchExcept` under `should` exclude matches across the whole filter and fails to apply the outer negation when used under `must_not`. |
 | `MatchText` | Splits on whitespace and translates terms to LambdaDB text query strings. |
-| Geo or nested object filters | Unsupported. |
+| Geo conditions | A field condition with only a geo predicate is rejected. If that same condition also has a `match` or `range`, the adapter translates the supported part and silently drops the geo predicate. |
+| Nested object filters | Unsupported. |
 
 Use [native LambdaDB filters](/guides/search/boolean) where you need explicit boolean behavior. For deletion via the adapter, verify the intended point IDs independently and pass those IDs to `delete()`.
 
