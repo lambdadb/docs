@@ -229,7 +229,7 @@ A positive `--migration.query-overlap-min-ratio` applies only when the CLI compa
 
 ## Migrate one ID prefix
 
-Pass `--pinecone.list-prefix` on every command for the scoped run. The inventory file contains field mappings, and the CLI reads the prefix from the command line each time.
+Pass `--pinecone.list-prefix` to the inventory, dry-run, and import commands.
 
 ```bash
 lambdadb-migration inventory pinecone \
@@ -251,7 +251,7 @@ lambdadb-migration pinecone \
   --migration.dry-run
 ```
 
-The dry run's record count is for the full namespace. In v0.1.9, automated count validation compares the scoped import to that full count, and query overlap searches the full source namespace. Run the import with a dedicated checkpoint directory and leave out `--migration.validate`, `--migration.validation-report`, and `--migration.query-overlap`:
+In v0.1.9, the dry run and automated count validation use the full namespace count. Query overlap also searches the full namespace. For a prefix import, omit `--migration.validate`, `--migration.validation-report`, and `--migration.query-overlap`.
 
 ```bash
 lambdadb-migration pinecone \

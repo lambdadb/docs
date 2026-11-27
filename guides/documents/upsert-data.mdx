@@ -197,13 +197,15 @@ The write is accepted on that branch only. Read it back with a `ref` that select
 
 The acceptance response does not return auto-generated IDs. If you need to fetch, update, delete, or retry a document later, assign its ID before sending the request. Repeating an upsert without an ID can create another document with a new ID.
 
-Keep the same ID, branch, and partition-field value when replaying a write. An upsert replaces the entire document with that ID on the selected branch, so replaying an older payload can overwrite newer changes. Stable IDs prevent duplicate identities; they do not make writes conditional on the current document version.
+Keep the same ID, branch, and partition-field value when replaying a write. An upsert replaces the entire document with that ID on the selected branch, so replaying an older payload can overwrite newer changes.
 
 If a request times out or the connection closes after dispatch, its outcome may be unknown. [Fetch the expected IDs](/guides/documents/fetch-data) from the same branch with `consistentRead: true` and, for a partitioned collection, a `partitionFilter` selecting the original partition. Compare the stored content with the intended payload before deciding whether a retry is still needed. Do not infer write failure from an empty eventually consistent result. If that verification also fails, retain the unknown outcome and use the [error-specific retry guidance](/reference/api/introduction#errors-and-retries).
 
 ### Upsert into a partitioned collection
 
 Document IDs are unique across all partitions of a branch. Upserting the same ID with a different partition-field value replaces the document and routes the replacement using the new value. Omitting the partition field routes the replacement to `__default__`. To preserve its current partition, include its existing partition-field value.
+
+When tenants reuse local IDs, derive the document ID and partition value from the authorized tenant in your backend. For example, for tenant `tenant_42` and local ID `42`, write `id: "tenant_42:42"` and `tenant_id: "tenant_42"`.
 
 ## Upsert limits
 

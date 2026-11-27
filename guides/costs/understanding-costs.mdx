@@ -56,13 +56,9 @@ Write usage is billed at **$1 per write GB** of measured usage.
 
 ## Storage usage
 
-Storage is billed on **physical storage** at **$0.33 per GB-month**.
-
-If you use **branching**, logical storage and physical storage can differ; billing follows **physical** storage.
+Pay as You Go bills **physical storage** at **$0.33 per GB-month**. LambdaDB sums hourly averages into **GB-hours** over the billing period. Branching can cause physical and logical storage to differ.
 
 The Free plan quota uses the latest hourly physical storage measurement across the project's branches. When the recorded usage reaches 2 GB, LambdaDB blocks document upserts, updates, and bulk upserts. Document deletion remains available subject to the monthly write quota.
-
-For billing, LambdaDB sums **hourly averages** of stored data into **GB-hours** over the billing period.
 
 ## Data returned and retention storage
 

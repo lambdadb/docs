@@ -271,14 +271,20 @@ Python v0.17.0 and TypeScript v0.15.0 have filter translation bugs that can chan
 
 | Qdrant filter | Adapter behavior |
 |:--------------|:-----------------|
-| `Filter.must` with scalar `MatchValue` or range conditions | Conditions are required. Verify the target field types and matching rules. |
-| `Filter.should` with a required `Filter.must` clause | Clauses translated as `should` become optional. `MatchExcept` follows the rule below. |
+| `Filter.must` with scalar `MatchValue` or range conditions | These conditions are required. |
+| `Filter.should` with a required `Filter.must` clause | Ordinary `should` clauses become optional. |
 | `Filter.must_not` / `mustNot` | If the entire filter translates to one exclusion clause, the adapter removes the negation and returns a positive match. |
 | `MatchAny` or `HasIdCondition` with multiple values under `must` | Every value becomes required. |
-| `MatchExcept` | If the entire filter translates to one clause, the excluded value becomes a positive match. With multiple clauses, each listed value becomes a `must_not` clause. This makes a `MatchExcept` under `should` exclude matches across the whole filter and fails to apply the outer negation when used under `must_not`. |
+| `MatchExcept` | If the entire filter produces one clause, it matches the excluded value. With multiple clauses, the adapter excludes each listed value across the entire filter. |
 | `MatchText` | Splits on whitespace and translates terms to LambdaDB text query strings. |
 | Geo conditions | A field condition with only a geo predicate is rejected. If that same condition also has a `match` or `range`, the adapter translates the supported part and silently drops the geo predicate. |
 | Nested object filters | Unsupported. |
+
+Consider a `MatchExcept` condition that excludes `red` on a scalar `color` field.
+
+- With this condition alone under `must`, the adapter matches red points.
+- Under `should` alongside a condition that matches London, the adapter excludes red points even if they are in London.
+- Under `must_not` with London required by `must`, the adapter excludes red points in London. In Qdrant, the outer `must_not` keeps the red London points.
 
 Use [native LambdaDB filters](/guides/search/boolean) where you need explicit boolean behavior. For deletion via the adapter, verify the intended point IDs independently and pass those IDs to `delete()`.
 
@@ -287,7 +293,7 @@ Use [native LambdaDB filters](/guides/search/boolean) where you need explicit bo
 - Local Qdrant mode, including `path` and `location=":memory:"`
 - Sparse vector upsert through the compatibility client
 - Multi-vector comparators
-- Geo payload indexes and geo filters
+- Geo payload indexes
 - Filtered count
 - Query offset
 - `score_threshold`

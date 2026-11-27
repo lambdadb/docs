@@ -244,7 +244,7 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 
 ### Update the index schema
 
-An index schema belongs to a branch. The `indexConfigs` on a collection are those of its default `main` branch, and they stay in collection responses. To change a schema, update the branch that owns it.
+Collection responses show the `indexConfigs` of the default `main` branch. To change a schema, update the branch that owns it.
 
 This update adds a `category` index and retains the existing `url`, `author`, and `content` settings. It omits the server-managed `id` and the existing `content` description, which LambdaDB preserves. The Go snippet also imports `github.com/lambdadb/go-lambdadb/models/components`.
 
