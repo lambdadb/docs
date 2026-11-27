@@ -3,17 +3,19 @@ title: Subprocessors
 description: Review the subprocessors LambdaDB uses to process customer data, their purposes, and processing locations.
 ---
 
-Last updated: October 9, 2026
+Last updated: November 27, 2026
 
-LambdaDB (Functional Systems Corp.) uses the following subprocessors to process customer data (customer content and account, usage, and billing data):
+LambdaDB (Functional Systems Corp.) uses the following providers to process customer data and to administer accounts and billing. Customer data includes the documents, vectors, and queries you send to LambdaDB. An inference provider receives data only when you use [native embeddings](/guides/collections/native-embeddings) or [native reranking](/guides/search/native-reranking) with that provider.
 
-| Subprocessor | Purpose | Location |
-| --- | --- | --- |
-| Amazon Web Services (AWS) | Cloud infrastructure — compute, storage, and networking for the LambdaDB service | Customer content: the AWS region selected for the project. Account, authentication, usage, and billing data: us-east-1 (N. Virginia). |
-| Stripe | Payment processing | United States |
-| Vercel | Website and dashboard hosting | United States |
-
-Account, authentication, usage, and billing data are processed on AWS infrastructure in the us-east-1 (N. Virginia) region.
+| Subprocessor | Purpose | Data processed | Processing location |
+| --- | --- | --- | --- |
+| Amazon Web Services (AWS) | Compute, storage, and networking | Customer data | AWS region selected for the project |
+| Amazon Web Services (AWS) | Account and service administration | Account, authentication, usage, and billing data | United States |
+| Stripe | Payment processing | Billing and payment information | United States |
+| Vercel | Website and dashboard hosting | Website and dashboard requests | United States |
+| OpenAI OpCo, LLC | Text embeddings | Document or query text submitted for embedding | Global |
+| Cohere Inc. | Embeddings and reranking | Text or image inputs for embedding. Query text and selected candidate fields for reranking. | [United States (Cohere-hosted API)](https://trustcenter.cohere.com/?format=html) |
+| TypeSafe AI, Inc. | Reranking | Query text, selected candidate fields, and relevance criteria | [United States](https://help.typesafe.ai/articles/5974925716) |
 
 ## Changes to subprocessors
 

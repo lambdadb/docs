@@ -85,7 +85,7 @@ See [native reranking](/guides/search/native-reranking) for supported inputs, pr
 
 ## Quotas and throttling
 
-Monthly usage allowances are separate from per-request limits. See [Understanding costs](/guides/costs/understanding-costs) for Free plan read, write, storage, and inference quotas. Moving to a paid plan does not remove document, request, or model input limits.
+The Free plan has a 2 GB physical storage quota and monthly allowances for reads, writes, and inference. See [Understanding costs](/guides/costs/understanding-costs#plans) for details. Moving to a paid plan does not remove document, request, or model input limits.
 
 HTTP `429` can mean request throttling, too much pending data for a consistent read, temporary facet memory exhaustion, or provider-call admission exhaustion. Follow the error message: waiting for indexing differs from reducing concurrency. Honor `Retry-After` when present. An individual facet request over its memory budget returns `400`; an inference quota failure returns `403`. See [Errors and retries](/reference/api/introduction#errors-and-retries).
 

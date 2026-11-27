@@ -139,6 +139,8 @@ results, err := client.Collection("my_collection").Query(ctx, lambdadb.QueryInpu
 
 `field` must match the configured partition field, and `in` contains field values, not physical partition IDs. Hash partitioning can place several field values in the same physical partition; the request also restricts matches to the supplied values. Derive permitted values in your backend from the caller's authorization.
 
+When tenants reuse local IDs, [include the tenant in each document ID](/guides/documents/upsert-data#upsert-into-a-partitioned-collection).
+
 Use query predicates, including `knn.filter`, for additional document conditions within that search scope. A document predicate alone does not replace `partitionFilter` for skipping physical partitions. Internal sharding distributes query execution and has no user-facing configuration; it is separate from this explicit partition selection.
 
 See [Create a partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection) for setup and [Read usage](/guides/costs/understanding-costs#read-usage) for the effect of partition selection on billing.
@@ -156,8 +158,6 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
     # `results.results` contains items (each item includes `doc` and `score`).
     # `results.documents` contains document bodies only (no scores).
 ```
-
-<PythonClientLifecycleNote />
 
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
@@ -212,6 +212,8 @@ curl -X POST "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/quer
 ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 The response will look like this:
 

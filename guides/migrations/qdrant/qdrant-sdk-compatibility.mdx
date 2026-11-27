@@ -7,7 +7,7 @@ import CloudConnectionDetails from '/snippets/cloud-connection-details.mdx';
 
 LambdaDB provides explicit Qdrant-style compatibility clients for Python and TypeScript applications. Use them when you have already moved or plan to move Qdrant data into LambdaDB, but want to keep common Qdrant client calls while you migrate application code.
 
-The compatibility clients are not full Qdrant client replacements. They cover the common dense-vector search and RAG subset, map Qdrant points to LambdaDB documents, and raise an explicit unsupported-feature error for behavior that LambdaDB cannot safely emulate.
+The compatibility clients cover common dense-vector search and RAG workflows and map Qdrant points to LambdaDB documents. Review [filter support](#filter-support) before reusing Qdrant predicates.
 
 ## When to use this path
 
@@ -27,13 +27,13 @@ Dense vectors must fit the [dimension limits](/guides/get-started/limits#collect
 
 ## Install
 
-Python support is available in `lambdadb >= 0.8.2`:
+Install the Python SDK with support for the filters in this guide:
 
 ```bash
-pip install --upgrade lambdadb
+pip install --upgrade "lambdadb>=0.17.1"
 ```
 
-TypeScript support is available in `@functional-systems/lambdadb >= 0.4.3`:
+For TypeScript, install the current stable SDK:
 
 ```bash
 npm install @functional-systems/lambdadb@latest
@@ -193,7 +193,7 @@ const results = await client.queryPoints("articles", {
 | Query | `query_points()` | `queryPoints()` / `query_points()` | Dense vector query plus supported payload filters. Always sends `consistentRead: true`; a Qdrant `consistency` argument is ignored with a warning. |
 | Query alias | `search()` | `query()` / `search()` | TypeScript `query()` supports Qdrant JS-style `filter`, `with_payload`, and `with_vector`. |
 | Retrieve | `retrieve()` | `retrieve()` | Uses strongly consistent LambdaDB fetches. |
-| Delete points | `delete()` | `delete()` | Supports point IDs and supported Qdrant filters. |
+| Delete points | `delete()` | `delete()` | Pass point IDs, or a non-empty [supported filter](#filter-support) in Python 0.17.1+ or TypeScript 0.15.1+. |
 | Scroll | `scroll()` | `scroll()` | Supports filtered scroll with payload and vector response selectors. Maps to LambdaDB document listing without the consistent-read option, so on a branch recent writes can be missing until they are committed. Returned offsets are LambdaDB page tokens, not Qdrant point-id offsets. |
 | Count | `count()` | `count()` | Unfiltered collection count only. |
 
@@ -232,7 +232,7 @@ await client.query("articles", {
 
 `scroll()` maps to LambdaDB list documents. Filters are translated to LambdaDB list filters before pagination. When Qdrant-style vector selectors are requested, the compatibility layer requests vector values from LambdaDB and filters the returned vector object while shaping the response.
 
-Returned `next_offset` / `nextOffset` values are LambdaDB page tokens. Pass the returned token back as the next `offset` with the same filter, `limit`, and payload and vector selectors; a token reused with a changed request returns a `400` error. Numeric Qdrant point-ID offsets are not supported.
+Returned `next_offset` / `nextOffset` values are LambdaDB page tokens. Pass the returned token back as the next `offset` with the same filter, `limit`, and payload and vector selectors; a token reused with a changed request returns a `400` error. If an SDK upgrade changes how the filter is translated, restart the scroll from the first page. Numeric Qdrant point-ID offsets are not supported.
 
 ```python Python
 records, next_offset = client.scroll(
@@ -267,26 +267,27 @@ const [records, nextOffset] = await client.scroll("articles", {
 
 ## Filter support
 
-| Qdrant filter | Status |
-|:--------------|:-------|
-| `Filter.must` | Supported |
-| `Filter.should` | Supported through LambdaDB bool clauses |
-| `Filter.must_not` / `mustNot` | Supported |
-| `FieldCondition.match=MatchValue` | Supported |
-| `FieldCondition.match=MatchAny` | Supported |
-| `FieldCondition.match=MatchExcept` | Supported |
-| `FieldCondition.range` | Supported |
-| `HasIdCondition` | Supported |
-| `MatchText` | Supported for whitespace-separated text terms through LambdaDB text query strings. |
-| Geo filters | Unsupported |
-| Nested object filters | Unsupported |
+Filtered search, scroll, and delete use the matching rules below starting with **Python SDK 0.17.1** and **TypeScript SDK 0.15.1**. Earlier versions can select unintended points, including when a filter contains a single exclusion. Until you upgrade, delete by explicit point IDs.
+
+| Qdrant filter | Matching behavior |
+|:--------------|:------------------|
+| `must` | All conditions must match. |
+| `should` | At least one condition must match, even alongside `must`. Supply a non-empty list. |
+| `must_not` / `mustNot` | Excludes points that match any of the listed conditions. |
+| `MatchValue` | Matches a string, boolean, or integer. Use a keyword field for string equality. |
+| `MatchAny` | Matches any value in a non-empty list of strings or a non-empty list of integers. |
+| `HasIdCondition` | Matches any ID in a non-empty list. |
+| `MatchText` | All whitespace-separated alphanumeric terms must match a scalar text field. Use compatible text analyzers in Qdrant and LambdaDB. |
+| `range` | Set a lower bound, an upper bound, or both. Use a double field for fractional bounds and RFC 3339 strings with a time zone and up to millisecond precision for datetime bounds. |
+
+The adapters reject `MatchExcept`, geo predicates, nested filters, and `min_should` before sending the request. In particular, Qdrant's `MatchExcept` can match an array containing both an excluded value and another value. A document-level exclusion would select different points. Use one predicate per field condition.
 
 ## Unsupported behavior
 
 - Local Qdrant mode, including `path` and `location=":memory:"`
 - Sparse vector upsert through the compatibility client
 - Multi-vector comparators
-- Geo payload indexes and geo filters
+- Geo payload indexes
 - Filtered count
 - Query offset
 - `score_threshold`
@@ -294,9 +295,36 @@ const [records, nextOffset] = await client.scroll("articles", {
 
 ## How this fits with the Migration CLI
 
-The LambdaDB Migration CLI moves data from Qdrant to LambdaDB. The Qdrant compatibility clients help reduce application code changes after data is in LambdaDB.
+### Prepare the migration mapping
 
-For a full Qdrant migration workflow, start with the migration guide:
+Before importing, edit the generated migration mapping so the target vector fields match the adapter's [data mapping](#data-mapping). For an unnamed vector, change the `targetField` under `vectors[""]` from `dense` to `_qdrant_vector`. For a named vector, use `_qdrant_vector_<name>`, replacing dots in the name with underscores. The example shows an updated entry for a 1,536-dimensional cosine vector named `title`. Keep your generated dimensions and metric and leave the other mapping entries in place.
+
+```yaml
+mapping:
+  vectors:
+    title:
+      targetField: _qdrant_vector_title
+      dimensions: 1536
+      similarity: cosine
+```
+
+Import into a collection with the matching schema. The CLI leaves an existing collection's schema as-is, so use a new collection when the existing import uses the default field names. Review payload renames for fields your application filters or selects. A payload field named `id` or starting with `_qdrant_` needs a different target name and corresponding changes to application field references.
+
+The CLI stringifies numeric point IDs. Setting `ids.copyOriginalTo: _qdrant_id` copies that same string. If your application requires numeric IDs in responses, provide a numeric `_qdrant_id` through a custom export or post-import transform and check that the target SDK can represent the original values.
+
+After the imported documents are visible, run a representative search before switching traffic. With the compatibility client connected and `query_vector` set to a vector from the source model, query the migrated `title` vector and inspect the returned IDs.
+
+```python Python
+results = client.query_points(
+    collection_name="articles",
+    query=query_vector,
+    using="title",
+    limit=10,
+)
+print([(point.id, type(point.id).__name__) for point in results.points])
+```
+
+Omit `using` for an unnamed vector. Compare the returned IDs, their types, and the expected payload fields with the source results.
 
 <CardGroup cols={2}>
   <Card title="Migrate from Qdrant" href="/guides/migrations/qdrant/migrate-from-qdrant" icon="arrows-rotate">

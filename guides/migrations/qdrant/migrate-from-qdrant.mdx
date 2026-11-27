@@ -170,7 +170,7 @@ lambdadb-migration qdrant \
   --migration.query-overlap
 ```
 
-By default, `--migration.query-overlap` reports vector overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+A positive `--migration.query-overlap-min-ratio` applies only when the CLI compares results. See [Interpret query overlap](/guides/migrations/overview#interpret-query-overlap) for how to check sample coverage, result counts, and the reported ratio.
 
 ## Mapping details
 
@@ -319,9 +319,9 @@ For Qdrant sparse vectors, the CLI converts `indices` and `values` to an object 
 
 ## Reduce application changes with SDK compatibility
 
-After data is in LambdaDB, Python and TypeScript applications can use LambdaDB's Qdrant compatibility clients as a bridge before rewriting every query to native LambdaDB APIs.
+To use LambdaDB's Python or TypeScript Qdrant compatibility client, [prepare the vector mapping before importing](/guides/migrations/qdrant/qdrant-sdk-compatibility#prepare-the-migration-mapping). The generated mapping uses `dense` for unnamed vectors and the normalized source names for named vectors. The adapters expect `_qdrant_vector` and `_qdrant_vector_<name>`, respectively.
 
-The compatibility clients support common Qdrant-style calls such as collection creation, dense-vector upsert, dense-vector query, retrieve, delete, filtered scroll, and unfiltered count. They are not full Qdrant client replacements, and unsupported behavior raises an explicit error where possible.
+Before switching application traffic, compare the returned point IDs with Qdrant and check that your predicates are [supported by the adapter](/guides/migrations/qdrant/qdrant-sdk-compatibility#filter-support).
 
 <CardGroup cols={1}>
   <Card title="Qdrant SDK compatibility" href="/guides/migrations/qdrant/qdrant-sdk-compatibility" icon="code">

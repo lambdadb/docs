@@ -5,7 +5,7 @@ description: Paginate through documents in a LambdaDB collection using the list 
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
 
-This page shows you how to use the list endpoint to list documents in a collection. Use this when you need to iterate over documents (for example, to export or scan) without running a ranked search.
+Use the list endpoint to scan or export documents from a collection.
 
 Large responses may return documents through `docsUrl` instead of inline `docs`. See [Large results](/guides/search/limits#large-results) for REST download instructions and SDK behavior.
 
@@ -17,11 +17,13 @@ Large responses may return documents through `docsUrl` instead of inline `docs`.
 | refKind     | Ref type: `branch`, `tag`, or `alias`; use with `refName`. | string | | |
 | refName     | Ref name; use with `refKind`. | string | | |
 
-Treat `pageToken` as opaque and return it unchanged to the same endpoint. When selecting a ref, supply `refKind` and `refName` together; omitting both reads from `main`. See [Read from a ref](/guides/data-versioning/branches-tags-aliases#read-from-a-ref) for examples.
+To read the next page, repeat the request with the returned `nextPageToken` as `pageToken`. Keep the endpoint and all other options the same. If the project, collection, ref, or options change, start from the first page to avoid a `400 BadRequest`. See the [sorted list example](#sort-and-read-pending-writes).
+
+To select a ref, supply `refKind` and `refName` together. Omitting both reads from `main`. See [Read from a ref](/guides/data-versioning/branches-tags-aliases#read-from-a-ref) for examples.
 
 Documents are returned in ascending document ID order unless an [extended list request](#extended-list-request) sorts them. A list request on a branch reads its published snapshot. On a tag, or an alias that targets a tag, it also includes the pending writes the tag captured. To include a branch's pending writes, set `consistentRead` in an extended list request. Pending bulk imports become visible after they are published. A read that includes pending writes can return `429` when that pending payload reaches the [configured threshold](/guides/get-started/limits#search-and-reads).
 
-Page tokens record a position in the requested order, not a snapshot. Each page reads the data currently visible to the ref, so documents added after the position can appear on later pages and documents disappear once their deletion is visible to the read. Between pages, a branch may advance, an alias may be retargeted, and a tag may publish pending writes it captured at creation. For a stable multi-page export, use the same [tag created with `source.asOf`](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) on every page. Keep the page size and the sort, filter, partition, field-selection, vector, and consistency options unchanged: a changed request condition returns `400 BadRequest`, as does reusing a token with a different project, collection, or ref. Start again from the first page when any of them changes.
+Page tokens record a position in the requested order. A branch can gain documents or an alias can point to a different tag between pages. For a stable multi-page export, use a [tag created with `source.asOf`](/guides/data-versioning/branches-tags-aliases#create-and-list-tags).
 
 <CodeGroup>
 
@@ -46,8 +48,6 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
           res_next = coll.docs.list(size=10, page_token=res.next_page_token)
   ```
 
-<PythonClientLifecycleNote />
-
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -59,13 +59,14 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
   const collection = client.collection("my_collection");
 
   // List first page
-  const res = await collection.docs.list({ size: 20 });
+  const options = { size: 20 };
+  const res = await collection.docs.list(options);
   console.log(res.docs?.length, res.total);
 
   // List next page
   if (res.nextPageToken) {
     const resNext = await collection.docs.list({
-      size: 20,
+      ...options,
       pageToken: res.nextPageToken,
     });
   }
@@ -124,6 +125,8 @@ Page tokens record a position in the requested order, not a snapshot. Each page 
   ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 The response includes `total` (the number of documents returned in this page, including any delivered through `docsUrl`), the current page of documents, and an optional token for the next page. `total` is not the collection size:
 
@@ -262,8 +265,7 @@ For filtering, partition filtering, sorting, field selection, pending writes, or
 
 </CodeGroup>
 
-The SDK scoped list helpers (`docs.list` in Python and TypeScript, `Docs().List` in Go) use the extended list request automatically when you pass filter, partition filter, or field-selection options. They also use it when you pass `sort` or `consistentRead: true` (`consistent_read=True` in Python, `ConsistentRead` in Go). To read the next page, pass the same arguments again, including the page size, with the returned token.
-In Go, pass these as `Filter`, `PartitionFilter`, `Fields`, `Sort`, `ConsistentRead`, and `IncludeVectors` on `lambdadb.ListDocsOpts`.
+The SDKs use POST for document or partition filters, field selection, sorting, and consistent reads. Python (`consistent_read=False`) and TypeScript 0.15.1 or later (`consistentRead: false`) choose the same endpoint as when the option is omitted. In TypeScript 0.15.0, adding `consistentRead: false` switches a basic list from GET to POST, which invalidates its page token. Go 0.11.0 uses POST if `Ref` or `ConsistentRead` is set, including `lambdadb.Bool(false)`.
 
 The extended list request body supports:
 
@@ -306,7 +308,7 @@ Inside a `bool` filter, `occur` can be `filter`, `must`, `must_not`, or `should`
 
 ### Sort and read pending writes
 
-These requests return pages ordered by `category`, including writes to `main` that are not yet in its published snapshot. The SDK examples read a second page with the same arguments:
+These requests sort by `category` and include pending writes to `main`.
 
 <CodeGroup>
 
@@ -405,15 +407,9 @@ These requests return pages ordered by `category`, including writes to `main` th
 
 </CodeGroup>
 
-In the SDKs, the paging helpers (`list_pages` in Python, `listPages` or `listAll` in TypeScript, and `ListIterator` or `ListAll` in Go) repeat these options and the page size on every page. In Python and TypeScript, a `sort` direction other than `asc` or `desc` fails before a request is sent, and so does `consistentRead: true` (`consistent_read=True` in Python) with a tag ref; Go sends the request and returns the server's `400`.
+To paginate automatically, use `list_pages` in Python, `listPages` or `listAll` in TypeScript, or `ListIterator` or `ListAll` in Go. Python and TypeScript reject invalid sort directions and tag refs with consistent reads enabled before sending the request. Go returns the server's `400` in both cases.
 
 Fields are compared in the order given, and ascending document ID breaks ties. Omit `sort` or send `null` for the default order; an empty array returns `400 BadRequest`. For a `keyword` array, `asc` uses the smallest indexed value and `desc` the largest. A document without a `keyword` value sorts last for `asc` and first for `desc`; a missing numeric or `datetime` value sorts as zero (the Unix epoch for `datetime`). If a document's sort value changes between pages, that document can be returned again or skipped.
-
-<Note>
-
-  When you use `nextPageToken` with the extended endpoint, repeat the original request body with the token as `pageToken`: keep the same `size`, `sort`, `consistentRead`, `filter`, `partitionFilter`, `fields`, `includeVectors`, and `ref` options across pages.
-
-</Note>
 
 <Note>
 

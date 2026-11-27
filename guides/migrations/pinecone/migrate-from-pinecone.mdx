@@ -36,7 +36,7 @@ Pinecone's newer document-schema indexes can mix `dense_vector`, `sparse_vector`
 
 <Note>
 
-Pinecone's current API reference is versioned as `2026-04`. If you call Pinecone REST APIs directly during a custom migration, set the `X-Pinecone-Api-Version` header explicitly. The LambdaDB Migration CLI uses Pinecone's official SDK and does not require you to pass this header.
+If you call Pinecone REST APIs directly during a custom migration, set `X-Pinecone-Api-Version` to the version of the API reference you are following. The LambdaDB Migration CLI uses Pinecone's official SDK and does not require you to pass this header.
 
 </Note>
 
@@ -76,15 +76,7 @@ lambdadb-migration inventory pinecone \
   --output pinecone-inventory.yaml
 ```
 
-Use `--pinecone.list-prefix` when you only want to migrate records whose IDs start with a specific prefix:
-
-```bash
-lambdadb-migration inventory pinecone \
-  --pinecone.index articles \
-  --pinecone.namespace production \
-  --pinecone.list-prefix "tenant-a#" \
-  --output pinecone-inventory.yaml
-```
+To import only IDs that start with a prefix, follow [Migrate one ID prefix](#migrate-one-id-prefix).
 
 A dense-vector inventory produces an editable mapping like this:
 
@@ -217,7 +209,7 @@ Use `--migration.create-collection=false` when the target LambdaDB collection al
 
 `--migration.validation-report` writes the validation result as JSON. The report includes source count, accepted records, LambdaDB `numDocs`, sampled IDs, compared sample count, query overlap results, and validation errors.
 
-For dense or sparse-vector migrations, add query overlap checks:
+For full-namespace dense or sparse-vector migrations, add query overlap checks:
 
 ```bash
 lambdadb-migration pinecone \
@@ -233,7 +225,82 @@ lambdadb-migration pinecone \
   --migration.query-overlap
 ```
 
-By default, `--migration.query-overlap` reports vector overlap without failing the migration. Set `--migration.query-overlap-min-ratio` above `0` to require a minimum average overlap.
+A positive `--migration.query-overlap-min-ratio` applies only when the CLI compares results. See [Interpret query overlap](/guides/migrations/overview#interpret-query-overlap) for how to check sample coverage, result counts, and the reported ratio.
+
+## Migrate one ID prefix
+
+Pass `--pinecone.list-prefix` to the inventory, dry-run, and import commands.
+
+```bash
+lambdadb-migration inventory pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --pinecone.list-prefix "tenant-a#" \
+  --output pinecone-tenant-a.yaml
+```
+
+Review the generated mapping and set `mapping.target.collection` to a new collection named `articles-tenant-a`. With the credentials exported in Step 2, check the mapping in a dry run:
+
+```bash
+lambdadb-migration pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --pinecone.list-prefix "tenant-a#" \
+  --lambdadb.collection articles-tenant-a \
+  --mapping-file pinecone-tenant-a.yaml \
+  --migration.dry-run
+```
+
+In v0.1.9, the dry run and automated count validation use the full namespace count. Query overlap also searches the full namespace. For a prefix import, omit `--migration.validate`, `--migration.validation-report`, and `--migration.query-overlap`.
+
+```bash
+lambdadb-migration pinecone \
+  --pinecone.index articles \
+  --pinecone.namespace production \
+  --pinecone.list-prefix "tenant-a#" \
+  --lambdadb.collection articles-tenant-a \
+  --mapping-file pinecone-tenant-a.yaml \
+  --migration.write-mode bulk \
+  --migration.checkpoint-path .lambdadb-migration/checkpoints/tenant-a
+```
+
+To resume, rerun the same command. The checkpoint key includes the target project and collection and omits the prefix. If you reuse a target, use a separate checkpoint directory for each prefix.
+
+After indexing completes, compare the [scoped Pinecone IDs](https://docs.pinecone.io/reference/api/2026-07/data-plane/list) with [all target document IDs](/guides/documents/list-data) while both sets are stable. This check uses `pinecone==10.3.0` and `lambdadb==0.17.0`. Use the same credentials and the data-plane host for the `articles` index.
+
+```python Python
+from os import environ
+
+from lambdadb import LambdaDB
+from pinecone import Pinecone
+
+pinecone = Pinecone(api_key=environ["PINECONE_API_KEY"])
+index = pinecone.index(host="YOUR_ARTICLES_INDEX_HOST")
+source_ids = {
+    vector.id
+    for page in index.list(namespace="production", prefix="tenant-a#")
+    for vector in page.vectors or []
+}
+
+with LambdaDB(
+    base_url=environ["LAMBDADB_BASE_URL"],
+    project_name=environ["LAMBDADB_PROJECT_NAME"],
+    project_api_key=environ["LAMBDADB_PROJECT_API_KEY"],
+) as client:
+    documents = client.collection("articles-tenant-a").docs
+    target_ids = {document["id"] for document in documents.iter_all()}
+
+missing = sorted(source_ids - target_ids)
+unexpected = sorted(target_ids - source_ids)
+if missing or unexpected:
+    raise SystemExit(
+        f"Missing IDs ({len(missing)}), first 10: {missing[:10]}\n"
+        f"Unexpected IDs ({len(unexpected)}), first 10: {unexpected[:10]}"
+    )
+print(f"Matched all {len(source_ids)} source IDs.")
+```
+
+Check representative fields and search results against the same source subset before cutover.
 
 ## Mapping details
 

@@ -46,8 +46,6 @@ with LambdaDB(
     client.collections.create(collection_name="example-collection", index_configs=basic_config)
 ```
 
-<PythonClientLifecycleNote />
-
 ```typescript TypeScript
 import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -130,6 +128,8 @@ curl -i -X POST "$BASE_URL/projects/$PROJECT_NAME/collections" \
 ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 A successful REST request returns `201 Created`. Collection creation also creates the default branch, `main`:
 

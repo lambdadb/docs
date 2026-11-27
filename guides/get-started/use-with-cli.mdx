@@ -391,7 +391,6 @@ The `branches`, `tags`, and `aliases` commands manage [data versioning refs](/gu
 
 ```bash
 lambdadb branches create --collection cli-demo-docs --branch candidate --json
-lambdadb branches create --collection cli-demo-docs --branch replay --source branch:main --as-of 2026-10-01T00:00:00Z --json
 lambdadb tags create --collection cli-demo-docs --tag release-one --source branch:candidate --json
 lambdadb branches create --collection cli-demo-docs --branch hotfix --source tag:release-one --json
 lambdadb aliases create --collection cli-demo-docs --alias production --target tag:release-one --json
@@ -399,6 +398,15 @@ lambdadb aliases retarget --collection cli-demo-docs --alias production --target
 ```
 
 `branches create` starts a writable branch from a branch or a tag (`--source branch:NAME` or `--source tag:NAME`, default `branch:main`) and inherits the source's index schema; `tags create` pins the state of a branch or tag. Without `--as-of`, the new branch or tag takes the source's committed snapshot, if one exists, and also the writes that were pending on the source at creation; with `--as-of`, it takes only the latest retained committed snapshot at or before that time, without pending writes. `--as-of` takes Unix epoch milliseconds or an ISO 8601 time and applies to branch sources only; with a tag source it is rejected before any request is sent. A branch created from a tag reports `parentBranch: null`. See [what a new branch](/guides/data-versioning/branches-tags-aliases#create-and-list-branches) and [a tag](/guides/data-versioning/branches-tags-aliases#create-and-list-tags) capture. Aliases are read names for a branch or tag, never write targets or targets of other aliases, and `retarget` changes what every reader of the alias sees immediately.
+
+To create a point-in-time branch, use a timestamp from the collection's retained history. This example uses `jq` to read the current committed snapshot time from `main`. If `headSnapshot` is still null after a write, wait for the first snapshot and rerun the example.
+
+```bash
+snapshot_time=$(lambdadb branches describe --collection cli-demo-docs --branch main --json |
+  jq -er '.data.branch.headSnapshot.snapshotCommittedAt') &&
+  lambdadb branches create --collection cli-demo-docs --branch replay \
+    --source branch:main --as-of "$snapshot_time" --json
+```
 
 ### List and describe refs
 

@@ -46,8 +46,6 @@ To fetch documents, specify their IDs within the per-request limit above.
       # `res.documents` contains document bodies only.
   ```
 
-<PythonClientLifecycleNote />
-
   ```typescript TypeScript
   import { LambdaDBClient } from "@functional-systems/lambdadb";
 
@@ -106,6 +104,8 @@ To fetch documents, specify their IDs within the per-request limit above.
   ```
 
 </CodeGroup>
+
+<PythonClientLifecycleNote />
 
 `consistentRead: true` is supported when `ref` selects a branch directly or an alias that currently targets a branch. Tag reads and an alias that targets a tag reject consistent reads. See [Branches, tags, and aliases](/guides/data-versioning/branches-tags-aliases#read-from-a-ref).
 
