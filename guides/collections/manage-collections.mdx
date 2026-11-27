@@ -9,6 +9,8 @@ This page shows you how to manage your existing collections including listing, d
 
 Later snippets reuse the imports and client setup from the first example. For Go, place the snippets inside `main`, import `context`, `log`, and `github.com/lambdadb/go-lambdadb` as `lambdadb`, and initialize `ctx := context.Background()`. See the [Start with an SDK](/guides/get-started/quickstart) for a complete Go setup.
 
+The examples use the `example-collection` schema from [Create a collection from scratch](/guides/collections/create-a-collection#create-a-collection-from-scratch).
+
 ## List collections
 
 Retrieve collections in your project with their configuration and metadata. The endpoint supports optional pagination.
@@ -96,10 +98,16 @@ The response includes detailed information about each collection. When there are
       "projectName": "your-project",
       "collectionName": "example-collection",
       "indexConfigs": {
-        "title": {"type": "text"},
-        "category": {"type": "keyword"}
+        "url": { "type": "keyword" },
+        "author": { "type": "keyword" },
+        "content": {
+          "type": "text",
+          "analyzers": ["japanese", "korean", "english"],
+          "description": "Article body in Japanese, Korean, or English"
+        },
+        "id": { "type": "keyword" }
       },
-      "description": "Product catalog",
+      "description": "Articles searchable by URL, author, and content",
       "tags": {"environment": "production"},
       "numDocs": 1250,
       "numPartitions": 1,
@@ -152,18 +160,16 @@ The REST response wraps the collection details in `collection`. SDK convenience 
     "projectName": "your-project",
     "collectionName": "example-collection",
     "indexConfigs": {
-      "title": {
+      "url": { "type": "keyword" },
+      "author": { "type": "keyword" },
+      "content": {
         "type": "text",
-        "analyzers": ["standard", "korean"],
-        "description": "Product title shown in search results"
+        "analyzers": ["japanese", "korean", "english"],
+        "description": "Article body in Japanese, Korean, or English"
       },
-      "embedding": {
-        "type": "vector",
-        "dimensions": 768,
-        "similarity": "cosine"
-      }
+      "id": { "type": "keyword" }
     },
-    "description": "Product catalog",
+    "description": "Articles searchable by URL, author, and content",
     "tags": {"environment": "production"},
     "numDocs": 1250,
     "numPartitions": 1,
@@ -188,7 +194,7 @@ Update one or more of `description`, `tags`, or `snapshotRetentionInDays`:
 with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_name="YOUR_PROJECT_NAME") as client:
     client.collections.update(
         collection_name="example-collection",
-        description="Validated product catalog",
+        description="Validated article catalog",
         tags={"environment": "production"},
         snapshot_retention_in_days=14,
     )
@@ -196,7 +202,7 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
 
 ```typescript TypeScript
 await client.collection("example-collection").update({
-  description: "Validated product catalog",
+  description: "Validated article catalog",
   tags: { environment: "production" },
   snapshotRetentionInDays: 14,
 });
@@ -204,7 +210,7 @@ await client.collection("example-collection").update({
 
 ```go Go
 _, err = client.Collection("example-collection").Update(ctx, lambdadb.UpdateCollectionOptions{
-  Description:             lambdadb.String("Validated product catalog"),
+  Description:             lambdadb.String("Validated article catalog"),
   Tags:                    map[string]string{"environment": "production"},
   SnapshotRetentionInDays: lambdadb.Int64(14),
 })
@@ -217,7 +223,7 @@ curl -i -X PATCH \
   -H "content-type: application/json" \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
-    "description": "Validated product catalog",
+    "description": "Validated article catalog",
     "tags": { "environment": "production" },
     "snapshotRetentionInDays": 14
   }'
@@ -238,7 +244,9 @@ The REST response is `200 OK` with the full `collection` wrapper. Omitted or `nu
 
 ### Update the index schema
 
-An index schema belongs to a branch. The `indexConfigs` on a collection are those of its default `main` branch, and they stay in collection responses. To change a schema, update the branch that owns it. The Go snippet also imports `github.com/lambdadb/go-lambdadb/models/components`:
+An index schema belongs to a branch. The `indexConfigs` on a collection are those of its default `main` branch, and they stay in collection responses. To change a schema, update the branch that owns it.
+
+This update adds a `category` index and retains the existing `url`, `author`, and `content` settings. It omits the server-managed `id` and the existing `content` description, which LambdaDB preserves. The Go snippet also imports `github.com/lambdadb/go-lambdadb/models/components`.
 
 <CodeGroup>
 
@@ -247,8 +255,9 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
     client.collection("example-collection").branches.update(
         "main",
         index_configs={
-            "title": {"type": "text", "analyzers": ["standard", "korean"]},
-            "embedding": {"type": "vector", "dimensions": 768, "similarity": "cosine"},
+            "url": {"type": "keyword"},
+            "author": {"type": "keyword"},
+            "content": {"type": "text", "analyzers": ["japanese", "korean", "english"]},
             "category": {"type": "keyword"},
         },
     )
@@ -257,8 +266,9 @@ with LambdaDB(project_api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL", project_
 ```typescript TypeScript
 await client.collection("example-collection").branches.update("main", {
   indexConfigs: {
-    title: { type: "text", analyzers: ["standard", "korean"] },
-    embedding: { type: "vector", dimensions: 768, similarity: "cosine" },
+    url: { type: "keyword" },
+    author: { type: "keyword" },
+    content: { type: "text", analyzers: ["japanese", "korean", "english"] },
     category: { type: "keyword" },
   },
 });
@@ -267,14 +277,11 @@ await client.collection("example-collection").branches.update("main", {
 ```go Go
 _, err = client.Collection("example-collection").Branches().Update(ctx, "main", lambdadb.UpdateBranchInput{
   IndexConfigs: map[string]components.IndexConfigsUnion{
-    "title": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
+    "url": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+    "author": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
+    "content": components.CreateIndexConfigsUnionText(components.IndexConfigsText{
       Type:      components.TypeTextText,
-      Analyzers: []components.Analyzer{components.AnalyzerStandard, components.AnalyzerKorean},
-    }),
-    "embedding": components.CreateIndexConfigsUnionVector(components.IndexConfigsVector{
-      Type:       components.TypeVectorVector,
-      Dimensions: 768,
-      Similarity: components.SimilarityCosine.ToPointer(),
+      Analyzers: []components.Analyzer{components.AnalyzerJapanese, components.AnalyzerKorean, components.AnalyzerEnglish},
     }),
     "category": components.CreateIndexConfigsUnionKeyword(components.IndexConfigs{Type: components.TypeKeyword}),
   },
@@ -289,8 +296,9 @@ curl -i -X PATCH \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
     "indexConfigs": {
-      "title": { "type": "text", "analyzers": ["standard", "korean"] },
-      "embedding": { "type": "vector", "dimensions": 768, "similarity": "cosine" },
+      "url": { "type": "keyword" },
+      "author": { "type": "keyword" },
+      "content": { "type": "text", "analyzers": ["japanese", "korean", "english"] },
       "category": { "type": "keyword" }
     }
   }'
@@ -308,7 +316,7 @@ Submit a nonempty full schema that preserves existing fields and their settings 
 
 Every field in `indexConfigs`, including nested `objectIndexConfigs` children, accepts an optional `description` of up to 255 characters. It is metadata only: it never affects indexing, and changing it does not reindex the field. On create, omitting it, `null`, or `""` means no description. On PATCH, omitting a field's `description` or sending `null` keeps the stored value, `""` clears it, and any other string replaces it. The server-managed `id` field does not accept a description. See [Field descriptions](/guides/collections/index-types#field-descriptions) for examples on every index type.
 
-To change only a description, resend the full schema with the new value and every other setting unchanged:
+To change only the `content` description after adding `category`, resend the full schema with the new description and every other setting unchanged.
 
 ```bash
 curl -i -X PATCH \
@@ -317,17 +325,19 @@ curl -i -X PATCH \
   -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
   -d '{
     "indexConfigs": {
-      "title": {
+      "url": { "type": "keyword" },
+      "author": { "type": "keyword" },
+      "content": {
         "type": "text",
-        "analyzers": ["standard", "korean"],
-        "description": "Localized product title shown in search results"
+        "analyzers": ["japanese", "korean", "english"],
+        "description": "Full article text used for search"
       },
-      "embedding": { "type": "vector", "dimensions": 768, "similarity": "cosine" }
+      "category": { "type": "keyword" }
     }
   }'
 ```
 
-The response returns the updated `branch`, and the `title` field keeps its analyzers and indexed data.
+The response returns the updated `branch`, and the `content` field keeps its analyzers and indexed data.
 
 Described and listed collections include the server-managed top-level `id` field as `{"type": "keyword"}`. You can send a described `indexConfigs` back unchanged, with that `id` entry, or omit it; any other `id` configuration, an `id` inside an object field, or another reserved field name is rejected.
 

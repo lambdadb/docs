@@ -7,6 +7,8 @@ import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.md
 
 Use bulk upsert for batches that exceed the regular [request-body limit](/guides/get-started/limits#requests-and-documents). It uploads documents separately through a presigned URL. Enforce the returned `sizeLimitBytes`; the individual document limit still applies.
 
+In a partitioned collection, each ID identifies one document across the branch. Bulk upsert replaces and routes documents using the same [partition rules as regular upsert](/guides/documents/upsert-data#upsert-into-a-partitioned-collection).
+
 <Warning>
 
   Bulk upsert never generates [native embeddings](/guides/collections/native-embeddings#bulk-upsert). For each native embedding field, a document with no source values can omit the vector. A document with a present source field must supply the vector directly or the whole request fails before any documents are committed; empty image arrays are skipped. To generate embeddings, use the regular [upsert](/guides/documents/upsert-data) or [update](/guides/documents/update-data) flow.

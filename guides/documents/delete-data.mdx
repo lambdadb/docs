@@ -1,6 +1,6 @@
 ---
 title: Delete data
-description: Remove documents from a LambdaDB collection by specifying document IDs. Includes Python, TypeScript, Go, and cURL deletion code examples.
+description: Delete documents by ID or filter, or clear all documents from a branch. Includes Python, TypeScript, Go, and cURL examples.
 ---
 
 import PythonClientLifecycleNote from '/snippets/python-client-lifecycle-note.mdx';
@@ -143,9 +143,39 @@ These snippets reuse the imports, client setup, and cURL variables above. For Go
 
 </CodeGroup>
 
+## Delete all documents from a branch
+
+This example clears all partitions on the existing `candidate` branch. Before deleting, inspect the same branch with a query that returns up to one document ID.
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/query" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "ref": { "kind": "branch", "name": "candidate" },
+    "size": 1,
+    "fields": { "include": ["id"] }
+  }'
+```
+
+Use the match-all query `*:*` as the deletion filter. To clear the default branch instead, set both the query's `ref.name` and the delete request's `branch` to `main`.
+
+```bash
+curl -i -X POST \
+  "$BASE_URL/projects/$PROJECT_NAME/collections/$COLLECTION_NAME/docs/delete" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $LAMBDADB_PROJECT_API_KEY" \
+  -d '{
+    "branch": "candidate",
+    "filter": { "queryString": { "query": "*:*" } }
+  }'
+```
+
+A `202 Accepted` response confirms the deletion was submitted. Default reads reflect the deletion after a snapshot containing it is published. Run the same query again after publication and check for `"total": 0`.
+
+This operation preserves the collection, the branch schema, other branches, and tags. Aliases that target the branch reflect its updated data. Tags and retained snapshots may still contain the deleted documents.
+
 ## Delete an entire collection
 
-To remove all documents from a collection,
-[delete the collection](/guides/collections/manage-collections#delete-a-collection) and
-[recreate it](/guides/collections/create-a-collection#create-a-collection-from-scratch).
-The delete operation makes the logical collection unavailable before returning `200 OK`, so the same collection name can be reused immediately.
+To permanently remove the collection and its associated data, use [Delete a collection](/guides/collections/manage-collections#delete-a-collection).

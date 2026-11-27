@@ -139,6 +139,8 @@ results, err := client.Collection("my_collection").Query(ctx, lambdadb.QueryInpu
 
 `field` must match the configured partition field, and `in` contains field values, not physical partition IDs. Hash partitioning can place several field values in the same physical partition; the request also restricts matches to the supplied values. Derive permitted values in your backend from the caller's authorization.
 
+Document IDs are unique across the branch, including across tenant values. When tenants reuse local IDs, construct each LambdaDB ID from the tenant and local ID. For example, write tenant `tenant_42`'s document `42` as `{"id": "tenant_42:42", "tenant_id": "tenant_42", "content": "Refund policy"}`. Derive both the tenant field and the ID prefix in your backend before writing. An [upsert with the same ID](/guides/documents/upsert-data#upsert-into-a-partitioned-collection) replaces the existing document even if its tenant value changes.
+
 Use query predicates, including `knn.filter`, for additional document conditions within that search scope. A document predicate alone does not replace `partitionFilter` for skipping physical partitions. Internal sharding distributes query execution and has no user-facing configuration; it is separate from this explicit partition selection.
 
 See [Create a partitioned collection](/guides/collections/create-a-collection#create-a-partitioned-collection) for setup and [Read usage](/guides/costs/understanding-costs#read-usage) for the effect of partition selection on billing.
