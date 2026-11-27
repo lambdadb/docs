@@ -12,12 +12,11 @@ LambdaDB (Functional Systems Corp.) uses the following subprocessors to process 
 | Amazon Web Services (AWS) | Cloud infrastructure — compute, storage, and networking for the LambdaDB service | Customer content: the AWS region selected for the project. Account, authentication, usage, and billing data: us-east-1 (N. Virginia). |
 | Stripe | Payment processing | United States |
 | Vercel | Website and dashboard hosting | United States |
+| OpenAI | [Native embeddings](/guides/collections/native-embeddings) when selected. Processes document or query text to generate vectors. | Contact LambdaDB for processing locations. |
+| Cohere | [Native embeddings](/guides/collections/native-embeddings) for text and images, or [native reranking](/guides/search/native-reranking) for query text and selected candidate fields, when selected. | Contact LambdaDB for processing locations. |
+| TypeSafe | [Native reranking](/guides/search/native-reranking) when selected. Processes query text, selected candidate fields, and relevance criteria to score results. | Contact LambdaDB for processing locations. |
 
 Account, authentication, usage, and billing data are processed on AWS infrastructure in the us-east-1 (N. Virginia) region.
-
-## Optional inference
-
-When you use [native embeddings](/guides/collections/native-embeddings), LambdaDB sends the configured source inputs or query inputs to the selected embedding provider. When you enable [native reranking](/guides/search/native-reranking), the selected provider receives the query text and the candidate fields you choose for scoring. For questions about processing locations for a particular provider, contact [contact@lambdadb.ai](mailto:contact@lambdadb.ai).
 
 ## Changes to subprocessors
 
